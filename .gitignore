@@ -1,0 +1,12 @@
+/.build-backups/
+/.install-backups/
+/_upstream/
+/_vendor/
+/artifacts/
+
+/backend/PinsAllSky/bin/
+/backend/PinsAllSky/obj/
+
+/.DS_Store
+**/.DS_Store
+**/node_modules/

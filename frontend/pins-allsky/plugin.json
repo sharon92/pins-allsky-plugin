@@ -1,0 +1,10 @@
+{
+  "id": "pins-allsky",
+  "name": "AllSky Capture",
+  "description": "Pi HQ camera timelapses, keograms, and startrails for PINS rigs.",
+  "version": "1.0.0",
+  "author": "PINS AllSky Contributors",
+  "defaultEnabled": true,
+  "enabled": true,
+  "isPins": true
+}

@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <RootNamespace>NINA.PINS.AllSky</RootNamespace>
+    <AssemblyName>NINA.PINS.AllSky</AssemblyName>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="EmbedIO" Version="3.5.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.ComponentModel.Composition">
+      <HintPath>/home/pi/pins/System.ComponentModel.Composition.dll</HintPath>
+    </Reference>
+    <Reference Include="NINA.Plugin">
+      <HintPath>/home/pi/pins/NINA.Plugin.dll</HintPath>
+    </Reference>
+    <Reference Include="NINA.Core">
+      <HintPath>/home/pi/pins/NINA.Core.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\assets\tools\linux-arm64\keogram">
+      <Link>tools/keogram</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\assets\tools\linux-arm64\startrails">
+      <Link>tools/startrails</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>
