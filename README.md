@@ -8,6 +8,11 @@
 
 The backend is a NINA/PINS plugin. The frontend is a Touch-N-Stars plugin that must be compiled into the Touch-N-Stars web app because TNS discovers plugins at build time.
 
+## Disclaimer And Credits
+
+- This plugin was generated entirely with the help of OpenAI Codex. A human review is still required before any production or unattended use.
+- The project was inspired by the work of the [AllSky Team](https://github.com/AllskyTeam/allsky), whose tooling and approach informed the timelapse, keogram, and startrail pipeline used here.
+
 ## Repository Layout
 
 - `backend/PinsAllSky`: NINA/PINS plugin backend and local REST API

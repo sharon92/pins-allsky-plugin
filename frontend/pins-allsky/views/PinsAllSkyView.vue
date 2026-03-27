@@ -107,7 +107,7 @@
             </div>
           </div>
 
-          <div class="mt-4 grid gap-3 sm:grid-cols-4">
+          <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <div class="rounded-xl border border-gray-700 bg-gray-900/50 p-3">
               <div class="text-xs uppercase tracking-wide text-gray-500">Session</div>
               <div class="mt-2 text-sm text-white">
@@ -123,8 +123,12 @@
               <div class="mt-2 text-sm text-white">{{ formatDate(currentSession?.lastCaptureAtUtc) }}</div>
             </div>
             <div class="rounded-xl border border-gray-700 bg-gray-900/50 p-3">
-              <div class="text-xs uppercase tracking-wide text-gray-500">Poll Interval</div>
-              <div class="mt-2 text-sm text-white">{{ formatPollInterval(config?.sequencePollIntervalSeconds) }}</div>
+              <div class="text-xs uppercase tracking-wide text-gray-500">Capture Interval</div>
+              <div class="mt-2 text-sm text-white">{{ formatInterval(config?.camera?.intervalSeconds) }}</div>
+            </div>
+            <div class="rounded-xl border border-gray-700 bg-gray-900/50 p-3">
+              <div class="text-xs uppercase tracking-wide text-gray-500">Sequence Poll</div>
+              <div class="mt-2 text-sm text-white">{{ formatInterval(config?.sequencePollIntervalSeconds) }}</div>
             </div>
           </div>
         </section>
@@ -280,6 +284,10 @@
                 max="300"
                 class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
               />
+              <span class="mt-2 block text-xs text-gray-500">
+                Controls how often AllSky checks whether a PINS/NINA sequence has started or stopped.
+                It does not change the camera frame cadence.
+              </span>
             </label>
             <label class="block">
               <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
@@ -795,7 +803,7 @@ const formatDate = (value) => {
   return parsed.toLocaleString();
 };
 
-const formatPollInterval = (seconds) => {
+const formatInterval = (seconds) => {
   if (!Number.isFinite(seconds)) {
     return '—';
   }
