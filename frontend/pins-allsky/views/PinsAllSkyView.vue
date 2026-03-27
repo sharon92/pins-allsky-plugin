@@ -328,12 +328,73 @@
           <div class="space-y-4 rounded-2xl border border-gray-700 bg-gray-900/50 p-4">
             <h3 class="text-lg font-semibold text-white">Camera</h3>
             <div class="grid gap-4 sm:grid-cols-2">
-              <FieldNumber v-model="config.camera.intervalSeconds" label="Interval (s)" min="5" />
-              <FieldNumber v-model="config.camera.captureTimeoutSeconds" label="Timeout (s)" min="15" />
-              <FieldNumber v-model="config.camera.width" label="Width" min="640" />
-              <FieldNumber v-model="config.camera.height" label="Height" min="480" />
-              <FieldNumber v-model="config.camera.quality" label="JPEG Quality" min="1" max="100" />
-              <FieldNumber v-model="config.camera.warmupMilliseconds" label="Warmup (ms)" min="1" />
+              <label class="block">
+                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  Interval (s)
+                </span>
+                <input
+                  v-model.number="config.camera.intervalSeconds"
+                  type="number"
+                  min="5"
+                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                />
+              </label>
+              <label class="block">
+                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  Timeout (s)
+                </span>
+                <input
+                  v-model.number="config.camera.captureTimeoutSeconds"
+                  type="number"
+                  min="15"
+                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                />
+              </label>
+              <label class="block">
+                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  Width
+                </span>
+                <input
+                  v-model.number="config.camera.width"
+                  type="number"
+                  min="640"
+                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                />
+              </label>
+              <label class="block">
+                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  Height
+                </span>
+                <input
+                  v-model.number="config.camera.height"
+                  type="number"
+                  min="480"
+                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                />
+              </label>
+              <label class="block">
+                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  JPEG Quality
+                </span>
+                <input
+                  v-model.number="config.camera.quality"
+                  type="number"
+                  min="1"
+                  max="100"
+                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                />
+              </label>
+              <label class="block">
+                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  Warmup (ms)
+                </span>
+                <input
+                  v-model.number="config.camera.warmupMilliseconds"
+                  type="number"
+                  min="1"
+                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                />
+              </label>
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
@@ -395,12 +456,81 @@
               <FieldText v-model="config.camera.meteringMode" label="Metering" />
               <FieldText v-model="config.camera.awbMode" label="AWB" />
               <FieldText v-model="config.camera.denoiseMode" label="Denoise" />
-              <FieldNumber v-model="config.camera.evCompensation" label="EV Compensation" step="0.1" />
-              <FieldNumber v-model="config.camera.rotation" label="Rotation" min="0" max="180" />
-              <FieldNumber v-model="config.camera.brightness" label="Brightness" step="0.1" />
-              <FieldNumber v-model="config.camera.contrast" label="Contrast" step="0.1" min="0" />
-              <FieldNumber v-model="config.camera.saturation" label="Saturation" step="0.1" min="0" />
-              <FieldNumber v-model="config.camera.sharpness" label="Sharpness" step="0.1" min="0" />
+              <label class="block">
+                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  EV Compensation
+                </span>
+                <input
+                  v-model.number="config.camera.evCompensation"
+                  type="number"
+                  step="0.1"
+                  inputmode="decimal"
+                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                />
+              </label>
+              <label class="block">
+                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  Rotation
+                </span>
+                <input
+                  v-model.number="config.camera.rotation"
+                  type="number"
+                  min="0"
+                  max="180"
+                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                />
+              </label>
+              <label class="block">
+                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  Brightness
+                </span>
+                <input
+                  v-model.number="config.camera.brightness"
+                  type="number"
+                  step="0.1"
+                  inputmode="decimal"
+                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                />
+              </label>
+              <label class="block">
+                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  Contrast
+                </span>
+                <input
+                  v-model.number="config.camera.contrast"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  inputmode="decimal"
+                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                />
+              </label>
+              <label class="block">
+                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  Saturation
+                </span>
+                <input
+                  v-model.number="config.camera.saturation"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  inputmode="decimal"
+                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                />
+              </label>
+              <label class="block">
+                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  Sharpness
+                </span>
+                <input
+                  v-model.number="config.camera.sharpness"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  inputmode="decimal"
+                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                />
+              </label>
             </div>
 
             <div class="rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-100">
@@ -446,10 +576,51 @@
                 />
               </div>
               <div v-if="config.products.timelapseEnabled" class="mt-3 grid gap-4 sm:grid-cols-2">
-                <FieldNumber v-model="config.products.timelapseFps" label="FPS" min="1" max="60" />
-                <FieldNumber v-model="config.products.timelapseBitrateKbps" label="Bitrate (kbps)" min="1000" />
-                <FieldNumber v-model="config.products.timelapseWidth" label="Width" min="320" />
-                <FieldNumber v-model="config.products.timelapseHeight" label="Height" min="240" />
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    FPS
+                  </span>
+                  <input
+                    v-model.number="config.products.timelapseFps"
+                    type="number"
+                    min="1"
+                    max="60"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                  />
+                </label>
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Bitrate (kbps)
+                  </span>
+                  <input
+                    v-model.number="config.products.timelapseBitrateKbps"
+                    type="number"
+                    min="1000"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                  />
+                </label>
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Width
+                  </span>
+                  <input
+                    v-model.number="config.products.timelapseWidth"
+                    type="number"
+                    min="320"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                  />
+                </label>
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Height
+                  </span>
+                  <input
+                    v-model.number="config.products.timelapseHeight"
+                    type="number"
+                    min="240"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                  />
+                </label>
                 <FieldText v-model="config.products.timelapseCodec" label="Codec" />
                 <FieldText v-model="config.products.timelapsePixelFormat" label="Pixel Format" />
                 <FieldText v-model="config.products.timelapseLogLevel" label="FFmpeg Log Level" />
@@ -467,7 +638,7 @@
                 <span class="font-semibold text-white">Keogram</span>
                 <toggleButton
                   :status-value="Boolean(config.products.keogramEnabled)"
-                  @update:status-value="setProductSetting('keogramEnabled', $event)"
+                  @update:statusValue="setProductSetting('keogramEnabled', $event)"
                 />
               </div>
               <div v-if="config.products.keogramEnabled" class="mt-3 grid gap-4 sm:grid-cols-2">
@@ -492,11 +663,43 @@
                     @update:statusValue="setProductSetting('keogramShowDate', $event)"
                   />
                 </label>
-                <FieldNumber v-model="config.products.keogramRotateDegrees" label="Rotate (deg)" />
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Rotate (deg)
+                  </span>
+                  <input
+                    v-model.number="config.products.keogramRotateDegrees"
+                    type="number"
+                    inputmode="decimal"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                  />
+                </label>
                 <FieldText v-model="config.products.keogramFontName" label="Font Name" />
                 <FieldText v-model="config.products.keogramFontColor" label="Font Color" />
-                <FieldNumber v-model="config.products.keogramFontSize" label="Font Size" min="0.1" step="0.1" />
-                <FieldNumber v-model="config.products.keogramLineThickness" label="Line Thickness" min="1" />
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Font Size
+                  </span>
+                  <input
+                    v-model.number="config.products.keogramFontSize"
+                    type="number"
+                    min="0.1"
+                    step="0.1"
+                    inputmode="decimal"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                  />
+                </label>
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Line Thickness
+                  </span>
+                  <input
+                    v-model.number="config.products.keogramLineThickness"
+                    type="number"
+                    min="1"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                  />
+                </label>
               </div>
               <FieldTextarea
                 v-if="config.products.keogramEnabled"
@@ -515,13 +718,20 @@
                 />
               </div>
               <div v-if="config.products.startrailsEnabled" class="mt-3 space-y-3">
-                <FieldNumber
-                  v-model="config.products.startrailsBrightnessThreshold"
-                  label="Brightness Threshold"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                />
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Brightness Threshold
+                  </span>
+                  <input
+                    v-model.number="config.products.startrailsBrightnessThreshold"
+                    type="number"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    inputmode="decimal"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                  />
+                </label>
                 <div class="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
                   On an equatorial mount the camera may track with the sky, so the startrail output
                   can still be generated but may not show the classic circular trail effect.
@@ -846,32 +1056,6 @@ onBeforeUnmount(() => {
 <script>
 export default {
   components: {
-    fieldNumber: {
-      props: {
-        label: { type: String, required: true },
-        modelValue: { type: [Number, String], default: null },
-        min: { type: [Number, String], default: undefined },
-        max: { type: [Number, String], default: undefined },
-        step: { type: [Number, String], default: 1 },
-        disabled: { type: Boolean, default: false },
-      },
-      emits: ['update:modelValue'],
-      template: `
-        <label class="block">
-          <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">{{ label }}</span>
-          <input
-            :value="modelValue"
-            type="number"
-            :min="min"
-            :max="max"
-            :step="step"
-            :disabled="disabled"
-            class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
-            @input="$emit('update:modelValue', $event.target.valueAsNumber)"
-          />
-        </label>
-      `,
-    },
     fieldText: {
       props: {
         label: { type: String, required: true },
