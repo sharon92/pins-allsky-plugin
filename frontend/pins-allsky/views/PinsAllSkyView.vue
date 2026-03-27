@@ -147,13 +147,20 @@
               />
             </label>
 
-            <div class="grid gap-3 sm:grid-cols-2">
+            <div class="grid gap-3 sm:grid-cols-3">
               <button
                 class="rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"
                 :disabled="loading || status?.captureRunning"
                 @click="startSession"
               >
                 Start Capture
+              </button>
+              <button
+                class="rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 font-semibold text-cyan-100 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                :disabled="loading || !status?.captureRunning || !currentSession?.captureCount || status?.generateInProgress"
+                @click="generateArtifacts(currentSession?.id || null)"
+              >
+                {{ status?.generateInProgress ? 'Rendering Progress…' : 'Render Progress' }}
               </button>
               <button
                 class="rounded-xl bg-rose-600 px-4 py-3 font-semibold text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-40"
@@ -163,6 +170,11 @@
                 Stop And Render
               </button>
             </div>
+
+            <p class="text-xs text-gray-500">
+              `Render Progress` generates timelapse, keogram, and startrails from frames captured
+              so far without stopping the active capture session.
+            </p>
 
             <button
               class="w-full rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 font-semibold text-cyan-100 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
@@ -246,14 +258,14 @@
               <span class="text-sm text-gray-300">Auto-start with sequence</span>
               <toggleButton
                 :status-value="Boolean(config.autoStartWithSequence)"
-                @update:status-value="setRootConfigValue('autoStartWithSequence', $event)"
+                @update:statusValue="setRootConfigValue('autoStartWithSequence', $event)"
               />
             </label>
             <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
               <span class="text-sm text-gray-300">Advanced API enabled</span>
               <toggleButton
                 :status-value="Boolean(config.advancedApi.enabled)"
-                @update:status-value="setAdvancedApiSetting('enabled', $event)"
+                @update:statusValue="setAdvancedApiSetting('enabled', $event)"
               />
             </label>
             <FieldText v-model="config.advancedApi.protocol" label="Protocol" />
@@ -322,7 +334,7 @@
                   <span class="text-sm text-gray-300">Manual exposure</span>
                   <toggleButton
                     :status-value="Boolean(config.camera.useManualExposure)"
-                    @update:status-value="setCameraSetting('useManualExposure', $event)"
+                    @update:statusValue="setCameraSetting('useManualExposure', $event)"
                   />
                 </label>
                 <FieldNumber
@@ -341,7 +353,7 @@
                   <span class="text-sm text-gray-300">Manual gain</span>
                   <toggleButton
                     :status-value="Boolean(config.camera.useManualGain)"
-                    @update:status-value="setCameraSetting('useManualGain', $event)"
+                    @update:statusValue="setCameraSetting('useManualGain', $event)"
                   />
                 </label>
                 <FieldNumber
@@ -378,14 +390,14 @@
                 <span class="text-sm text-gray-300">Horizontal flip</span>
                 <toggleButton
                   :status-value="Boolean(config.camera.horizontalFlip)"
-                  @update:status-value="setCameraSetting('horizontalFlip', $event)"
+                  @update:statusValue="setCameraSetting('horizontalFlip', $event)"
                 />
               </label>
               <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
                 <span class="text-sm text-gray-300">Vertical flip</span>
                 <toggleButton
                   :status-value="Boolean(config.camera.verticalFlip)"
-                  @update:status-value="setCameraSetting('verticalFlip', $event)"
+                  @update:statusValue="setCameraSetting('verticalFlip', $event)"
                 />
               </label>
             </div>
@@ -399,7 +411,7 @@
               <span class="text-sm text-gray-300">Keep source frames</span>
               <toggleButton
                 :status-value="Boolean(config.products.keepFrames)"
-                @update:status-value="setProductSetting('keepFrames', $event)"
+                @update:statusValue="setProductSetting('keepFrames', $event)"
               />
             </label>
 
@@ -408,7 +420,7 @@
                 <span class="font-semibold text-white">Timelapse</span>
                 <toggleButton
                   :status-value="Boolean(config.products.timelapseEnabled)"
-                  @update:status-value="setProductSetting('timelapseEnabled', $event)"
+                  @update:statusValue="setProductSetting('timelapseEnabled', $event)"
                 />
               </div>
               <div v-if="config.products.timelapseEnabled" class="mt-3 grid gap-4 sm:grid-cols-2">
@@ -441,21 +453,21 @@
                   <span class="text-sm text-gray-300">Expand to frame width</span>
                   <toggleButton
                     :status-value="Boolean(config.products.keogramExpand)"
-                    @update:status-value="setProductSetting('keogramExpand', $event)"
+                    @update:statusValue="setProductSetting('keogramExpand', $event)"
                   />
                 </label>
                 <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2">
                   <span class="text-sm text-gray-300">Show labels</span>
                   <toggleButton
                     :status-value="Boolean(config.products.keogramShowLabels)"
-                    @update:status-value="setProductSetting('keogramShowLabels', $event)"
+                    @update:statusValue="setProductSetting('keogramShowLabels', $event)"
                   />
                 </label>
                 <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2">
                   <span class="text-sm text-gray-300">Show date</span>
                   <toggleButton
                     :status-value="Boolean(config.products.keogramShowDate)"
-                    @update:status-value="setProductSetting('keogramShowDate', $event)"
+                    @update:statusValue="setProductSetting('keogramShowDate', $event)"
                   />
                 </label>
                 <FieldNumber v-model="config.products.keogramRotateDegrees" label="Rotate (deg)" />
@@ -477,7 +489,7 @@
                 <span class="font-semibold text-white">Startrails</span>
                 <toggleButton
                   :status-value="Boolean(config.products.startrailsEnabled)"
-                  @update:status-value="setProductSetting('startrailsEnabled', $event)"
+                  @update:statusValue="setProductSetting('startrailsEnabled', $event)"
                 />
               </div>
               <div v-if="config.products.startrailsEnabled" class="mt-3 space-y-3">
