@@ -272,7 +272,15 @@
                 @update:statusValue="setAdvancedApiSetting('enabled', $event)"
               />
             </label>
-            <FieldText v-model="config.advancedApi.protocol" label="Protocol" />
+            <label class="block">
+              <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Protocol
+              </span>
+              <input
+                v-model="config.advancedApi.protocol"
+                class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+              />
+            </label>
             <label class="block">
               <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                 Sequence Poll Interval (s)
@@ -322,7 +330,15 @@
                 />
               </label>
             </div>
-            <FieldText v-model="config.advancedApi.basePath" label="Advanced API Base Path" />
+            <label class="block">
+              <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Advanced API Base Path
+              </span>
+              <input
+                v-model="config.advancedApi.basePath"
+                class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+              />
+            </label>
           </div>
 
           <div class="space-y-4 rounded-2xl border border-gray-700 bg-gray-900/50 p-4">
@@ -453,9 +469,33 @@
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
-              <FieldText v-model="config.camera.meteringMode" label="Metering" />
-              <FieldText v-model="config.camera.awbMode" label="AWB" />
-              <FieldText v-model="config.camera.denoiseMode" label="Denoise" />
+              <label class="block">
+                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  Metering
+                </span>
+                <input
+                  v-model="config.camera.meteringMode"
+                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                />
+              </label>
+              <label class="block">
+                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  AWB
+                </span>
+                <input
+                  v-model="config.camera.awbMode"
+                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                />
+              </label>
+              <label class="block">
+                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  Denoise
+                </span>
+                <input
+                  v-model="config.camera.denoiseMode"
+                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                />
+              </label>
               <label class="block">
                 <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                   EV Compensation
@@ -554,7 +594,16 @@
               </label>
             </div>
 
-            <FieldTextarea v-model="config.camera.extraArguments" label="Extra rpicam-still Arguments" />
+            <label class="block">
+              <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Extra rpicam-still Arguments
+              </span>
+              <textarea
+                v-model="config.camera.extraArguments"
+                rows="3"
+                class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+              />
+            </label>
           </div>
 
           <div class="space-y-4 rounded-2xl border border-gray-700 bg-gray-900/50 p-4">
@@ -621,16 +670,44 @@
                     class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
-                <FieldText v-model="config.products.timelapseCodec" label="Codec" />
-                <FieldText v-model="config.products.timelapsePixelFormat" label="Pixel Format" />
-                <FieldText v-model="config.products.timelapseLogLevel" label="FFmpeg Log Level" />
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Codec
+                  </span>
+                  <input
+                    v-model="config.products.timelapseCodec"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                  />
+                </label>
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Pixel Format
+                  </span>
+                  <input
+                    v-model="config.products.timelapsePixelFormat"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                  />
+                </label>
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    FFmpeg Log Level
+                  </span>
+                  <input
+                    v-model="config.products.timelapseLogLevel"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                  />
+                </label>
               </div>
-              <FieldTextarea
-                v-if="config.products.timelapseEnabled"
-                v-model="config.products.timelapseExtraParameters"
-                label="Extra ffmpeg Arguments"
-                class="mt-3"
-              />
+              <label v-if="config.products.timelapseEnabled" class="mt-3 block">
+                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  Extra ffmpeg Arguments
+                </span>
+                <textarea
+                  v-model="config.products.timelapseExtraParameters"
+                  rows="3"
+                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                />
+              </label>
             </div>
 
             <div class="rounded-xl border border-gray-700 bg-gray-800/70 p-3">
@@ -674,8 +751,24 @@
                     class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
-                <FieldText v-model="config.products.keogramFontName" label="Font Name" />
-                <FieldText v-model="config.products.keogramFontColor" label="Font Color" />
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Font Name
+                  </span>
+                  <input
+                    v-model="config.products.keogramFontName"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                  />
+                </label>
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Font Color
+                  </span>
+                  <input
+                    v-model="config.products.keogramFontColor"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                  />
+                </label>
                 <label class="block">
                   <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                     Font Size
@@ -701,12 +794,16 @@
                   />
                 </label>
               </div>
-              <FieldTextarea
-                v-if="config.products.keogramEnabled"
-                v-model="config.products.keogramExtraParameters"
-                label="Extra keogram Arguments"
-                class="mt-3"
-              />
+              <label v-if="config.products.keogramEnabled" class="mt-3 block">
+                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  Extra keogram Arguments
+                </span>
+                <textarea
+                  v-model="config.products.keogramExtraParameters"
+                  rows="3"
+                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                />
+              </label>
             </div>
 
             <div class="rounded-xl border border-gray-700 bg-gray-800/70 p-3">
@@ -736,10 +833,16 @@
                   On an equatorial mount the camera may track with the sky, so the startrail output
                   can still be generated but may not show the classic circular trail effect.
                 </div>
-                <FieldTextarea
-                  v-model="config.products.startrailsExtraParameters"
-                  label="Extra startrails Arguments"
-                />
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Extra startrails Arguments
+                  </span>
+                  <textarea
+                    v-model="config.products.startrailsExtraParameters"
+                    rows="3"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                  />
+                </label>
               </div>
             </div>
           </div>
@@ -1051,46 +1154,4 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   store.stopPolling();
 });
-</script>
-
-<script>
-export default {
-  components: {
-    fieldText: {
-      props: {
-        label: { type: String, required: true },
-        modelValue: { type: String, default: '' },
-      },
-      emits: ['update:modelValue'],
-      template: `
-        <label class="block">
-          <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">{{ label }}</span>
-          <input
-            :value="modelValue"
-            class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-            @input="$emit('update:modelValue', $event.target.value)"
-          />
-        </label>
-      `,
-    },
-    fieldTextarea: {
-      props: {
-        label: { type: String, required: true },
-        modelValue: { type: String, default: '' },
-      },
-      emits: ['update:modelValue'],
-      template: `
-        <label class="block">
-          <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">{{ label }}</span>
-          <textarea
-            :value="modelValue"
-            rows="3"
-            class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-            @input="$emit('update:modelValue', $event.target.value)"
-          />
-        </label>
-      `,
-    },
-  },
-};
 </script>
