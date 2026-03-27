@@ -337,14 +337,21 @@
                     @update:statusValue="setCameraSetting('useManualExposure', $event)"
                   />
                 </label>
-                <FieldNumber
-                  v-model="config.camera.shutterMicroseconds"
-                  label="Shutter (µs)"
-                  min="1"
-                  :disabled="!config.camera.useManualExposure"
-                />
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Shutter (µs)
+                  </span>
+                  <input
+                    v-model.number="config.camera.shutterMicroseconds"
+                    type="number"
+                    min="1"
+                    inputmode="numeric"
+                    :disabled="!config.camera.useManualExposure"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </label>
                 <p class="text-xs text-gray-500">
-                  When disabled, `rpicam-still` controls exposure automatically.
+                  When disabled, <code class="font-mono text-gray-400">rpicam-still</code> controls exposure automatically.
                 </p>
               </div>
 
@@ -356,15 +363,22 @@
                     @update:statusValue="setCameraSetting('useManualGain', $event)"
                   />
                 </label>
-                <FieldNumber
-                  v-model="config.camera.analogGain"
-                  label="Analog Gain"
-                  min="1"
-                  step="0.1"
-                  :disabled="!config.camera.useManualGain"
-                />
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Analog Gain
+                  </span>
+                  <input
+                    v-model.number="config.camera.analogGain"
+                    type="number"
+                    min="1"
+                    step="0.1"
+                    inputmode="decimal"
+                    :disabled="!config.camera.useManualGain"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </label>
                 <p class="text-xs text-gray-500">
-                  When disabled, `rpicam-still` controls gain automatically.
+                  When disabled, <code class="font-mono text-gray-400">rpicam-still</code> controls gain automatically.
                 </p>
               </div>
             </div>
@@ -382,7 +396,7 @@
             </div>
 
             <div class="rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-100">
-              `rpicam-still` rotation is limited to `0` or `180` degrees.
+              <code class="font-mono">rpicam-still</code> rotation is limited to <code class="font-mono">0</code> or <code class="font-mono">180</code> degrees.
             </div>
 
             <div class="grid gap-3 sm:grid-cols-2">
