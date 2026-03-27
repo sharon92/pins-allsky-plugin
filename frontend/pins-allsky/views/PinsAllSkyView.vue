@@ -1,8 +1,12 @@
 <template>
   <div class="container py-8 sm:py-12 px-4">
     <div class="mx-auto max-w-7xl space-y-6">
-      <div class="rounded-2xl border border-cyan-900/40 bg-gray-800/80 p-6 shadow-2xl">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <section class="rounded-2xl border border-cyan-900/40 bg-gray-800/80 p-6 shadow-2xl">
+        <button
+          type="button"
+          class="flex w-full items-start justify-between gap-4 text-left"
+          @click="toggleSection('overview')"
+        >
           <div>
             <h1 class="text-3xl font-bold text-white">AllSky Capture</h1>
             <p class="mt-2 max-w-3xl text-sm text-gray-300">
@@ -10,34 +14,43 @@
               keograms, and startrail composites from the captured frames.
             </p>
           </div>
-          <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-              <div class="text-xs uppercase tracking-wide text-gray-400">Backend</div>
-              <div class="mt-2 text-sm font-semibold" :class="status?.advancedApiReachable ? 'text-emerald-400' : 'text-amber-300'">
-                {{ status ? 'Online' : 'Loading' }}
-              </div>
+          <div class="flex items-center gap-3">
+            <span class="rounded-full border border-gray-600 bg-gray-900/70 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gray-300">
+              {{ sectionOpen.overview ? 'Expanded' : 'Collapsed' }}
+            </span>
+            <span class="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-500/40 bg-cyan-500/10 text-lg font-semibold text-cyan-200">
+              {{ sectionOpen.overview ? '-' : '+' }}
+            </span>
+          </div>
+        </button>
+
+        <div v-if="sectionOpen.overview" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
+            <div class="text-xs uppercase tracking-wide text-gray-400">Backend</div>
+            <div class="mt-2 text-sm font-semibold" :class="status?.advancedApiReachable ? 'text-emerald-400' : 'text-amber-300'">
+              {{ status ? (status.advancedApiReachable ? 'Online' : 'Offline') : 'Loading' }}
             </div>
-            <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-              <div class="text-xs uppercase tracking-wide text-gray-400">Sequence</div>
-              <div class="mt-2 text-sm font-semibold" :class="status?.sequenceRunning ? 'text-emerald-400' : 'text-gray-300'">
-                {{ status?.sequenceRunning ? 'Running' : 'Idle' }}
-              </div>
+          </div>
+          <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
+            <div class="text-xs uppercase tracking-wide text-gray-400">Sequence</div>
+            <div class="mt-2 text-sm font-semibold" :class="status?.sequenceRunning ? 'text-emerald-400' : 'text-gray-300'">
+              {{ status?.sequenceRunning ? 'Running' : 'Idle' }}
             </div>
-            <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-              <div class="text-xs uppercase tracking-wide text-gray-400">Capture</div>
-              <div class="mt-2 text-sm font-semibold" :class="status?.captureRunning ? 'text-emerald-400' : 'text-gray-300'">
-                {{ status?.captureRunning ? 'Active' : 'Stopped' }}
-              </div>
+          </div>
+          <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
+            <div class="text-xs uppercase tracking-wide text-gray-400">Capture</div>
+            <div class="mt-2 text-sm font-semibold" :class="status?.captureRunning ? 'text-emerald-400' : 'text-gray-300'">
+              {{ status?.captureRunning ? 'Active' : 'Stopped' }}
             </div>
-            <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-              <div class="text-xs uppercase tracking-wide text-gray-400">Products</div>
-              <div class="mt-2 text-sm font-semibold" :class="status?.generateInProgress ? 'text-cyan-300' : 'text-gray-300'">
-                {{ status?.generateInProgress ? 'Rendering' : 'Ready' }}
-              </div>
+          </div>
+          <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
+            <div class="text-xs uppercase tracking-wide text-gray-400">Products</div>
+            <div class="mt-2 text-sm font-semibold" :class="status?.generateInProgress ? 'text-cyan-300' : 'text-gray-300'">
+              {{ status?.generateInProgress ? 'Rendering' : 'Ready' }}
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       <div
         v-if="error"
@@ -94,7 +107,7 @@
             </div>
           </div>
 
-          <div class="mt-4 grid gap-3 sm:grid-cols-3">
+          <div class="mt-4 grid gap-3 sm:grid-cols-4">
             <div class="rounded-xl border border-gray-700 bg-gray-900/50 p-3">
               <div class="text-xs uppercase tracking-wide text-gray-500">Session</div>
               <div class="mt-2 text-sm text-white">
@@ -108,6 +121,10 @@
             <div class="rounded-xl border border-gray-700 bg-gray-900/50 p-3">
               <div class="text-xs uppercase tracking-wide text-gray-500">Last Capture</div>
               <div class="mt-2 text-sm text-white">{{ formatDate(currentSession?.lastCaptureAtUtc) }}</div>
+            </div>
+            <div class="rounded-xl border border-gray-700 bg-gray-900/50 p-3">
+              <div class="text-xs uppercase tracking-wide text-gray-500">Poll Interval</div>
+              <div class="mt-2 text-sm text-white">{{ formatPollInterval(config?.sequencePollIntervalSeconds) }}</div>
             </div>
           </div>
         </section>
@@ -157,8 +174,22 @@
           </div>
 
           <div class="mt-6 rounded-xl border border-gray-700 bg-gray-900/60 p-4">
-            <div class="text-sm font-semibold text-white">Backend Dependencies</div>
-            <div class="mt-3 grid gap-2">
+            <button
+              type="button"
+              class="flex w-full items-center justify-between gap-3 text-left"
+              @click="toggleSection('dependencies')"
+            >
+              <div class="text-sm font-semibold text-white">Backend Dependencies</div>
+              <div class="flex items-center gap-3">
+                <span class="text-xs uppercase tracking-wide text-gray-400">
+                  {{ sectionOpen.dependencies ? 'Expanded' : 'Collapsed' }}
+                </span>
+                <span class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-600 bg-gray-800/80 text-sm font-semibold text-gray-200">
+                  {{ sectionOpen.dependencies ? '-' : '+' }}
+                </span>
+              </div>
+            </button>
+            <div v-if="sectionOpen.dependencies" class="mt-3 grid gap-2">
               <div
                 v-for="item in dependencyRows"
                 :key="item.label"
@@ -175,7 +206,11 @@
       </div>
 
       <section v-if="config" class="rounded-2xl border border-gray-700 bg-gray-800/80 p-6 shadow-xl">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <button
+          type="button"
+          class="flex w-full flex-col gap-4 text-left lg:flex-row lg:items-start lg:justify-between"
+          @click="toggleSection('captureSettings')"
+        >
           <div>
             <h2 class="text-xl font-semibold text-white">Capture And Product Settings</h2>
             <p class="text-sm text-gray-400">
@@ -183,25 +218,43 @@
               monitoring as well as manual runs.
             </p>
           </div>
-          <button
-            class="rounded-xl bg-cyan-600 px-5 py-3 font-semibold text-white transition hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-40"
-            :disabled="saving"
-            @click="saveConfig"
-          >
-            {{ saving ? 'Saving…' : 'Save Settings' }}
-          </button>
-        </div>
+          <div class="flex items-center gap-3 self-start lg:self-auto">
+            <span class="rounded-full border border-gray-600 bg-gray-900/70 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gray-300">
+              {{ sectionOpen.captureSettings ? 'Expanded' : 'Collapsed' }}
+            </span>
+            <span class="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-500/40 bg-cyan-500/10 text-lg font-semibold text-cyan-200">
+              {{ sectionOpen.captureSettings ? '-' : '+' }}
+            </span>
+          </div>
+        </button>
 
-        <div class="mt-6 grid gap-6 xl:grid-cols-3">
+        <div v-if="sectionOpen.captureSettings" class="mt-6">
+          <div class="flex justify-end">
+            <button
+              class="rounded-xl bg-cyan-600 px-5 py-3 font-semibold text-white transition hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-40"
+              :disabled="saving"
+              @click="saveConfig"
+            >
+              {{ saving ? 'Saving…' : 'Save Settings' }}
+            </button>
+          </div>
+
+          <div class="mt-6 grid gap-6 xl:grid-cols-3">
           <div class="space-y-4 rounded-2xl border border-gray-700 bg-gray-900/50 p-4">
             <h3 class="text-lg font-semibold text-white">Automation</h3>
             <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
               <span class="text-sm text-gray-300">Auto-start with sequence</span>
-              <toggleButton v-model:statusValue="config.autoStartWithSequence" />
+              <toggleButton
+                :status-value="Boolean(config.autoStartWithSequence)"
+                @update:status-value="setRootConfigValue('autoStartWithSequence', $event)"
+              />
             </label>
             <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
               <span class="text-sm text-gray-300">Advanced API enabled</span>
-              <toggleButton v-model:statusValue="config.advancedApi.enabled" />
+              <toggleButton
+                :status-value="Boolean(config.advancedApi.enabled)"
+                @update:status-value="setAdvancedApiSetting('enabled', $event)"
+              />
             </label>
             <FieldText v-model="config.advancedApi.protocol" label="Protocol" />
             <label class="block">
@@ -263,28 +316,46 @@
               <FieldNumber v-model="config.camera.warmupMilliseconds" label="Warmup (ms)" min="1" />
             </div>
 
-            <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
-              <span class="text-sm text-gray-300">Manual exposure</span>
-              <toggleButton v-model:statusValue="config.camera.useManualExposure" />
-            </label>
-            <FieldNumber
-              v-if="config.camera.useManualExposure"
-              v-model="config.camera.shutterMicroseconds"
-              label="Shutter (µs)"
-              min="1"
-            />
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div class="space-y-3 rounded-xl border border-gray-700 bg-gray-800/70 p-3">
+                <label class="flex items-center justify-between gap-3">
+                  <span class="text-sm text-gray-300">Manual exposure</span>
+                  <toggleButton
+                    :status-value="Boolean(config.camera.useManualExposure)"
+                    @update:status-value="setCameraSetting('useManualExposure', $event)"
+                  />
+                </label>
+                <FieldNumber
+                  v-model="config.camera.shutterMicroseconds"
+                  label="Shutter (µs)"
+                  min="1"
+                  :disabled="!config.camera.useManualExposure"
+                />
+                <p class="text-xs text-gray-500">
+                  When disabled, `rpicam-still` controls exposure automatically.
+                </p>
+              </div>
 
-            <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
-              <span class="text-sm text-gray-300">Manual gain</span>
-              <toggleButton v-model:statusValue="config.camera.useManualGain" />
-            </label>
-            <FieldNumber
-              v-if="config.camera.useManualGain"
-              v-model="config.camera.analogGain"
-              label="Analog Gain"
-              min="1"
-              step="0.1"
-            />
+              <div class="space-y-3 rounded-xl border border-gray-700 bg-gray-800/70 p-3">
+                <label class="flex items-center justify-between gap-3">
+                  <span class="text-sm text-gray-300">Manual gain</span>
+                  <toggleButton
+                    :status-value="Boolean(config.camera.useManualGain)"
+                    @update:status-value="setCameraSetting('useManualGain', $event)"
+                  />
+                </label>
+                <FieldNumber
+                  v-model="config.camera.analogGain"
+                  label="Analog Gain"
+                  min="1"
+                  step="0.1"
+                  :disabled="!config.camera.useManualGain"
+                />
+                <p class="text-xs text-gray-500">
+                  When disabled, `rpicam-still` controls gain automatically.
+                </p>
+              </div>
+            </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
               <FieldText v-model="config.camera.meteringMode" label="Metering" />
@@ -305,11 +376,17 @@
             <div class="grid gap-3 sm:grid-cols-2">
               <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
                 <span class="text-sm text-gray-300">Horizontal flip</span>
-                <toggleButton v-model:statusValue="config.camera.horizontalFlip" />
+                <toggleButton
+                  :status-value="Boolean(config.camera.horizontalFlip)"
+                  @update:status-value="setCameraSetting('horizontalFlip', $event)"
+                />
               </label>
               <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
                 <span class="text-sm text-gray-300">Vertical flip</span>
-                <toggleButton v-model:statusValue="config.camera.verticalFlip" />
+                <toggleButton
+                  :status-value="Boolean(config.camera.verticalFlip)"
+                  @update:status-value="setCameraSetting('verticalFlip', $event)"
+                />
               </label>
             </div>
 
@@ -320,13 +397,19 @@
             <h3 class="text-lg font-semibold text-white">Products</h3>
             <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
               <span class="text-sm text-gray-300">Keep source frames</span>
-              <toggleButton v-model:statusValue="config.products.keepFrames" />
+              <toggleButton
+                :status-value="Boolean(config.products.keepFrames)"
+                @update:status-value="setProductSetting('keepFrames', $event)"
+              />
             </label>
 
             <div class="rounded-xl border border-gray-700 bg-gray-800/70 p-3">
               <div class="flex items-center justify-between gap-3">
                 <span class="font-semibold text-white">Timelapse</span>
-                <toggleButton v-model:statusValue="config.products.timelapseEnabled" />
+                <toggleButton
+                  :status-value="Boolean(config.products.timelapseEnabled)"
+                  @update:status-value="setProductSetting('timelapseEnabled', $event)"
+                />
               </div>
               <div v-if="config.products.timelapseEnabled" class="mt-3 grid gap-4 sm:grid-cols-2">
                 <FieldNumber v-model="config.products.timelapseFps" label="FPS" min="1" max="60" />
@@ -348,20 +431,32 @@
             <div class="rounded-xl border border-gray-700 bg-gray-800/70 p-3">
               <div class="flex items-center justify-between gap-3">
                 <span class="font-semibold text-white">Keogram</span>
-                <toggleButton v-model:statusValue="config.products.keogramEnabled" />
+                <toggleButton
+                  :status-value="Boolean(config.products.keogramEnabled)"
+                  @update:status-value="setProductSetting('keogramEnabled', $event)"
+                />
               </div>
               <div v-if="config.products.keogramEnabled" class="mt-3 grid gap-4 sm:grid-cols-2">
                 <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2">
                   <span class="text-sm text-gray-300">Expand to frame width</span>
-                  <toggleButton v-model:statusValue="config.products.keogramExpand" />
+                  <toggleButton
+                    :status-value="Boolean(config.products.keogramExpand)"
+                    @update:status-value="setProductSetting('keogramExpand', $event)"
+                  />
                 </label>
                 <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2">
                   <span class="text-sm text-gray-300">Show labels</span>
-                  <toggleButton v-model:statusValue="config.products.keogramShowLabels" />
+                  <toggleButton
+                    :status-value="Boolean(config.products.keogramShowLabels)"
+                    @update:status-value="setProductSetting('keogramShowLabels', $event)"
+                  />
                 </label>
                 <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2">
                   <span class="text-sm text-gray-300">Show date</span>
-                  <toggleButton v-model:statusValue="config.products.keogramShowDate" />
+                  <toggleButton
+                    :status-value="Boolean(config.products.keogramShowDate)"
+                    @update:status-value="setProductSetting('keogramShowDate', $event)"
+                  />
                 </label>
                 <FieldNumber v-model="config.products.keogramRotateDegrees" label="Rotate (deg)" />
                 <FieldText v-model="config.products.keogramFontName" label="Font Name" />
@@ -380,7 +475,10 @@
             <div class="rounded-xl border border-gray-700 bg-gray-800/70 p-3">
               <div class="flex items-center justify-between gap-3">
                 <span class="font-semibold text-white">Startrails</span>
-                <toggleButton v-model:statusValue="config.products.startrailsEnabled" />
+                <toggleButton
+                  :status-value="Boolean(config.products.startrailsEnabled)"
+                  @update:status-value="setProductSetting('startrailsEnabled', $event)"
+                />
               </div>
               <div v-if="config.products.startrailsEnabled" class="mt-3 space-y-3">
                 <FieldNumber
@@ -402,19 +500,36 @@
             </div>
           </div>
         </div>
+        </div>
       </section>
 
       <section class="rounded-2xl border border-gray-700 bg-gray-800/80 p-6 shadow-xl">
-        <h2 class="text-xl font-semibold text-white">Recent Sessions</h2>
-        <p class="mt-1 text-sm text-gray-400">
-          Generated products are served directly from the backend and open in a new tab.
-        </p>
+        <button
+          type="button"
+          class="flex w-full items-start justify-between gap-4 text-left"
+          @click="toggleSection('recentSessions')"
+        >
+          <div>
+            <h2 class="text-xl font-semibold text-white">Recent Sessions</h2>
+            <p class="mt-1 text-sm text-gray-400">
+              Generated products are served directly from the backend and open in a new tab.
+            </p>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="rounded-full border border-gray-600 bg-gray-900/70 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gray-300">
+              {{ sectionOpen.recentSessions ? 'Expanded' : 'Collapsed' }}
+            </span>
+            <span class="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-500/40 bg-cyan-500/10 text-lg font-semibold text-cyan-200">
+              {{ sectionOpen.recentSessions ? '-' : '+' }}
+            </span>
+          </div>
+        </button>
 
-        <div v-if="recentSessions.length === 0" class="mt-6 rounded-xl border border-dashed border-gray-700 bg-gray-900/40 px-4 py-8 text-center text-sm text-gray-500">
+        <div v-if="sectionOpen.recentSessions && recentSessions.length === 0" class="mt-6 rounded-xl border border-dashed border-gray-700 bg-gray-900/40 px-4 py-8 text-center text-sm text-gray-500">
           No completed sessions have been recorded yet.
         </div>
 
-        <div v-else class="mt-6 space-y-4">
+        <div v-else-if="sectionOpen.recentSessions" class="mt-6 space-y-4">
           <article
             v-for="session in recentSessions"
             :key="session.id"
@@ -500,7 +615,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive } from 'vue';
 import { storeToRefs } from 'pinia';
 import toggleButton from '@/components/helpers/toggleButton.vue';
 import { usePinsAllSkyStore } from '../store/pinsAllskyStore';
@@ -535,6 +650,49 @@ const missingDependencies = computed(() =>
   dependencyRows.value.filter((item) => !item.ready).map((item) => item.label)
 );
 
+const sectionOpen = reactive({
+  overview: false,
+  captureSettings: false,
+  recentSessions: false,
+  dependencies: false,
+});
+
+const toggleSection = (sectionKey) => {
+  sectionOpen[sectionKey] = !sectionOpen[sectionKey];
+};
+
+const setRootConfigValue = (key, value) => {
+  if (!config.value) {
+    return;
+  }
+
+  config.value[key] = value;
+};
+
+const setCameraSetting = (key, value) => {
+  if (!config.value?.camera) {
+    return;
+  }
+
+  config.value.camera[key] = value;
+};
+
+const setProductSetting = (key, value) => {
+  if (!config.value?.products) {
+    return;
+  }
+
+  config.value.products[key] = value;
+};
+
+const setAdvancedApiSetting = (key, value) => {
+  if (!config.value?.advancedApi) {
+    return;
+  }
+
+  config.value.advancedApi[key] = value;
+};
+
 const refreshAll = async () => {
   await store.refreshAll();
 };
@@ -557,12 +715,66 @@ const generateArtifacts = async (sessionId = null) => {
 
 const artifactUrl = (relativePath) => store.artifactUrl(relativePath);
 
-const formatDate = (value) => {
+const parseDateValue = (value) => {
   if (!value) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+
+  if (typeof value === 'string' || typeof value === 'number') {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  if (typeof value === 'object') {
+    const utcDateTime = typeof value.utcDateTime === 'string' ? value.utcDateTime : null;
+    if (utcDateTime) {
+      const parsedUtc = new Date(
+        /[zZ]|[+-]\d{2}:\d{2}$/.test(utcDateTime) ? utcDateTime : `${utcDateTime}Z`
+      );
+      if (!Number.isNaN(parsedUtc.getTime())) {
+        return parsedUtc;
+      }
+    }
+
+    const localDateTime = typeof value.localDateTime === 'string' ? value.localDateTime : null;
+    if (localDateTime) {
+      const parsedLocal = new Date(localDateTime);
+      if (!Number.isNaN(parsedLocal.getTime())) {
+        return parsedLocal;
+      }
+    }
+
+    const dateTime = typeof value.dateTime === 'string' ? value.dateTime : null;
+    if (dateTime) {
+      const parsedDateTime = new Date(dateTime);
+      if (!Number.isNaN(parsedDateTime.getTime())) {
+        return parsedDateTime;
+      }
+    }
+  }
+
+  return null;
+};
+
+const formatDate = (value) => {
+  const parsed = parseDateValue(value);
+  if (!parsed) {
     return '—';
   }
 
-  return new Date(value).toLocaleString();
+  return parsed.toLocaleString();
+};
+
+const formatPollInterval = (seconds) => {
+  if (!Number.isFinite(seconds)) {
+    return '—';
+  }
+
+  return `${seconds}s`;
 };
 
 const formatSize = (bytes) => {
@@ -607,6 +819,7 @@ export default {
         min: { type: [Number, String], default: undefined },
         max: { type: [Number, String], default: undefined },
         step: { type: [Number, String], default: 1 },
+        disabled: { type: Boolean, default: false },
       },
       emits: ['update:modelValue'],
       template: `
@@ -618,7 +831,8 @@ export default {
             :min="min"
             :max="max"
             :step="step"
-            class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+            :disabled="disabled"
+            class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
             @input="$emit('update:modelValue', $event.target.valueAsNumber)"
           />
         </label>
