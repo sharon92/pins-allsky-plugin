@@ -5,18 +5,43 @@
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <h1 class="text-3xl font-bold text-white">AllSky Capture</h1>
-            <p class="mt-2 max-w-3xl text-sm text-gray-300">
-              Control the Pi HQ camera during a normal imaging run and build timelapse videos,
-              keograms, and startrail composites from the captured frames.
-            </p>
           </div>
-          <div class="flex items-center gap-3 self-start">
+          <div class="flex flex-wrap items-center justify-end gap-2 self-start lg:ml-auto">
             <button
               type="button"
-              class="rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-500/20"
+              title="Automation"
+              aria-label="Automation"
+              class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
+              @click="openSettingsModal('automation')"
+            >
+              <Cog6ToothIcon class="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              title="Camera"
+              aria-label="Camera"
+              class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
+              @click="openSettingsModal('camera')"
+            >
+              <CameraIcon class="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              title="Outputs"
+              aria-label="Outputs"
+              class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
+              @click="openSettingsModal('outputs')"
+            >
+              <PhotoIcon class="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              title="Show Status"
+              aria-label="Show Status"
+              class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
               @click="showStatusModal = true"
             >
-              Show Status
+              <InformationCircleIcon class="h-5 w-5" />
             </button>
           </div>
         </div>
@@ -250,35 +275,6 @@
             </div>
           </div>
 
-          <div class="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              title="Automation"
-              aria-label="Automation"
-              class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
-              @click="openSettingsModal('automation')"
-            >
-              <Cog6ToothIcon class="h-5 w-5" />
-            </button>
-            <button
-              type="button"
-              title="Camera"
-              aria-label="Camera"
-              class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
-              @click="openSettingsModal('camera')"
-            >
-              <CameraIcon class="h-5 w-5" />
-            </button>
-            <button
-              type="button"
-              title="Outputs"
-              aria-label="Outputs"
-              class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
-              @click="openSettingsModal('outputs')"
-            >
-              <PhotoIcon class="h-5 w-5" />
-            </button>
-          </div>
         </div>
       </section>
 
@@ -1305,6 +1301,7 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
   Cog6ToothIcon,
+  InformationCircleIcon,
   PhotoIcon,
   PlayIcon,
   StopIcon,
