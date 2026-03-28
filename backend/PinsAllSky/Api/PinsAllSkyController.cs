@@ -144,10 +144,11 @@ public sealed class PinsAllSkyController : WebApiController
     }
 
     [Route(HttpVerbs.Post, "/backend/update")]
-    public ApiResponse<BackendUpdateResult> TriggerBackendUpdate()
+    public async Task<ApiResponse<BackendUpdateResult>> TriggerBackendUpdate()
     {
         try
         {
+            await Task.Yield();
             return ApiResponse<BackendUpdateResult>.Ok(PinsAllSkyPlugin.Host.TriggerBackendUpdate());
         }
         catch (InvalidOperationException ex)
