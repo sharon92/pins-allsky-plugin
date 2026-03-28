@@ -10,6 +10,7 @@ BACKEND_INSTALL_DIR="$PLUGIN_ROOT/PINS AllSky"
 TNS_APP_DIR="$PLUGIN_ROOT/Touch-N-Stars/app"
 PINS_BIN="${PINS_BIN:-/home/pi/pins/NINA}"
 PINS_WORKDIR="${PINS_WORKDIR:-$(dirname "$PINS_BIN")}"
+PINS_LD_LIBRARY_PATH="${PINS_LD_LIBRARY_PATH:-/opt/opencvsharp/lib:/usr/lib/aarch64-linux-gnu}"
 RESTART_PINS=false
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
 
@@ -49,12 +50,23 @@ echo "Installed Touch-N-Stars app bundle to: $TNS_APP_DIR"
 if [[ "$RESTART_PINS" == true ]]; then
   if pgrep -f "^$PINS_BIN$" >/dev/null 2>&1; then
     pkill -f "^$PINS_BIN$"
-    sleep 5
+    for _ in $(seq 1 30); do
+      if ! pgrep -f "^$PINS_BIN$" >/dev/null 2>&1; then
+        break
+      fi
+      sleep 1
+    done
   fi
 
-  nohup bash -lc "cd \"$PINS_WORKDIR\" && exec \"$PINS_BIN\"" >/tmp/pins-allsky-pins.log 2>&1 &
+  if pgrep -f "^$PINS_BIN$" >/dev/null 2>&1; then
+    echo "PINS did not exit cleanly after SIGTERM; aborting restart." >&2
+    exit 1
+  fi
+
+  nohup bash -lc "cd \"$PINS_WORKDIR\" && export LD_LIBRARY_PATH=\"$PINS_LD_LIBRARY_PATH\" && exec \"$PINS_BIN\"" >/tmp/pins-allsky-pins.log 2>&1 &
   sleep 10
-  echo "Restarted PINS using $PINS_BIN from $PINS_WORKDIR"
+  echo "Restarted PINS using $PINS_BIN from $PINS_WORKDIR with LD_LIBRARY_PATH=$PINS_LD_LIBRARY_PATH"
+  echo "PINS can take around a minute to finish loading plugins and bind its web ports."
 else
   echo "PINS was not restarted. Restart it manually before using the plugin."
 fi

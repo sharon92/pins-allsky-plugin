@@ -2,15 +2,28 @@ using EmbedIO;
 using EmbedIO.Routing;
 using EmbedIO.WebApi;
 using NINA.PINS.AllSky.Models;
+using NINA.PINS.AllSky.Services;
 using Swan.Formatters;
+using System.Text.Json;
 
 namespace NINA.PINS.AllSky.Api;
 
 public sealed class PinsAllSkyController : WebApiController
 {
-    private static Task<T> ReadCamelCaseRequestAsync<T>(IHttpContext context)
+    private static readonly JsonSerializerOptions RequestOptions = new(JsonStorage.DefaultOptions)
     {
-        return context.GetRequestDataAsync(RequestDeserializer.Json<T>(JsonSerializerCase.CamelCase));
+        PropertyNameCaseInsensitive = true
+    };
+
+    private static async Task<T> ReadCamelCaseRequestAsync<T>(IHttpContext context)
+    {
+        var body = await context.GetRequestBodyAsStringAsync().ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return Activator.CreateInstance<T>();
+        }
+
+        return JsonSerializer.Deserialize<T>(body, RequestOptions) ?? Activator.CreateInstance<T>();
     }
 
     [Route(HttpVerbs.Get, "/status")]

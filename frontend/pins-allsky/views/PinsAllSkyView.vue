@@ -146,6 +146,7 @@
               </span>
               <input
                 v-model="store.manualLabel"
+                title="Optional label used to identify the next manually started AllSky session."
                 class="w-full rounded-xl border border-gray-600 bg-gray-900/80 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 placeholder="Optional label for the next manual session"
               />
@@ -278,6 +279,7 @@
               </span>
               <input
                 v-model="config.advancedApi.protocol"
+                title="Protocol used to reach the local Advanced API exposed by PINS."
                 class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
               />
             </label>
@@ -290,6 +292,7 @@
                 type="number"
                 min="5"
                 max="300"
+                title="How often AllSky checks whether a PINS/NINA sequence has started or stopped."
                 class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
               />
               <span class="mt-2 block text-xs text-gray-500">
@@ -303,6 +306,7 @@
               </span>
               <input
                 v-model="config.advancedApi.host"
+                title="Hostname or IP address of the PINS Advanced API service."
                 class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
               />
             </label>
@@ -314,6 +318,7 @@
                 <input
                   v-model.number="config.advancedApi.port"
                   type="number"
+                  title="TCP port used by the PINS Advanced API service."
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
@@ -326,6 +331,7 @@
                   type="number"
                   min="1"
                   max="30"
+                  title="Maximum time to wait for a single Advanced API request before marking it unavailable."
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
@@ -336,6 +342,7 @@
               </span>
               <input
                 v-model="config.advancedApi.basePath"
+                title="Base path prefix used when calling the Advanced API endpoints."
                 class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
               />
             </label>
@@ -352,6 +359,7 @@
                   v-model.number="config.camera.intervalSeconds"
                   type="number"
                   min="5"
+                  title="Time between capture starts in seconds. This is the actual AllSky frame cadence."
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
@@ -363,6 +371,7 @@
                   v-model.number="config.camera.captureTimeoutSeconds"
                   type="number"
                   min="15"
+                  title="Maximum time allowed for a single rpicam-still capture before it is treated as failed."
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
@@ -374,6 +383,7 @@
                   v-model.number="config.camera.width"
                   type="number"
                   min="640"
+                  title="Output image width in pixels for each captured frame."
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
@@ -385,6 +395,7 @@
                   v-model.number="config.camera.height"
                   type="number"
                   min="480"
+                  title="Output image height in pixels for each captured frame."
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
@@ -397,6 +408,7 @@
                   type="number"
                   min="1"
                   max="100"
+                  title="JPEG quality used for captured frames. Higher values preserve more detail at larger file sizes."
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
@@ -408,6 +420,7 @@
                   v-model.number="config.camera.warmupMilliseconds"
                   type="number"
                   min="1"
+                  title="Warmup time passed to rpicam-still before each frame is written."
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
@@ -432,6 +445,7 @@
                     min="1"
                     inputmode="numeric"
                     :disabled="!config.camera.useManualExposure"
+                    title="Manual shutter time in microseconds. Only applied when Manual exposure is enabled."
                     class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
                   />
                 </label>
@@ -459,6 +473,7 @@
                     step="0.1"
                     inputmode="decimal"
                     :disabled="!config.camera.useManualGain"
+                    title="Manual analog gain applied to the Pi camera. Only used when Manual gain is enabled."
                     class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
                   />
                 </label>
@@ -473,28 +488,55 @@
                 <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Metering
                 </span>
-                <input
+                <select
                   v-model="config.camera.meteringMode"
+                  title="Exposure metering strategy used by rpicam-still."
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                />
+                >
+                  <option
+                    v-for="option in meteringOptions"
+                    :key="option.value"
+                    :value="option.value"
+                  >
+                    {{ option.label }}
+                  </option>
+                </select>
               </label>
               <label class="block">
                 <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                   AWB
                 </span>
-                <input
+                <select
                   v-model="config.camera.awbMode"
+                  title="Automatic white balance mode used by rpicam-still."
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                />
+                >
+                  <option
+                    v-for="option in awbOptions"
+                    :key="option.value"
+                    :value="option.value"
+                  >
+                    {{ option.label }}
+                  </option>
+                </select>
               </label>
               <label class="block">
                 <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Denoise
                 </span>
-                <input
+                <select
                   v-model="config.camera.denoiseMode"
+                  title="Noise reduction mode used by rpicam-still for each captured frame."
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                />
+                >
+                  <option
+                    v-for="option in denoiseOptions"
+                    :key="option.value"
+                    :value="option.value"
+                  >
+                    {{ option.label }}
+                  </option>
+                </select>
               </label>
               <label class="block">
                 <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
@@ -505,6 +547,7 @@
                   type="number"
                   step="0.1"
                   inputmode="decimal"
+                  title="Exposure value compensation applied on top of the selected exposure mode."
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
@@ -517,6 +560,7 @@
                   type="number"
                   min="0"
                   max="180"
+                  title="Image rotation in degrees. The Pi camera stack only supports 0 or 180 here."
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
@@ -529,6 +573,7 @@
                   type="number"
                   step="0.1"
                   inputmode="decimal"
+                  title="Brightness adjustment applied by rpicam-still."
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
@@ -542,6 +587,7 @@
                   min="0"
                   step="0.1"
                   inputmode="decimal"
+                  title="Contrast multiplier applied by rpicam-still."
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
@@ -555,6 +601,7 @@
                   min="0"
                   step="0.1"
                   inputmode="decimal"
+                  title="Saturation multiplier applied by rpicam-still."
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
@@ -568,6 +615,7 @@
                   min="0"
                   step="0.1"
                   inputmode="decimal"
+                  title="Sharpness multiplier applied by rpicam-still."
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
@@ -601,6 +649,7 @@
               <textarea
                 v-model="config.camera.extraArguments"
                 rows="3"
+                title="Additional raw rpicam-still arguments appended after the managed camera settings."
                 class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
               />
             </label>
@@ -634,6 +683,7 @@
                     type="number"
                     min="1"
                     max="60"
+                    title="Playback frame rate used when assembling the timelapse video."
                     class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
@@ -645,6 +695,7 @@
                     v-model.number="config.products.timelapseBitrateKbps"
                     type="number"
                     min="1000"
+                    title="Target video bitrate for the generated timelapse in kilobits per second."
                     class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
@@ -656,6 +707,7 @@
                     v-model.number="config.products.timelapseWidth"
                     type="number"
                     min="320"
+                    title="Output width in pixels for the rendered timelapse video."
                     class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
@@ -667,6 +719,7 @@
                     v-model.number="config.products.timelapseHeight"
                     type="number"
                     min="240"
+                    title="Output height in pixels for the rendered timelapse video."
                     class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
@@ -676,6 +729,7 @@
                   </span>
                   <input
                     v-model="config.products.timelapseCodec"
+                    title="ffmpeg video codec used to encode the timelapse output."
                     class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
@@ -685,6 +739,7 @@
                   </span>
                   <input
                     v-model="config.products.timelapsePixelFormat"
+                    title="ffmpeg pixel format used for the timelapse output."
                     class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
@@ -694,6 +749,7 @@
                   </span>
                   <input
                     v-model="config.products.timelapseLogLevel"
+                    title="ffmpeg log verbosity used while rendering the timelapse."
                     class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
@@ -705,6 +761,7 @@
                 <textarea
                   v-model="config.products.timelapseExtraParameters"
                   rows="3"
+                  title="Extra ffmpeg arguments appended to the timelapse render command."
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
@@ -748,6 +805,7 @@
                     v-model.number="config.products.keogramRotateDegrees"
                     type="number"
                     inputmode="decimal"
+                    title="Rotation applied to the finished keogram image."
                     class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
@@ -757,6 +815,7 @@
                   </span>
                   <input
                     v-model="config.products.keogramFontName"
+                    title="Font family name passed to the AllSky keogram tool for labels."
                     class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
@@ -766,6 +825,7 @@
                   </span>
                   <input
                     v-model="config.products.keogramFontColor"
+                    title="Font color used by the keogram tool, usually as a hex color value."
                     class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
@@ -779,6 +839,7 @@
                     min="0.1"
                     step="0.1"
                     inputmode="decimal"
+                    title="Label font size used in the generated keogram."
                     class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
@@ -790,6 +851,7 @@
                     v-model.number="config.products.keogramLineThickness"
                     type="number"
                     min="1"
+                    title="Line thickness used when the keogram tool draws labels or markers."
                     class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
@@ -801,6 +863,7 @@
                 <textarea
                   v-model="config.products.keogramExtraParameters"
                   rows="3"
+                  title="Extra command-line arguments appended to the AllSky keogram tool."
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
@@ -826,6 +889,7 @@
                     max="1"
                     step="0.01"
                     inputmode="decimal"
+                    title="Minimum normalized brightness a pixel must reach before it contributes to the startrails composite."
                     class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
@@ -840,6 +904,7 @@
                   <textarea
                     v-model="config.products.startrailsExtraParameters"
                     rows="3"
+                    title="Extra command-line arguments appended to the AllSky startrails tool."
                     class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
@@ -1003,6 +1068,32 @@ const sectionOpen = reactive({
   recentSessions: false,
   dependencies: false,
 });
+
+const meteringOptions = [
+  { value: 'centre', label: 'Centre' },
+  { value: 'spot', label: 'Spot' },
+  { value: 'average', label: 'Average' },
+  { value: 'custom', label: 'Custom' },
+];
+
+const awbOptions = [
+  { value: 'auto', label: 'Auto' },
+  { value: 'incandescent', label: 'Incandescent' },
+  { value: 'tungsten', label: 'Tungsten' },
+  { value: 'fluorescent', label: 'Fluorescent' },
+  { value: 'indoor', label: 'Indoor' },
+  { value: 'daylight', label: 'Daylight' },
+  { value: 'cloudy', label: 'Cloudy' },
+  { value: 'custom', label: 'Custom' },
+];
+
+const denoiseOptions = [
+  { value: 'auto', label: 'Auto' },
+  { value: 'off', label: 'Off' },
+  { value: 'cdn_off', label: 'CDN Off' },
+  { value: 'cdn_fast', label: 'CDN Fast' },
+  { value: 'cdn_hq', label: 'CDN High Quality' },
+];
 
 const toggleSection = (sectionKey) => {
   sectionOpen[sectionKey] = !sectionOpen[sectionKey];
