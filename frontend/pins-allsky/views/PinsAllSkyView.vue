@@ -4,13 +4,13 @@
       <section class="rounded-2xl border border-cyan-900/40 bg-gray-800/80 p-6 shadow-2xl">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h1 class="text-3xl font-bold text-white">AllSky Capture</h1>
+            <h1 class="text-3xl font-bold text-white">{{ tr('title') }}</h1>
           </div>
           <div class="flex flex-wrap items-center justify-end gap-2 self-start lg:ml-auto">
             <button
               type="button"
-              title="Automation"
-              aria-label="Automation"
+              :title="tr('buttons.automation')"
+              :aria-label="tr('buttons.automation')"
               class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
               @click="openSettingsModal('automation')"
             >
@@ -18,8 +18,8 @@
             </button>
             <button
               type="button"
-              title="Camera"
-              aria-label="Camera"
+              :title="tr('buttons.camera')"
+              :aria-label="tr('buttons.camera')"
               class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
               @click="openSettingsModal('camera')"
             >
@@ -27,8 +27,8 @@
             </button>
             <button
               type="button"
-              title="Outputs"
-              aria-label="Outputs"
+              :title="tr('buttons.outputs')"
+              :aria-label="tr('buttons.outputs')"
               class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
               @click="openSettingsModal('outputs')"
             >
@@ -36,8 +36,8 @@
             </button>
             <button
               type="button"
-              title="Show Status"
-              aria-label="Show Status"
+              :title="tr('buttons.showStatus')"
+              :aria-label="tr('buttons.showStatus')"
               class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
               @click="showStatusModal = true"
             >
@@ -52,20 +52,24 @@
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm"
         @click.self="showStatusModal = false"
       >
-        <div class="w-full max-w-2xl rounded-2xl border border-gray-700 bg-gray-900/95 p-6 shadow-2xl">
+        <div
+          class="w-full max-w-2xl rounded-2xl border border-gray-700 bg-gray-900/95 p-6 shadow-2xl"
+        >
           <div class="flex items-start justify-between gap-4">
-            <h2 class="text-xl font-semibold text-white">AllSky Status</h2>
+            <h2 class="text-xl font-semibold text-white">{{ tr('statusModal.title') }}</h2>
             <button
               type="button"
               class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-600 bg-gray-800/80 text-gray-200 transition hover:border-cyan-400 hover:text-white"
-              aria-label="Close status dialog"
+              :aria-label="tr('statusModal.close')"
               @click="showStatusModal = false"
             >
               <XMarkIcon class="h-5 w-5" />
             </button>
           </div>
 
-          <div class="mt-6 grid grid-cols-[auto_minmax(0,1fr)] gap-x-8 gap-y-3 lg:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)]">
+          <div
+            class="mt-6 grid grid-cols-[auto_minmax(0,1fr)] gap-x-8 gap-y-3 lg:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)]"
+          >
             <template v-for="item in statusRows" :key="item.label">
               <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">
                 {{ item.label }}
@@ -81,17 +85,17 @@
               type="button"
               class="rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
               :disabled="backendUpdateBusy || status?.captureRunning || status?.generateInProgress"
-              title="Pull the latest backend repo, reinstall the PINS AllSky backend plugin, and restart PINS."
+              :title="tr('statusModal.updateBackendTooltip')"
               @click="updateBackend"
             >
-              {{ backendUpdateBusy ? 'Starting Update…' : 'Update Backend' }}
+              {{ backendUpdateBusy ? tr('buttons.startingUpdate') : tr('buttons.updateBackend') }}
             </button>
             <button
               type="button"
               class="rounded-xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-500"
               @click="showStatusModal = false"
             >
-              OK
+              {{ tr('common.ok') }}
             </button>
           </div>
         </div>
@@ -122,27 +126,28 @@
         v-if="missingDependencies.length > 0"
         class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100"
       >
-        Missing runtime dependencies:
-        <span class="font-semibold">{{ missingDependencies.join(', ') }}</span>
+        {{
+          tr('banners.missingRuntimeDependencies', { dependencies: missingDependencies.join(', ') })
+        }}
       </div>
 
       <section class="rounded-2xl border border-gray-700 bg-gray-800/80 p-5 shadow-xl">
-        <h2 class="text-xl font-semibold text-white">Session Control</h2>
+        <h2 class="text-xl font-semibold text-white">{{ tr('sections.sessionControl') }}</h2>
 
         <div class="mt-5 space-y-5">
           <div class="flex flex-wrap items-stretch gap-2">
             <input
               v-model="manualLabelInput"
-              :title="`Session label for the next manual capture. Defaults to ${defaultManualLabel}.`"
+              :title="tr('estimate.sessionLabelTitle', { label: defaultManualLabel })"
               class="min-w-0 flex-1 rounded-xl border border-gray-600 bg-gray-900/80 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-              placeholder="Session label"
+              :placeholder="tr('estimate.sessionLabelPlaceholder')"
             />
 
             <div class="flex items-center gap-2">
               <button
                 type="button"
-                title="Start Capture"
-                aria-label="Start Capture"
+                :title="tr('buttons.startCapture')"
+                :aria-label="tr('buttons.startCapture')"
                 class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-600 text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"
                 :disabled="loading || status?.captureRunning"
                 @click="startSession"
@@ -151,18 +156,34 @@
               </button>
               <button
                 type="button"
-                :title="status?.generateInProgress ? 'Rendering Progress…' : 'Render Progress'"
-                :aria-label="status?.generateInProgress ? 'Rendering Progress' : 'Render Progress'"
+                :title="
+                  status?.generateInProgress
+                    ? tr('buttons.renderingProgress')
+                    : tr('buttons.renderProgress')
+                "
+                :aria-label="
+                  status?.generateInProgress
+                    ? tr('buttons.renderingProgress')
+                    : tr('buttons.renderProgress')
+                "
                 class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                :disabled="loading || !status?.captureRunning || !currentSession?.captureCount || status?.generateInProgress"
+                :disabled="
+                  loading ||
+                  !status?.captureRunning ||
+                  !currentSession?.captureCount ||
+                  status?.generateInProgress
+                "
                 @click="generateArtifacts(currentSession?.id || null)"
               >
-                <ArrowDownTrayIcon class="h-5 w-5" :class="status?.generateInProgress ? 'animate-pulse' : ''" />
+                <ArrowDownTrayIcon
+                  class="h-5 w-5"
+                  :class="status?.generateInProgress ? 'animate-pulse' : ''"
+                />
               </button>
               <button
                 type="button"
-                title="Stop And Render"
-                aria-label="Stop And Render"
+                :title="tr('buttons.stopAndRender')"
+                :aria-label="tr('buttons.stopAndRender')"
                 class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-rose-600 text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-40"
                 :disabled="loading || !status?.captureRunning"
                 @click="stopSession"
@@ -184,21 +205,28 @@
                 v-else
                 class="flex h-full items-center justify-center px-6 text-center text-sm text-gray-500"
               >
-                No captured frame is available yet. Start a session or wait for the next automatic
-                capture.
+                {{ tr('preview.noFrameYet') }}
               </div>
 
-              <div class="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/80 via-black/30 to-transparent" />
-              <div class="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
+              <div
+                class="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/80 via-black/30 to-transparent"
+              />
+              <div
+                class="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/85 via-black/35 to-transparent"
+              />
 
               <div class="absolute right-4 top-4 z-10 flex items-center gap-2">
-                <div class="pointer-events-none rounded-xl border border-white/10 bg-black/45 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-300 backdrop-blur-sm">
-                  Live Preview
+                <div
+                  class="pointer-events-none rounded-xl border border-white/10 bg-black/45 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-300 backdrop-blur-sm"
+                >
+                  {{ tr('sections.livePreview') }}
                 </div>
                 <button
                   type="button"
-                  :title="loading ? 'Refreshing Preview…' : 'Refresh Preview'"
-                  :aria-label="loading ? 'Refreshing Preview' : 'Refresh Preview'"
+                  :title="loading ? tr('buttons.refreshingPreview') : tr('buttons.refreshPreview')"
+                  :aria-label="
+                    loading ? tr('buttons.refreshingPreview') : tr('buttons.refreshPreview')
+                  "
                   class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-black/45 text-gray-200 backdrop-blur-sm transition hover:border-cyan-400 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
                   :disabled="loading"
                   @click="refreshAll"
@@ -207,38 +235,46 @@
                 </button>
               </div>
 
-              <div class="pointer-events-none absolute left-4 top-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm">
-                <div class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-300">Session</div>
+              <div
+                class="pointer-events-none absolute left-4 top-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm"
+              >
+                <div class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-300">
+                  {{ tr('preview.session') }}
+                </div>
                 <div class="mt-1 text-sm font-medium text-white">
-                  {{ currentSession?.id || 'No active session' }}
+                  {{ currentSession?.id || tr('preview.noActiveSession') }}
                 </div>
               </div>
 
-              <div class="pointer-events-none absolute bottom-4 left-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm">
+              <div
+                class="pointer-events-none absolute bottom-4 left-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm"
+              >
                 <div class="space-y-1 text-sm text-white">
                   <div>
-                    <span class="text-gray-300">Last Capture:</span>
+                    <span class="text-gray-300">{{ tr('preview.lastCapture') }}</span>
                     {{ formatDate(currentSession?.lastCaptureAtUtc) }}
                   </div>
                   <div>
-                    <span class="text-gray-300">Frame Count:</span>
+                    <span class="text-gray-300">{{ tr('preview.frameCount') }}</span>
                     {{ formatCount(currentSession?.captureCount || 0) }}
                   </div>
                 </div>
               </div>
 
-              <div class="pointer-events-none absolute bottom-4 right-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm">
+              <div
+                class="pointer-events-none absolute bottom-4 right-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm"
+              >
                 <div class="space-y-1 text-right text-sm text-white">
                   <div>
-                    <span class="text-gray-300">Capture Interval:</span>
+                    <span class="text-gray-300">{{ tr('preview.captureInterval') }}</span>
                     {{ formatInterval(config?.camera?.intervalSeconds) }}
                   </div>
                   <div>
-                    <span class="text-gray-300">Exposure:</span>
+                    <span class="text-gray-300">{{ tr('preview.exposure') }}</span>
                     {{ formatExposure(config?.camera) }}
                   </div>
                   <div>
-                    <span class="text-gray-300">Gain:</span>
+                    <span class="text-gray-300">{{ tr('preview.gain') }}</span>
                     {{ formatGain(config?.camera) }}
                   </div>
                 </div>
@@ -247,37 +283,50 @@
           </div>
 
           <div class="rounded-2xl border border-gray-700 bg-gray-900/50 p-4">
-            <div class="text-sm font-semibold text-white">Session Estimate</div>
+            <div class="text-sm font-semibold text-white">{{ tr('sections.sessionEstimate') }}</div>
             <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
               <label class="block rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-                <span class="block text-xs uppercase tracking-wide text-gray-500">Start</span>
+                <span class="block text-xs uppercase tracking-wide text-gray-500">{{
+                  tr('estimate.start')
+                }}</span>
                 <input
                   v-model="estimateWindow.startLocal"
                   type="datetime-local"
-                  title="Planned capture start time used for the storage estimate. Defaults to the current local time."
+                  :title="tr('estimate.startTooltip')"
                   class="mt-2 w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
               <label class="block rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-                <span class="block text-xs uppercase tracking-wide text-gray-500">End</span>
+                <span class="block text-xs uppercase tracking-wide text-gray-500">{{
+                  tr('estimate.end')
+                }}</span>
                 <input
                   v-model="estimateWindow.endLocal"
                   type="datetime-local"
-                  title="Planned capture stop time used for the storage estimate. Defaults to tomorrow at 08:00 local time."
+                  :title="tr('estimate.endTooltip')"
                   class="mt-2 w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
               <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-                <div class="text-xs uppercase tracking-wide text-gray-500">Expected Duration</div>
+                <div class="text-xs uppercase tracking-wide text-gray-500">
+                  {{ tr('estimate.expectedDuration') }}
+                </div>
                 <div class="mt-2 text-sm text-white">{{ estimateDurationLabel }}</div>
               </div>
               <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-                <div class="text-xs uppercase tracking-wide text-gray-500">Expected Frames</div>
+                <div class="text-xs uppercase tracking-wide text-gray-500">
+                  {{ tr('estimate.expectedFrames') }}
+                </div>
                 <div class="mt-2 text-sm text-white">{{ formatCount(estimatedFrameCount) }}</div>
               </div>
               <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-                <div class="text-xs uppercase tracking-wide text-gray-500">Expected Storage</div>
-                <div class="mt-2 text-sm font-semibold" :class="estimateExceedsAvailable ? 'text-amber-300' : 'text-white'">
+                <div class="text-xs uppercase tracking-wide text-gray-500">
+                  {{ tr('estimate.expectedStorage') }}
+                </div>
+                <div
+                  class="mt-2 text-sm font-semibold"
+                  :class="estimateExceedsAvailable ? 'text-amber-300' : 'text-white'"
+                >
                   {{ formatSize(estimatedStorageBytes) }}
                 </div>
               </div>
@@ -290,7 +339,6 @@
               {{ estimateWarning }}
             </div>
           </div>
-
         </div>
       </section>
 
@@ -299,14 +347,16 @@
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm"
         @click.self="closeSettingsModal()"
       >
-        <div class="w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-2xl border border-gray-700 bg-gray-900/95 p-6 shadow-2xl">
+        <div
+          class="w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-2xl border border-gray-700 bg-gray-900/95 p-6 shadow-2xl"
+        >
           <div class="flex items-start justify-between gap-4">
             <h2 class="text-xl font-semibold text-white">{{ settingsModalTitle }}</h2>
             <button
               type="button"
               class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-600 bg-gray-800/80 text-gray-200 transition hover:border-cyan-400 hover:text-white"
               :disabled="saving"
-              :aria-label="`Close ${settingsModalTitle} dialog`"
+              :aria-label="tr('modals.closeDialog', { title: settingsModalTitle })"
               @click="closeSettingsModal()"
             >
               <XMarkIcon class="h-5 w-5" />
@@ -314,12 +364,17 @@
           </div>
 
           <div v-if="settingsModal === 'automation'" class="mt-6 flex flex-wrap gap-4">
-            <label :class="settingsFieldClass" class="rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
+            <label
+              :class="settingsFieldClass"
+              class="rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2"
+            >
               <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Auto-start with sequence
+                {{ tr('modals.automation.autoStartWithSequence') }}
               </span>
               <div class="flex items-center justify-between gap-3">
-                <span class="text-sm text-gray-300">Sequence-triggered capture</span>
+                <span class="text-sm text-gray-300">{{
+                  tr('modals.automation.sequenceTriggeredCapture')
+                }}</span>
                 <toggleButton
                   :status-value="Boolean(config.autoStartWithSequence)"
                   @update:statusValue="setRootConfigValue('autoStartWithSequence', $event)"
@@ -327,18 +382,24 @@
               </div>
             </label>
 
-            <div :class="settingsWideFieldClass" class="rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-100">
-              When enabled, AllSky starts a capture session as soon as the PINS Advanced API reports
-              an active sequence, then stops capture and renders products automatically when the
-              sequence ends.
+            <div
+              :class="settingsWideFieldClass"
+              class="rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-100"
+            >
+              {{ tr('modals.automationInfo') }}
             </div>
 
-            <label :class="settingsFieldClass" class="rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
+            <label
+              :class="settingsFieldClass"
+              class="rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2"
+            >
               <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Advanced API enabled
+                {{ tr('modals.automation.advancedApiEnabled') }}
               </span>
               <div class="flex items-center justify-between gap-3">
-                <span class="text-sm text-gray-300">Backend monitoring</span>
+                <span class="text-sm text-gray-300">{{
+                  tr('modals.automation.backendMonitoring')
+                }}</span>
                 <toggleButton
                   :status-value="Boolean(config.advancedApi.enabled)"
                   @update:statusValue="setAdvancedApiSetting('enabled', $event)"
@@ -348,83 +409,83 @@
 
             <label :class="settingsFieldClass" class="block">
               <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Protocol
+                {{ tr('modals.automation.protocol') }}
               </span>
               <input
                 v-model="config.advancedApi.protocol"
-                title="Protocol used to reach the local Advanced API exposed by PINS."
+                :title="tr('modals.automation.protocolTooltip')"
                 class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
               />
             </label>
 
             <label :class="settingsFieldClass" class="block">
               <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Sequence Poll Interval (s)
+                {{ tr('modals.automation.sequencePollIntervalSeconds') }}
               </span>
               <input
                 v-model.number="config.sequencePollIntervalSeconds"
                 type="number"
                 min="5"
                 max="300"
-                title="How often AllSky checks whether a PINS/NINA sequence has started or stopped."
+                :title="tr('modals.automation.sequencePollTooltip')"
                 class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
               />
               <span class="mt-2 block text-xs text-gray-500">
-                Polls sequence state only. It does not change the camera frame cadence.
+                {{ tr('modals.automation.sequencePollIntervalHelp') }}
               </span>
             </label>
 
             <label :class="settingsFieldClass" class="block">
               <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Advanced API Host
+                {{ tr('modals.automation.advancedApiHost') }}
               </span>
               <input
                 v-model="config.advancedApi.host"
-                title="Hostname or IP address of the PINS Advanced API service."
+                :title="tr('modals.automation.advancedApiHostTooltip')"
                 class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
               />
             </label>
 
             <label :class="settingsFieldClass" class="block">
               <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Port
+                {{ tr('modals.automation.port') }}
               </span>
               <input
                 v-model.number="config.advancedApi.port"
                 type="number"
-                title="TCP port used by the PINS Advanced API service."
+                :title="tr('modals.automation.portTooltip')"
                 class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
               />
             </label>
 
             <label :class="settingsFieldClass" class="block">
               <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Timeout (s)
+                {{ tr('modals.automation.timeoutSeconds') }}
               </span>
               <input
                 v-model.number="config.advancedApi.requestTimeoutSeconds"
                 type="number"
                 min="1"
                 max="30"
-                title="Maximum time to wait for a single Advanced API request before marking it unavailable."
+                :title="tr('modals.automation.timeoutTooltip')"
                 class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
               />
             </label>
 
             <label :class="settingsFieldClass" class="block">
               <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Advanced API Base Path
+                {{ tr('modals.automation.advancedApiBasePath') }}
               </span>
               <input
                 v-model="config.advancedApi.basePath"
-                title="Base path prefix used when calling the Advanced API endpoints."
+                :title="tr('modals.automation.advancedApiBasePathTooltip')"
                 class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
               />
             </label>
 
             <label :class="settingsFieldClass" class="block">
               <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Max Plugin Storage (GB)
+                {{ tr('modals.automation.maxPluginStorageGb') }}
               </span>
               <input
                 v-model.number="config.storage.maxUsageGb"
@@ -432,11 +493,11 @@
                 min="0"
                 step="0.1"
                 inputmode="decimal"
-                title="Maximum storage PINS AllSky may use under its plugin data directory. Set to 0 for no limit. When the limit is exceeded, the backend prunes the oldest completed sessions."
+                :title="tr('modals.automation.maxPluginStorageTooltip')"
                 class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
               />
               <span class="mt-2 block text-xs text-gray-500">
-                Set <code class="font-mono text-gray-400">0</code> for no limit.
+                {{ tr('modals.automation.maxPluginStorageHelp') }}
               </span>
             </label>
           </div>
@@ -444,85 +505,99 @@
           <div v-else-if="settingsModal === 'camera'" class="mt-6 space-y-4">
             <div class="flex flex-wrap gap-4">
               <label :class="settingsFieldClass" class="block">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Interval (s)
+                <span
+                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                >
+                  {{ tr('modals.camera.intervalSeconds') }}
                 </span>
                 <input
                   v-model.number="config.camera.intervalSeconds"
                   type="number"
                   min="5"
-                  title="Time between capture starts in seconds. This is the actual AllSky frame cadence."
+                  :title="tr('modals.camera.intervalTooltip')"
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
               <label :class="settingsFieldClass" class="block">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Timeout (s)
+                <span
+                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                >
+                  {{ tr('modals.camera.timeoutSeconds') }}
                 </span>
                 <input
                   v-model.number="config.camera.captureTimeoutSeconds"
                   type="number"
                   min="15"
-                  title="Maximum time allowed for a single rpicam-still capture before it is treated as failed."
+                  :title="tr('modals.camera.timeoutTooltip')"
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
               <label :class="settingsFieldClass" class="block">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Width
+                <span
+                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                >
+                  {{ tr('modals.camera.width') }}
                 </span>
                 <input
                   v-model.number="config.camera.width"
                   type="number"
                   min="640"
-                  title="Output image width in pixels for each captured frame."
+                  :title="tr('modals.camera.widthTooltip')"
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
               <label :class="settingsFieldClass" class="block">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Height
+                <span
+                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                >
+                  {{ tr('modals.camera.height') }}
                 </span>
                 <input
                   v-model.number="config.camera.height"
                   type="number"
                   min="480"
-                  title="Output image height in pixels for each captured frame."
+                  :title="tr('modals.camera.heightTooltip')"
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
               <label :class="settingsFieldClass" class="block">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  JPEG Quality
+                <span
+                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                >
+                  {{ tr('modals.camera.jpegQuality') }}
                 </span>
                 <input
                   v-model.number="config.camera.quality"
                   type="number"
                   min="1"
                   max="100"
-                  title="JPEG quality used for captured frames. Higher values preserve more detail at larger file sizes."
+                  :title="tr('modals.camera.jpegQualityTooltip')"
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
               <label :class="settingsFieldClass" class="block">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Warmup (ms)
+                <span
+                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                >
+                  {{ tr('modals.camera.warmupMilliseconds') }}
                 </span>
                 <input
                   v-model.number="config.camera.warmupMilliseconds"
                   type="number"
                   min="1"
-                  title="Warmup time passed to rpicam-still before each frame is written."
+                  :title="tr('modals.camera.warmupTooltip')"
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
               <label :class="settingsFieldClass" class="block">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Metering
+                <span
+                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                >
+                  {{ tr('modals.camera.metering') }}
                 </span>
                 <select
                   v-model="config.camera.meteringMode"
-                  title="Exposure metering strategy used by rpicam-still."
+                  :title="tr('modals.camera.meteringTooltip')"
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 >
                   <option
@@ -535,30 +610,30 @@
                 </select>
               </label>
               <label :class="settingsFieldClass" class="block">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  AWB
+                <span
+                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                >
+                  {{ tr('modals.camera.awb') }}
                 </span>
                 <select
                   v-model="config.camera.awbMode"
-                  title="Automatic white balance mode used by rpicam-still."
+                  :title="tr('modals.camera.awbTooltip')"
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 >
-                  <option
-                    v-for="option in awbOptions"
-                    :key="option.value"
-                    :value="option.value"
-                  >
+                  <option v-for="option in awbOptions" :key="option.value" :value="option.value">
                     {{ option.label }}
                   </option>
                 </select>
               </label>
               <label :class="settingsFieldClass" class="block">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Denoise
+                <span
+                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                >
+                  {{ tr('modals.camera.denoise') }}
                 </span>
                 <select
                   v-model="config.camera.denoiseMode"
-                  title="Noise reduction mode used by rpicam-still for each captured frame."
+                  :title="tr('modals.camera.denoiseTooltip')"
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 >
                   <option
@@ -571,47 +646,55 @@
                 </select>
               </label>
               <label :class="settingsFieldClass" class="block">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  EV Compensation
+                <span
+                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                >
+                  {{ tr('modals.camera.evCompensation') }}
                 </span>
                 <input
                   v-model.number="config.camera.evCompensation"
                   type="number"
                   step="0.1"
                   inputmode="decimal"
-                  title="Exposure value compensation applied on top of the selected exposure mode."
+                  :title="tr('modals.camera.evCompensationTooltip')"
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
               <label :class="settingsFieldClass" class="block">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Rotation
+                <span
+                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                >
+                  {{ tr('modals.camera.rotation') }}
                 </span>
                 <input
                   v-model.number="config.camera.rotation"
                   type="number"
                   min="0"
                   max="180"
-                  title="Image rotation in degrees. The Pi camera stack only supports 0 or 180 here."
+                  :title="tr('modals.camera.rotationTooltip')"
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
               <label :class="settingsFieldClass" class="block">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Brightness
+                <span
+                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                >
+                  {{ tr('modals.camera.brightness') }}
                 </span>
                 <input
                   v-model.number="config.camera.brightness"
                   type="number"
                   step="0.1"
                   inputmode="decimal"
-                  title="Brightness adjustment applied by rpicam-still."
+                  :title="tr('modals.camera.brightnessTooltip')"
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
               <label :class="settingsFieldClass" class="block">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Contrast
+                <span
+                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                >
+                  {{ tr('modals.camera.contrast') }}
                 </span>
                 <input
                   v-model.number="config.camera.contrast"
@@ -619,13 +702,15 @@
                   min="0"
                   step="0.1"
                   inputmode="decimal"
-                  title="Contrast multiplier applied by rpicam-still."
+                  :title="tr('modals.camera.contrastTooltip')"
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
               <label :class="settingsFieldClass" class="block">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Saturation
+                <span
+                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                >
+                  {{ tr('modals.camera.saturation') }}
                 </span>
                 <input
                   v-model.number="config.camera.saturation"
@@ -633,13 +718,15 @@
                   min="0"
                   step="0.1"
                   inputmode="decimal"
-                  title="Saturation multiplier applied by rpicam-still."
+                  :title="tr('modals.camera.saturationTooltip')"
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
               <label :class="settingsFieldClass" class="block">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Sharpness
+                <span
+                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                >
+                  {{ tr('modals.camera.sharpness') }}
                 </span>
                 <input
                   v-model.number="config.camera.sharpness"
@@ -647,24 +734,30 @@
                   min="0"
                   step="0.1"
                   inputmode="decimal"
-                  title="Sharpness multiplier applied by rpicam-still."
+                  :title="tr('modals.camera.sharpnessTooltip')"
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
             </div>
 
             <div class="flex flex-wrap gap-4">
-              <div class="w-full lg:w-[calc(50%-0.5rem)] rounded-xl border border-gray-700 bg-gray-800/70 p-3">
+              <div
+                class="w-full lg:w-[calc(50%-0.5rem)] rounded-xl border border-gray-700 bg-gray-800/70 p-3"
+              >
                 <label class="flex items-center justify-between gap-3">
-                  <span class="text-sm text-gray-300">Manual exposure</span>
+                  <span class="text-sm text-gray-300">{{
+                    tr('modals.camera.manualExposure')
+                  }}</span>
                   <toggleButton
                     :status-value="Boolean(config.camera.useManualExposure)"
                     @update:statusValue="setCameraSetting('useManualExposure', $event)"
                   />
                 </label>
                 <label class="mt-3 block">
-                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Shutter (µs)
+                  <span
+                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                  >
+                    {{ tr('modals.camera.shutterMicroseconds') }}
                   </span>
                   <input
                     v-model.number="config.camera.shutterMicroseconds"
@@ -672,26 +765,30 @@
                     min="1"
                     inputmode="numeric"
                     :disabled="!config.camera.useManualExposure"
-                    title="Manual shutter time in microseconds. Only applied when Manual exposure is enabled."
+                    :title="tr('modals.camera.shutterTooltip')"
                     class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
                   />
                 </label>
                 <p class="mt-3 text-xs text-gray-500">
-                  When disabled, <code class="font-mono text-gray-400">rpicam-still</code> controls exposure automatically.
+                  {{ tr('modals.camera.manualExposureHelp') }}
                 </p>
               </div>
 
-              <div class="w-full lg:w-[calc(50%-0.5rem)] rounded-xl border border-gray-700 bg-gray-800/70 p-3">
+              <div
+                class="w-full lg:w-[calc(50%-0.5rem)] rounded-xl border border-gray-700 bg-gray-800/70 p-3"
+              >
                 <label class="flex items-center justify-between gap-3">
-                  <span class="text-sm text-gray-300">Manual gain</span>
+                  <span class="text-sm text-gray-300">{{ tr('modals.camera.manualGain') }}</span>
                   <toggleButton
                     :status-value="Boolean(config.camera.useManualGain)"
                     @update:statusValue="setCameraSetting('useManualGain', $event)"
                   />
                 </label>
                 <label class="mt-3 block">
-                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Analog Gain
+                  <span
+                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                  >
+                    {{ tr('modals.camera.analogGain') }}
                   </span>
                   <input
                     v-model.number="config.camera.analogGain"
@@ -700,38 +797,51 @@
                     step="0.1"
                     inputmode="decimal"
                     :disabled="!config.camera.useManualGain"
-                    title="Manual analog gain applied to the Pi camera. Only used when Manual gain is enabled."
+                    :title="tr('modals.camera.analogGainTooltip')"
                     class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
                   />
                 </label>
                 <p class="mt-3 text-xs text-gray-500">
-                  When disabled, <code class="font-mono text-gray-400">rpicam-still</code> controls gain automatically.
+                  {{ tr('modals.camera.manualGainHelp') }}
                 </p>
               </div>
             </div>
 
             <div class="flex flex-wrap gap-4">
-              <div :class="settingsFullWidthClass" class="rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-100">
-                <code class="font-mono">rpicam-still</code> rotation is limited to <code class="font-mono">0</code> or <code class="font-mono">180</code> degrees.
+              <div
+                :class="settingsFullWidthClass"
+                class="rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-100"
+              >
+                {{ tr('modals.cameraRotationInfo') }}
               </div>
-              <label :class="settingsFieldClass" class="rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Horizontal flip
+              <label
+                :class="settingsFieldClass"
+                class="rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2"
+              >
+                <span
+                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                >
+                  {{ tr('modals.camera.horizontalFlip') }}
                 </span>
                 <div class="flex items-center justify-between gap-3">
-                  <span class="text-sm text-gray-300">Mirror on X axis</span>
+                  <span class="text-sm text-gray-300">{{ tr('modals.camera.mirrorOnXAxis') }}</span>
                   <toggleButton
                     :status-value="Boolean(config.camera.horizontalFlip)"
                     @update:statusValue="setCameraSetting('horizontalFlip', $event)"
                   />
                 </div>
               </label>
-              <label :class="settingsFieldClass" class="rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Vertical flip
+              <label
+                :class="settingsFieldClass"
+                class="rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2"
+              >
+                <span
+                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                >
+                  {{ tr('modals.camera.verticalFlip') }}
                 </span>
                 <div class="flex items-center justify-between gap-3">
-                  <span class="text-sm text-gray-300">Mirror on Y axis</span>
+                  <span class="text-sm text-gray-300">{{ tr('modals.camera.mirrorOnYAxis') }}</span>
                   <toggleButton
                     :status-value="Boolean(config.camera.verticalFlip)"
                     @update:statusValue="setCameraSetting('verticalFlip', $event)"
@@ -739,13 +849,15 @@
                 </div>
               </label>
               <label :class="settingsFullWidthClass" class="block">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Extra rpicam-still Arguments
+                <span
+                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                >
+                  {{ tr('modals.camera.extraArguments') }}
                 </span>
                 <textarea
                   v-model="config.camera.extraArguments"
                   rows="3"
-                  title="Additional raw rpicam-still arguments appended after the managed camera settings."
+                  :title="tr('modals.camera.extraArgumentsTooltip')"
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
@@ -755,10 +867,12 @@
           <div v-else class="mt-6 space-y-4">
             <label class="block rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
               <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Keep source frames
+                {{ tr('modals.outputs.keepSourceFrames') }}
               </span>
               <div class="flex items-center justify-between gap-3">
-                <span class="text-sm text-gray-300">Retain original captures</span>
+                <span class="text-sm text-gray-300">{{
+                  tr('modals.outputs.retainOriginalCaptures')
+                }}</span>
                 <toggleButton
                   :status-value="Boolean(config.products.keepFrames)"
                   @update:statusValue="setProductSetting('keepFrames', $event)"
@@ -768,7 +882,7 @@
 
             <div class="rounded-xl border border-gray-700 bg-gray-800/70 p-4">
               <div class="flex items-center justify-between gap-3">
-                <span class="font-semibold text-white">Timelapse</span>
+                <span class="font-semibold text-white">{{ tr('modals.outputs.timelapse') }}</span>
                 <toggleButton
                   :status-value="Boolean(config.products.timelapseEnabled)"
                   @update:statusValue="setProductSetting('timelapseEnabled', $event)"
@@ -776,92 +890,108 @@
               </div>
               <div v-if="config.products.timelapseEnabled" class="mt-4 flex flex-wrap gap-4">
                 <label :class="settingsFieldClass" class="block">
-                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    FPS
+                  <span
+                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                  >
+                    {{ tr('modals.outputs.fps') }}
                   </span>
                   <input
                     v-model.number="config.products.timelapseFps"
                     type="number"
                     min="1"
                     max="60"
-                    title="Playback frame rate used when assembling the timelapse video."
+                    :title="tr('modals.outputs.fpsTooltip')"
                     class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
                 <label :class="settingsFieldClass" class="block">
-                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Bitrate (kbps)
+                  <span
+                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                  >
+                    {{ tr('modals.outputs.bitrateKbps') }}
                   </span>
                   <input
                     v-model.number="config.products.timelapseBitrateKbps"
                     type="number"
                     min="1000"
-                    title="Target video bitrate for the generated timelapse in kilobits per second."
+                    :title="tr('modals.outputs.bitrateTooltip')"
                     class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
                 <label :class="settingsFieldClass" class="block">
-                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Width
+                  <span
+                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                  >
+                    {{ tr('modals.outputs.width') }}
                   </span>
                   <input
                     v-model.number="config.products.timelapseWidth"
                     type="number"
                     min="320"
-                    title="Output width in pixels for the rendered timelapse video."
+                    :title="tr('modals.outputs.timelapseWidthTooltip')"
                     class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
                 <label :class="settingsFieldClass" class="block">
-                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Height
+                  <span
+                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                  >
+                    {{ tr('modals.outputs.height') }}
                   </span>
                   <input
                     v-model.number="config.products.timelapseHeight"
                     type="number"
                     min="240"
-                    title="Output height in pixels for the rendered timelapse video."
+                    :title="tr('modals.outputs.timelapseHeightTooltip')"
                     class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
                 <label :class="settingsFieldClass" class="block">
-                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Codec
+                  <span
+                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                  >
+                    {{ tr('modals.outputs.codec') }}
                   </span>
                   <input
                     v-model="config.products.timelapseCodec"
-                    title="ffmpeg video codec used to encode the timelapse output."
+                    :title="tr('modals.outputs.codecTooltip')"
                     class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
                 <label :class="settingsFieldClass" class="block">
-                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Pixel Format
+                  <span
+                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                  >
+                    {{ tr('modals.outputs.pixelFormat') }}
                   </span>
                   <input
                     v-model="config.products.timelapsePixelFormat"
-                    title="ffmpeg pixel format used for the timelapse output."
+                    :title="tr('modals.outputs.pixelFormatTooltip')"
                     class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
                 <label :class="settingsFieldClass" class="block">
-                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    FFmpeg Log Level
+                  <span
+                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                  >
+                    {{ tr('modals.outputs.ffmpegLogLevel') }}
                   </span>
                   <input
                     v-model="config.products.timelapseLogLevel"
-                    title="ffmpeg log verbosity used while rendering the timelapse."
+                    :title="tr('modals.outputs.ffmpegLogLevelTooltip')"
                     class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
                 <label :class="settingsFullWidthClass" class="block">
-                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Extra ffmpeg Arguments
+                  <span
+                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                  >
+                    {{ tr('modals.outputs.extraFfmpegArguments') }}
                   </span>
                   <textarea
                     v-model="config.products.timelapseExtraParameters"
                     rows="3"
-                    title="Extra ffmpeg arguments appended to the timelapse render command."
+                    :title="tr('modals.outputs.extraFfmpegArgumentsTooltip')"
                     class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
@@ -870,43 +1000,62 @@
 
             <div class="rounded-xl border border-gray-700 bg-gray-800/70 p-4">
               <div class="flex items-center justify-between gap-3">
-                <span class="font-semibold text-white">Keogram</span>
+                <span class="font-semibold text-white">{{ tr('modals.outputs.keogram') }}</span>
                 <toggleButton
                   :status-value="Boolean(config.products.keogramEnabled)"
                   @update:statusValue="setProductSetting('keogramEnabled', $event)"
                 />
               </div>
               <div v-if="config.products.keogramEnabled" class="mt-4 flex flex-wrap gap-4">
-                <label :class="settingsFieldClass" class="rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2">
-                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Expand to frame width
+                <label
+                  :class="settingsFieldClass"
+                  class="rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2"
+                >
+                  <span
+                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                  >
+                    {{ tr('modals.outputs.expandToFrameWidth') }}
                   </span>
                   <div class="flex items-center justify-between gap-3">
-                    <span class="text-sm text-gray-300">Stretch output</span>
+                    <span class="text-sm text-gray-300">{{
+                      tr('modals.outputs.stretchOutput')
+                    }}</span>
                     <toggleButton
                       :status-value="Boolean(config.products.keogramExpand)"
                       @update:statusValue="setProductSetting('keogramExpand', $event)"
                     />
                   </div>
                 </label>
-                <label :class="settingsFieldClass" class="rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2">
-                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Show labels
+                <label
+                  :class="settingsFieldClass"
+                  class="rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2"
+                >
+                  <span
+                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                  >
+                    {{ tr('modals.outputs.showLabels') }}
                   </span>
                   <div class="flex items-center justify-between gap-3">
-                    <span class="text-sm text-gray-300">Draw captions</span>
+                    <span class="text-sm text-gray-300">{{
+                      tr('modals.outputs.drawCaptions')
+                    }}</span>
                     <toggleButton
                       :status-value="Boolean(config.products.keogramShowLabels)"
                       @update:statusValue="setProductSetting('keogramShowLabels', $event)"
                     />
                   </div>
                 </label>
-                <label :class="settingsFieldClass" class="rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2">
-                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Show date
+                <label
+                  :class="settingsFieldClass"
+                  class="rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2"
+                >
+                  <span
+                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                  >
+                    {{ tr('modals.outputs.showDate') }}
                   </span>
                   <div class="flex items-center justify-between gap-3">
-                    <span class="text-sm text-gray-300">Stamp date</span>
+                    <span class="text-sm text-gray-300">{{ tr('modals.outputs.stampDate') }}</span>
                     <toggleButton
                       :status-value="Boolean(config.products.keogramShowDate)"
                       @update:statusValue="setProductSetting('keogramShowDate', $event)"
@@ -914,40 +1063,48 @@
                   </div>
                 </label>
                 <label :class="settingsFieldClass" class="block">
-                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Rotate (deg)
+                  <span
+                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                  >
+                    {{ tr('modals.outputs.rotateDegrees') }}
                   </span>
                   <input
                     v-model.number="config.products.keogramRotateDegrees"
                     type="number"
                     inputmode="decimal"
-                    title="Rotation applied to the finished keogram image."
+                    :title="tr('modals.outputs.rotateTooltip')"
                     class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
                 <label :class="settingsFieldClass" class="block">
-                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Font Name
+                  <span
+                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                  >
+                    {{ tr('modals.outputs.fontName') }}
                   </span>
                   <input
                     v-model="config.products.keogramFontName"
-                    title="Font family name passed to the AllSky keogram tool for labels."
+                    :title="tr('modals.outputs.fontNameTooltip')"
                     class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
                 <label :class="settingsFieldClass" class="block">
-                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Font Color
+                  <span
+                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                  >
+                    {{ tr('modals.outputs.fontColor') }}
                   </span>
                   <input
                     v-model="config.products.keogramFontColor"
-                    title="Font color used by the keogram tool, usually as a hex color value."
+                    :title="tr('modals.outputs.fontColorTooltip')"
                     class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
                 <label :class="settingsFieldClass" class="block">
-                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Font Size
+                  <span
+                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                  >
+                    {{ tr('modals.outputs.fontSize') }}
                   </span>
                   <input
                     v-model.number="config.products.keogramFontSize"
@@ -955,30 +1112,34 @@
                     min="0.1"
                     step="0.1"
                     inputmode="decimal"
-                    title="Label font size used in the generated keogram."
+                    :title="tr('modals.outputs.fontSizeTooltip')"
                     class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
                 <label :class="settingsFieldClass" class="block">
-                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Line Thickness
+                  <span
+                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                  >
+                    {{ tr('modals.outputs.lineThickness') }}
                   </span>
                   <input
                     v-model.number="config.products.keogramLineThickness"
                     type="number"
                     min="1"
-                    title="Line thickness used when the keogram tool draws labels or markers."
+                    :title="tr('modals.outputs.lineThicknessTooltip')"
                     class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
                 <label :class="settingsFullWidthClass" class="block">
-                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Extra keogram Arguments
+                  <span
+                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                  >
+                    {{ tr('modals.outputs.extraKeogramArguments') }}
                   </span>
                   <textarea
                     v-model="config.products.keogramExtraParameters"
                     rows="3"
-                    title="Extra command-line arguments appended to the AllSky keogram tool."
+                    :title="tr('modals.outputs.extraKeogramArgumentsTooltip')"
                     class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
@@ -987,7 +1148,7 @@
 
             <div class="rounded-xl border border-gray-700 bg-gray-800/70 p-4">
               <div class="flex items-center justify-between gap-3">
-                <span class="font-semibold text-white">Startrails</span>
+                <span class="font-semibold text-white">{{ tr('modals.outputs.startrails') }}</span>
                 <toggleButton
                   :status-value="Boolean(config.products.startrailsEnabled)"
                   @update:statusValue="setProductSetting('startrailsEnabled', $event)"
@@ -995,8 +1156,10 @@
               </div>
               <div v-if="config.products.startrailsEnabled" class="mt-4 flex flex-wrap gap-4">
                 <label :class="settingsFieldClass" class="block">
-                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Brightness Threshold
+                  <span
+                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                  >
+                    {{ tr('modals.outputs.brightnessThreshold') }}
                   </span>
                   <input
                     v-model.number="config.products.startrailsBrightnessThreshold"
@@ -1005,22 +1168,26 @@
                     max="1"
                     step="0.01"
                     inputmode="decimal"
-                    title="Minimum normalized brightness a pixel must reach before it contributes to the startrails composite."
+                    :title="tr('modals.outputs.brightnessThresholdTooltip')"
                     class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
-                <div :class="settingsWideFieldClass" class="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
-                  On an equatorial mount the camera may track with the sky, so the startrail output
-                  can still be generated but may not show the classic circular trail effect.
+                <div
+                  :class="settingsWideFieldClass"
+                  class="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-100"
+                >
+                  {{ tr('modals.startrailMountInfo') }}
                 </div>
                 <label :class="settingsFullWidthClass" class="block">
-                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Extra startrails Arguments
+                  <span
+                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                  >
+                    {{ tr('modals.outputs.extraStartrailsArguments') }}
                   </span>
                   <textarea
                     v-model="config.products.startrailsExtraParameters"
                     rows="3"
-                    title="Extra command-line arguments appended to the AllSky startrails tool."
+                    :title="tr('modals.outputs.extraStartrailsArgumentsTooltip')"
                     class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
@@ -1035,7 +1202,7 @@
               :disabled="saving"
               @click="closeSettingsModal()"
             >
-              Cancel
+              {{ tr('common.cancel') }}
             </button>
             <button
               type="button"
@@ -1043,7 +1210,7 @@
               :disabled="saving"
               @click="saveSettingsModal"
             >
-              {{ saving ? 'Saving…' : 'OK' }}
+              {{ saving ? tr('common.saving') : tr('common.ok') }}
             </button>
           </div>
         </div>
@@ -1056,50 +1223,75 @@
           @click="toggleSection('recentSessions')"
         >
           <div>
-            <h2 class="text-xl font-semibold text-white">Recent Sessions</h2>
+            <h2 class="text-xl font-semibold text-white">{{ tr('sections.recentSessions') }}</h2>
             <p class="mt-1 text-sm text-gray-400">
-              Generated products are served directly from the backend and open in a new tab.
+              {{ tr('sections.recentSessionsDescription') }}
             </p>
           </div>
           <div class="flex items-center gap-3">
-            <span class="rounded-full border border-gray-600 bg-gray-900/70 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gray-300">
-              {{ sectionOpen.recentSessions ? 'Expanded' : 'Collapsed' }}
+            <span
+              class="rounded-full border border-gray-600 bg-gray-900/70 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gray-300"
+            >
+              {{
+                sectionOpen.recentSessions
+                  ? tr('recentSessions.expanded')
+                  : tr('recentSessions.collapsed')
+              }}
             </span>
-            <span class="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-500/40 bg-cyan-500/10 text-lg font-semibold text-cyan-200">
+            <span
+              class="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-500/40 bg-cyan-500/10 text-lg font-semibold text-cyan-200"
+            >
               {{ sectionOpen.recentSessions ? '-' : '+' }}
             </span>
           </div>
         </button>
 
         <div v-if="sectionOpen.recentSessions" class="mt-6 space-y-4">
-          <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-900/50 px-4 py-3">
+          <div
+            class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-900/50 px-4 py-3"
+          >
             <div class="text-sm text-gray-300">
               <span :class="storage.withinLimit ? 'text-emerald-300' : 'text-amber-200'">
-                {{ storage.withinLimit || !storage.limitEnabled ? 'Storage within limit.' : 'Storage limit exceeded.' }}
+                {{
+                  storage.withinLimit || !storage.limitEnabled
+                    ? tr('recentSessions.storageWithinLimit')
+                    : tr('recentSessions.storageLimitExceeded')
+                }}
               </span>
               <span class="text-gray-500">
-                Plugin available:
-                {{ storage.limitEnabled ? formatSize(storage.pluginAvailableBytes) : 'Unlimited' }}.
+                {{ tr('recentSessions.pluginAvailable') }}
+                {{
+                  storage.limitEnabled
+                    ? formatSize(storage.pluginAvailableBytes)
+                    : tr('common.unlimited')
+                }}.
               </span>
               <span class="text-gray-500">
-                Pi available: {{ formatSize(storage.diskAvailableBytes) }}.
+                {{ tr('recentSessions.piAvailable') }} {{ formatSize(storage.diskAvailableBytes) }}.
               </span>
             </div>
             <button
               class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-rose-500/40 bg-rose-500/10 text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-              :disabled="cleanupBusy || status?.captureRunning || status?.generateInProgress || recentSessions.length === 0"
-              title="Delete all stored sessions, frames, and generated products"
-              aria-label="Delete all sessions"
+              :disabled="
+                cleanupBusy ||
+                status?.captureRunning ||
+                status?.generateInProgress ||
+                recentSessions.length === 0
+              "
+              :title="tr('buttons.deleteAllSessions')"
+              :aria-label="tr('buttons.deleteAllSessions')"
               @click.stop="deleteAllSessions"
             >
               <TrashIcon class="h-5 w-5" />
             </button>
           </div>
-
         </div>
 
-        <div v-if="sectionOpen.recentSessions && recentSessions.length === 0" class="mt-6 rounded-xl border border-dashed border-gray-700 bg-gray-900/40 px-4 py-8 text-center text-sm text-gray-500">
-          No completed sessions have been recorded yet.
+        <div
+          v-if="sectionOpen.recentSessions && recentSessions.length === 0"
+          class="mt-6 rounded-xl border border-dashed border-gray-700 bg-gray-900/40 px-4 py-8 text-center text-sm text-gray-500"
+        >
+          {{ tr('recentSessions.noSessions') }}
         </div>
 
         <div v-else-if="sectionOpen.recentSessions" class="mt-6 space-y-4">
@@ -1114,15 +1306,27 @@
                   {{ session.label || session.id }}
                 </div>
                 <div class="text-sm text-gray-400">
-                  Started {{ formatDate(session.startedAtUtc) }}
-                  <span v-if="session.endedAtUtc"> • Stopped {{ formatDate(session.endedAtUtc) }}</span>
+                  {{ tr('recentSessions.started', { date: formatDate(session.startedAtUtc) }) }}
+                  <span v-if="session.endedAtUtc">
+                    •
+                    {{
+                      tr('recentSessions.stopped', { date: formatDate(session.endedAtUtc) })
+                    }}</span
+                  >
                 </div>
                 <div class="text-sm text-gray-400">
-                  Frames: {{ session.captureCount }} • Reason: {{ session.startReason }}
-                  <span v-if="session.stopReason"> • {{ session.stopReason }}</span>
+                  {{
+                    tr('recentSessions.framesReason', {
+                      count: formatCount(session.captureCount),
+                      reason: formatSessionReason(session.startReason),
+                    })
+                  }}
+                  <span v-if="session.stopReason">
+                    • {{ formatSessionReason(session.stopReason) }}</span
+                  >
                 </div>
                 <div class="text-sm text-gray-400">
-                  Storage: {{ formatSize(session.totalSizeBytes) }}
+                  {{ tr('recentSessions.storage', { size: formatSize(session.totalSizeBytes) }) }}
                 </div>
               </div>
 
@@ -1132,24 +1336,37 @@
                   :disabled="cleanupBusy"
                   @click="generateArtifacts(session.id)"
                 >
-                  Regenerate
+                  {{ tr('buttons.regenerate') }}
                 </button>
                 <button
                   class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-rose-500/40 bg-rose-500/10 text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                  :disabled="cleanupBusy || status?.captureRunning || status?.generateInProgress || session.id === currentSession?.id"
-                  title="Delete this session"
-                  aria-label="Delete this session"
+                  :disabled="
+                    cleanupBusy ||
+                    status?.captureRunning ||
+                    status?.generateInProgress ||
+                    session.id === currentSession?.id
+                  "
+                  :title="tr('buttons.deleteSession')"
+                  :aria-label="tr('buttons.deleteSession')"
                   @click="deleteSession(session)"
                 >
                   <TrashIcon class="h-5 w-5" />
                 </button>
                 <button
                   class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-sm text-white transition hover:border-cyan-400"
-                  :title="isSessionDetailsOpen(session.id) ? 'Hide stored files' : 'Show stored files'"
-                  :aria-label="isSessionDetailsOpen(session.id) ? 'Hide stored files' : 'Show stored files'"
+                  :title="
+                    isSessionDetailsOpen(session.id)
+                      ? tr('buttons.hideStoredFiles')
+                      : tr('buttons.showStoredFiles')
+                  "
+                  :aria-label="
+                    isSessionDetailsOpen(session.id)
+                      ? tr('buttons.hideStoredFiles')
+                      : tr('buttons.showStoredFiles')
+                  "
                   @click="toggleSessionDetails(session.id)"
                 >
-                  <span>Files</span>
+                  <span>{{ tr('buttons.files') }}</span>
                   <ChevronUpIcon v-if="isSessionDetailsOpen(session.id)" class="h-4 w-4" />
                   <ChevronDownIcon v-else class="h-4 w-4" />
                 </button>
@@ -1157,24 +1374,32 @@
             </div>
 
             <div class="mt-4 grid gap-3 sm:grid-cols-3">
-              <div class="rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-sm text-gray-300">
-                <div class="text-xs uppercase tracking-wide text-gray-500">Timelapse</div>
+              <div
+                class="rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-sm text-gray-300"
+              >
+                <div class="text-xs uppercase tracking-wide text-gray-500">
+                  {{ tr('recentSessions.timelapse') }}
+                </div>
                 <div class="mt-2 flex items-start justify-between gap-3">
                   <div>{{ describeArtifact(session.products?.timelapse) }}</div>
                   <div v-if="session.products?.timelapse" class="flex items-center gap-2">
                     <button
                       class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
-                      title="Download timelapse"
-                      aria-label="Download timelapse"
+                      :title="tr('buttons.downloadTimelapse')"
+                      :aria-label="tr('buttons.downloadTimelapse')"
                       @click="downloadRelativePath(session.products.timelapse.relativePath)"
                     >
                       <ArrowDownTrayIcon class="h-4 w-4" />
                     </button>
                     <button
                       class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-rose-500/40 bg-rose-500/10 text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                      :disabled="cleanupBusy || status?.generateInProgress || session.id === currentSession?.id"
-                      title="Delete timelapse"
-                      aria-label="Delete timelapse"
+                      :disabled="
+                        cleanupBusy ||
+                        status?.generateInProgress ||
+                        session.id === currentSession?.id
+                      "
+                      :title="tr('buttons.deleteTimelapse')"
+                      :aria-label="tr('buttons.deleteTimelapse')"
                       @click="deleteArtifact(session, session.products.timelapse)"
                     >
                       <TrashIcon class="h-4 w-4" />
@@ -1182,24 +1407,32 @@
                   </div>
                 </div>
               </div>
-              <div class="rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-sm text-gray-300">
-                <div class="text-xs uppercase tracking-wide text-gray-500">Keogram</div>
+              <div
+                class="rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-sm text-gray-300"
+              >
+                <div class="text-xs uppercase tracking-wide text-gray-500">
+                  {{ tr('recentSessions.keogram') }}
+                </div>
                 <div class="mt-2 flex items-start justify-between gap-3">
                   <div>{{ describeArtifact(session.products?.keogram) }}</div>
                   <div v-if="session.products?.keogram" class="flex items-center gap-2">
                     <button
                       class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
-                      title="Download keogram"
-                      aria-label="Download keogram"
+                      :title="tr('buttons.downloadKeogram')"
+                      :aria-label="tr('buttons.downloadKeogram')"
                       @click="downloadRelativePath(session.products.keogram.relativePath)"
                     >
                       <ArrowDownTrayIcon class="h-4 w-4" />
                     </button>
                     <button
                       class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-rose-500/40 bg-rose-500/10 text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                      :disabled="cleanupBusy || status?.generateInProgress || session.id === currentSession?.id"
-                      title="Delete keogram"
-                      aria-label="Delete keogram"
+                      :disabled="
+                        cleanupBusy ||
+                        status?.generateInProgress ||
+                        session.id === currentSession?.id
+                      "
+                      :title="tr('buttons.deleteKeogram')"
+                      :aria-label="tr('buttons.deleteKeogram')"
                       @click="deleteArtifact(session, session.products.keogram)"
                     >
                       <TrashIcon class="h-4 w-4" />
@@ -1207,24 +1440,32 @@
                   </div>
                 </div>
               </div>
-              <div class="rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-sm text-gray-300">
-                <div class="text-xs uppercase tracking-wide text-gray-500">Startrails</div>
+              <div
+                class="rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-sm text-gray-300"
+              >
+                <div class="text-xs uppercase tracking-wide text-gray-500">
+                  {{ tr('recentSessions.startrails') }}
+                </div>
                 <div class="mt-2 flex items-start justify-between gap-3">
                   <div>{{ describeArtifact(session.products?.startrails) }}</div>
                   <div v-if="session.products?.startrails" class="flex items-center gap-2">
                     <button
                       class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
-                      title="Download startrails"
-                      aria-label="Download startrails"
+                      :title="tr('buttons.downloadStartrails')"
+                      :aria-label="tr('buttons.downloadStartrails')"
                       @click="downloadRelativePath(session.products.startrails.relativePath)"
                     >
                       <ArrowDownTrayIcon class="h-4 w-4" />
                     </button>
                     <button
                       class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-rose-500/40 bg-rose-500/10 text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                      :disabled="cleanupBusy || status?.generateInProgress || session.id === currentSession?.id"
-                      title="Delete startrails"
-                      aria-label="Delete startrails"
+                      :disabled="
+                        cleanupBusy ||
+                        status?.generateInProgress ||
+                        session.id === currentSession?.id
+                      "
+                      :title="tr('buttons.deleteStartrails')"
+                      :aria-label="tr('buttons.deleteStartrails')"
                       @click="deleteArtifact(session, session.products.startrails)"
                     >
                       <TrashIcon class="h-4 w-4" />
@@ -1234,31 +1475,46 @@
               </div>
             </div>
 
-            <div v-if="isSessionDetailsOpen(session.id)" class="mt-4 rounded-2xl border border-gray-700 bg-gray-800/50 p-4">
+            <div
+              v-if="isSessionDetailsOpen(session.id)"
+              class="mt-4 rounded-2xl border border-gray-700 bg-gray-800/50 p-4"
+            >
               <div class="mb-3 flex items-center justify-between gap-3">
                 <div>
-                  <div class="text-sm font-semibold text-white">Stored Frames</div>
+                  <div class="text-sm font-semibold text-white">
+                    {{ tr('sections.storedFrames') }}
+                  </div>
                   <div class="text-xs text-gray-400">
-                    {{ formatCount(sessionDetails(session.id)?.frames?.length ?? session.storedFrameCount ?? 0) }}
-                    retained frame(s)
+                    {{
+                      tr('recentSessions.retainedFrames', {
+                        count: formatCount(
+                          sessionDetails(session.id)?.frames?.length ??
+                            session.storedFrameCount ??
+                            0
+                        ),
+                      })
+                    }}
                   </div>
                 </div>
                 <button
                   class="rounded-lg border border-gray-600 bg-gray-900/70 px-3 py-2 text-xs text-gray-200 transition hover:border-cyan-400"
                   @click="refreshSessionDetails(session.id)"
                 >
-                  Refresh Files
+                  {{ tr('buttons.refreshFiles') }}
                 </button>
               </div>
 
-              <div v-if="sessionDetailsLoading(session.id)" class="rounded-xl border border-dashed border-gray-700 bg-gray-900/40 px-4 py-6 text-center text-sm text-gray-500">
-                Loading stored files…
+              <div
+                v-if="sessionDetailsLoading(session.id)"
+                class="rounded-xl border border-dashed border-gray-700 bg-gray-900/40 px-4 py-6 text-center text-sm text-gray-500"
+              >
+                {{ tr('recentSessions.loadingStoredFiles') }}
               </div>
               <div
                 v-else-if="!sessionDetails(session.id)?.frames?.length"
                 class="rounded-xl border border-dashed border-gray-700 bg-gray-900/40 px-4 py-6 text-center text-sm text-gray-500"
               >
-                No stored frames are available for this session.
+                {{ tr('recentSessions.noStoredFrames') }}
               </div>
               <div v-else class="max-h-80 space-y-2 overflow-y-auto pr-1">
                 <div
@@ -1275,17 +1531,21 @@
                   <div class="flex items-center gap-2">
                     <button
                       class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
-                      :title="`Download ${frame.name}`"
-                      :aria-label="`Download ${frame.name}`"
+                      :title="tr('buttons.downloadItem', { name: frame.name })"
+                      :aria-label="tr('buttons.downloadItem', { name: frame.name })"
                       @click="downloadRelativePath(frame.relativePath, frame.name)"
                     >
                       <ArrowDownTrayIcon class="h-4 w-4" />
                     </button>
                     <button
                       class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-rose-500/40 bg-rose-500/10 text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                      :disabled="cleanupBusy || status?.generateInProgress || session.id === currentSession?.id"
-                      :title="`Delete ${frame.name}`"
-                      :aria-label="`Delete ${frame.name}`"
+                      :disabled="
+                        cleanupBusy ||
+                        status?.generateInProgress ||
+                        session.id === currentSession?.id
+                      "
+                      :title="tr('buttons.deleteItem', { name: frame.name })"
+                      :aria-label="tr('buttons.deleteItem', { name: frame.name })"
                       @click="deleteFrame(session, frame)"
                     >
                       <TrashIcon class="h-4 w-4" />
@@ -1304,6 +1564,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
 import {
   ArrowDownTrayIcon,
   ArrowPathIcon,
@@ -1321,6 +1582,8 @@ import {
 import toggleButton from '@/components/helpers/toggleButton.vue';
 import { usePinsAllSkyStore } from '../store/pinsAllskyStore';
 
+const { t } = useI18n({ useScope: 'global' });
+const tr = (key, params) => t(`plugins.pinsAllSky.${key}`, params);
 const store = usePinsAllSkyStore();
 const {
   status,
@@ -1348,8 +1611,10 @@ const estimateWindow = reactive({
 const showStatusModal = ref(false);
 const settingsModal = ref(null);
 const settingsModalSnapshot = ref(null);
-const settingsFieldClass = 'w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)] 2xl:w-[calc(16.666%-0.834rem)]';
-const settingsWideFieldClass = 'w-full lg:w-[calc(66.666%-0.667rem)] 2xl:w-[calc(33.333%-0.667rem)]';
+const settingsFieldClass =
+  'w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)] 2xl:w-[calc(16.666%-0.834rem)]';
+const settingsWideFieldClass =
+  'w-full lg:w-[calc(66.666%-0.667rem)] 2xl:w-[calc(33.333%-0.667rem)]';
 const settingsFullWidthClass = 'w-full';
 
 const currentSession = computed(() => status.value?.currentSession || null);
@@ -1366,23 +1631,25 @@ const storage = computed(() => {
   };
 });
 const estimateBaseline = computed(() => status.value?.estimateBaseline || null);
-const estimateBaselineAverageFrameBytes = computed(() => estimateBaseline.value?.averageFrameBytes || 0);
+const estimateBaselineAverageFrameBytes = computed(
+  () => estimateBaseline.value?.averageFrameBytes || 0
+);
 
 const dependencyRows = computed(() => [
   {
-    label: 'rpicam-still',
+    label: tr('dependencies.rpiCamStill'),
     ready: Boolean(status.value?.dependencies?.rpiCamStillAvailable),
   },
   {
-    label: 'ffmpeg',
+    label: tr('dependencies.ffmpeg'),
     ready: Boolean(status.value?.dependencies?.ffmpegAvailable),
   },
   {
-    label: 'AllSky keogram',
+    label: tr('dependencies.keogram'),
     ready: Boolean(status.value?.dependencies?.keogramAvailable),
   },
   {
-    label: 'AllSky startrails',
+    label: tr('dependencies.startrails'),
     ready: Boolean(status.value?.dependencies?.startrailsAvailable),
   },
 ]);
@@ -1393,65 +1660,69 @@ const missingDependencies = computed(() =>
 const statusRows = computed(() => {
   const pluginLimitValue = storage.value.limitEnabled
     ? formatSize(storage.value.maxPluginUsageBytes)
-    : 'Unlimited';
+    : tr('common.unlimited');
   const pluginAvailableValue = storage.value.limitEnabled
     ? formatSize(storage.value.pluginAvailableBytes)
-    : 'Unlimited';
+    : tr('common.unlimited');
 
   return [
     {
-      label: 'Backend',
-      value: status.value?.advancedApiReachable ? 'Online' : 'Offline',
+      label: tr('statusRows.backend'),
+      value: status.value?.advancedApiReachable
+        ? tr('statusRows.online')
+        : tr('statusRows.offline'),
       className: status.value?.advancedApiReachable ? 'text-emerald-300' : 'text-amber-300',
     },
     {
-      label: 'Session',
-      value: currentSession.value?.label || currentSession.value?.id || 'No active session',
+      label: tr('statusRows.session'),
+      value:
+        currentSession.value?.label || currentSession.value?.id || tr('preview.noActiveSession'),
       className: 'text-white',
     },
     {
-      label: 'Sequence',
-      value: status.value?.sequenceRunning ? 'Running' : 'Idle',
+      label: tr('statusRows.sequence'),
+      value: status.value?.sequenceRunning ? tr('statusRows.running') : tr('statusRows.idle'),
       className: status.value?.sequenceRunning ? 'text-emerald-300' : 'text-gray-300',
     },
     {
-      label: 'Capture',
-      value: status.value?.captureRunning ? 'Active' : 'Stopped',
+      label: tr('statusRows.capture'),
+      value: status.value?.captureRunning ? tr('statusRows.active') : tr('statusRows.stopped'),
       className: status.value?.captureRunning ? 'text-emerald-300' : 'text-gray-300',
     },
     {
-      label: 'Rendering',
-      value: status.value?.generateInProgress ? 'In progress' : 'Idle',
+      label: tr('statusRows.rendering'),
+      value: status.value?.generateInProgress ? tr('statusRows.inProgress') : tr('statusRows.idle'),
       className: status.value?.generateInProgress ? 'text-cyan-300' : 'text-gray-300',
     },
     {
-      label: 'Pi Used',
+      label: tr('statusRows.piUsed'),
       value: formatSize(storage.value.diskUsedBytes),
       className: 'text-white',
     },
     {
-      label: 'Pi Available',
+      label: tr('statusRows.piAvailable'),
       value: formatSize(storage.value.diskAvailableBytes),
       className: estimateExceedsAvailable.value ? 'text-amber-300' : 'text-white',
     },
     {
-      label: 'Plugin Used',
+      label: tr('statusRows.pluginUsed'),
       value: formatSize(storage.value.pluginUsedBytes),
       className: 'text-white',
     },
     {
-      label: 'Plugin Limit',
+      label: tr('statusRows.pluginLimit'),
       value: pluginLimitValue,
       className: 'text-white',
     },
     {
-      label: 'Plugin Available',
+      label: tr('statusRows.pluginAvailable'),
       value: pluginAvailableValue,
-      className: storage.value.withinLimit || !storage.value.limitEnabled ? 'text-white' : 'text-amber-300',
+      className:
+        storage.value.withinLimit || !storage.value.limitEnabled ? 'text-white' : 'text-amber-300',
     },
     ...dependencyRows.value.map((item) => ({
       label: item.label,
-      value: item.ready ? 'Available' : 'Missing',
+      value: item.ready ? tr('statusRows.available') : tr('statusRows.missing'),
       className: item.ready ? 'text-emerald-300' : 'text-amber-300',
     })),
   ];
@@ -1464,7 +1735,10 @@ const estimateDurationSeconds = computed(() => {
     return 0;
   }
 
-  return Math.max(0, Math.round((parsedEstimateEnd.value.getTime() - parsedEstimateStart.value.getTime()) / 1000));
+  return Math.max(
+    0,
+    Math.round((parsedEstimateEnd.value.getTime() - parsedEstimateStart.value.getTime()) / 1000)
+  );
 });
 const estimatedFrameCount = computed(() => {
   const intervalSeconds = Number(config.value?.camera?.intervalSeconds || 0);
@@ -1489,19 +1763,22 @@ const estimatedTimelapseBytes = computed(() => {
   const fps = Math.max(1, Number(config.value?.products?.timelapseFps || 1));
   const bitrateKbps = Math.max(1000, Number(config.value?.products?.timelapseBitrateKbps || 1000));
   const videoSeconds = estimatedFrameCount.value / fps;
-  return Math.round(videoSeconds * bitrateKbps * 1000 / 8);
+  return Math.round((videoSeconds * bitrateKbps * 1000) / 8);
 });
 const estimatedKeogramBytes = computed(() =>
   config.value?.products?.keogramEnabled ? Number(estimateBaseline.value?.keogramBytes || 0) : 0
 );
 const estimatedStartrailsBytes = computed(() =>
-  config.value?.products?.startrailsEnabled ? Number(estimateBaseline.value?.startrailsBytes || 0) : 0
+  config.value?.products?.startrailsEnabled
+    ? Number(estimateBaseline.value?.startrailsBytes || 0)
+    : 0
 );
-const estimatedStorageBytes = computed(() =>
-  estimatedFrameStorageBytes.value
-  + estimatedTimelapseBytes.value
-  + estimatedKeogramBytes.value
-  + estimatedStartrailsBytes.value
+const estimatedStorageBytes = computed(
+  () =>
+    estimatedFrameStorageBytes.value +
+    estimatedTimelapseBytes.value +
+    estimatedKeogramBytes.value +
+    estimatedStartrailsBytes.value
 );
 const estimateDurationLabel = computed(() => formatDuration(estimateDurationSeconds.value));
 const estimateExceedsAvailable = computed(() => {
@@ -1523,15 +1800,15 @@ const estimateExceedsAvailable = computed(() => {
 });
 const estimateWarning = computed(() => {
   if (!parsedEstimateStart.value || !parsedEstimateEnd.value) {
-    return 'Set a valid start and end time to estimate storage.';
+    return tr('estimate.invalidWindow');
   }
 
   if (estimateDurationSeconds.value <= 0) {
-    return 'End time must be later than start time.';
+    return tr('estimate.endBeforeStart');
   }
 
   if (!estimateBaseline.value) {
-    return 'No completed baseline session is available yet. Finish one session first to estimate storage reliably.';
+    return tr('estimate.noBaseline');
   }
 
   if (estimatedStorageBytes.value <= 0) {
@@ -1541,13 +1818,15 @@ const estimateWarning = computed(() => {
   const warnings = [];
   const diskAvailableBytes = Number(storage.value.diskAvailableBytes || 0);
   if (diskAvailableBytes > 0 && estimatedStorageBytes.value > diskAvailableBytes) {
-    warnings.push(`Pi free space (${formatSize(diskAvailableBytes)})`);
+    warnings.push(tr('estimate.piFreeSpace', { size: formatSize(diskAvailableBytes) }));
   }
 
   if (storage.value.limitEnabled) {
     const pluginAvailableBytes = Number(storage.value.pluginAvailableBytes || 0);
     if (estimatedStorageBytes.value > pluginAvailableBytes) {
-      warnings.push(`plugin limit remaining (${formatSize(pluginAvailableBytes)})`);
+      warnings.push(
+        tr('estimate.pluginLimitRemaining', { size: formatSize(pluginAvailableBytes) })
+      );
     }
   }
 
@@ -1555,43 +1834,46 @@ const estimateWarning = computed(() => {
     return null;
   }
 
-  return `Expected storage ${formatSize(estimatedStorageBytes.value)} exceeds ${warnings.join(' and ')}.`;
+  return tr('estimate.exceeds', {
+    size: formatSize(estimatedStorageBytes.value),
+    limits: warnings.join(` ${tr('common.and')} `),
+  });
 });
 
-const meteringOptions = [
-  { value: 'centre', label: 'Centre' },
-  { value: 'spot', label: 'Spot' },
-  { value: 'average', label: 'Average' },
-  { value: 'custom', label: 'Custom' },
-];
+const meteringOptions = computed(() => [
+  { value: 'centre', label: tr('modals.camera.options.centre') },
+  { value: 'spot', label: tr('modals.camera.options.spot') },
+  { value: 'average', label: tr('modals.camera.options.average') },
+  { value: 'custom', label: tr('modals.camera.options.custom') },
+]);
 
-const awbOptions = [
-  { value: 'auto', label: 'Auto' },
-  { value: 'incandescent', label: 'Incandescent' },
-  { value: 'tungsten', label: 'Tungsten' },
-  { value: 'fluorescent', label: 'Fluorescent' },
-  { value: 'indoor', label: 'Indoor' },
-  { value: 'daylight', label: 'Daylight' },
-  { value: 'cloudy', label: 'Cloudy' },
-  { value: 'custom', label: 'Custom' },
-];
+const awbOptions = computed(() => [
+  { value: 'auto', label: tr('modals.camera.options.auto') },
+  { value: 'incandescent', label: tr('modals.camera.options.incandescent') },
+  { value: 'tungsten', label: tr('modals.camera.options.tungsten') },
+  { value: 'fluorescent', label: tr('modals.camera.options.fluorescent') },
+  { value: 'indoor', label: tr('modals.camera.options.indoor') },
+  { value: 'daylight', label: tr('modals.camera.options.daylight') },
+  { value: 'cloudy', label: tr('modals.camera.options.cloudy') },
+  { value: 'custom', label: tr('modals.camera.options.custom') },
+]);
 
-const denoiseOptions = [
-  { value: 'auto', label: 'Auto' },
-  { value: 'off', label: 'Off' },
-  { value: 'cdn_off', label: 'CDN Off' },
-  { value: 'cdn_fast', label: 'CDN Fast' },
-  { value: 'cdn_hq', label: 'CDN High Quality' },
-];
+const denoiseOptions = computed(() => [
+  { value: 'auto', label: tr('modals.camera.options.auto') },
+  { value: 'off', label: tr('modals.camera.options.off') },
+  { value: 'cdn_off', label: tr('modals.camera.options.cdnOff') },
+  { value: 'cdn_fast', label: tr('modals.camera.options.cdnFast') },
+  { value: 'cdn_hq', label: tr('modals.camera.options.cdnHq') },
+]);
 
 const settingsModalTitle = computed(() => {
   switch (settingsModal.value) {
     case 'automation':
-      return 'Automation';
+      return tr('buttons.automation');
     case 'camera':
-      return 'Camera';
+      return tr('buttons.camera');
     case 'outputs':
-      return 'Outputs';
+      return tr('buttons.outputs');
     default:
       return '';
   }
@@ -1693,9 +1975,32 @@ const updateBackend = async () => {
   await store.updateBackend();
 };
 
+const formatSessionReason = (reason) => {
+  if (!reason) {
+    return tr('recentSessions.reasons.unknown');
+  }
+
+  const normalizedReason = String(reason)
+    .replace(/-([a-z])/g, (_, character) => character.toUpperCase())
+    .replace(/[^a-zA-Z0-9]/g, '');
+
+  switch (normalizedReason) {
+    case 'manualStart':
+      return tr('recentSessions.reasons.manualStart');
+    case 'manualStop':
+      return tr('recentSessions.reasons.manualStop');
+    case 'sequenceStart':
+      return tr('recentSessions.reasons.sequenceStart');
+    case 'sequenceStop':
+      return tr('recentSessions.reasons.sequenceStop');
+    default:
+      return reason;
+  }
+};
+
 const deleteSession = async (session) => {
-  const sessionName = session?.label || session?.id || 'this session';
-  if (!window.confirm(`Delete ${sessionName} and all of its captured frames/products?`)) {
+  const sessionName = session?.label || session?.id || tr('preview.noActiveSession');
+  if (!window.confirm(tr('dialogs.deleteSession', { sessionName }))) {
     return;
   }
 
@@ -1703,7 +2008,7 @@ const deleteSession = async (session) => {
 };
 
 const deleteAllSessions = async () => {
-  if (!window.confirm('Delete all stored AllSky sessions, frames, and generated products?')) {
+  if (!window.confirm(tr('dialogs.deleteAllSessions'))) {
     return;
   }
 
@@ -1715,8 +2020,9 @@ const deleteArtifact = async (session, artifact) => {
     return;
   }
 
-  const artifactName = artifact.name || artifact.relativePath.split('/').pop() || 'this artifact';
-  if (!window.confirm(`Delete ${artifactName}?`)) {
+  const artifactName =
+    artifact.name || artifact.relativePath.split('/').pop() || tr('common.notGenerated');
+  if (!window.confirm(tr('dialogs.deleteArtifact', { artifactName }))) {
     return;
   }
 
@@ -1728,8 +2034,8 @@ const deleteFrame = async (session, frame) => {
     return;
   }
 
-  const frameName = frame.name || frame.relativePath.split('/').pop() || 'this frame';
-  if (!window.confirm(`Delete ${frameName}?`)) {
+  const frameName = frame.name || frame.relativePath.split('/').pop() || tr('common.notAvailable');
+  if (!window.confirm(tr('dialogs.deleteFrame', { frameName }))) {
     return;
   }
 
@@ -1737,7 +2043,7 @@ const deleteFrame = async (session, frame) => {
 };
 
 const downloadRelativePath = async (relativePath, fallbackName = null) => {
-  const derivedName = fallbackName || relativePath?.split('/').pop() || 'download';
+  const derivedName = fallbackName || relativePath?.split('/').pop() || tr('common.download');
   await store.downloadFile(relativePath, derivedName);
 };
 
@@ -1800,9 +2106,9 @@ const parseDateValue = (value) => {
 };
 
 const sameLocalDay = (left, right) =>
-  left.getFullYear() === right.getFullYear()
-  && left.getMonth() === right.getMonth()
-  && left.getDate() === right.getDate();
+  left.getFullYear() === right.getFullYear() &&
+  left.getMonth() === right.getMonth() &&
+  left.getDate() === right.getDate();
 
 const buildDefaultManualLabel = () => {
   const now = new Date();
@@ -1811,7 +2117,8 @@ const buildDefaultManualLabel = () => {
   const candidateSessions = [currentSession.value, ...recentSessions.value].filter(Boolean);
 
   for (const session of candidateSessions) {
-    const sessionKey = session.id || `${session.label || ''}:${JSON.stringify(session.startedAtUtc || null)}`;
+    const sessionKey =
+      session.id || `${session.label || ''}:${JSON.stringify(session.startedAtUtc || null)}`;
     if (!sessionsById.has(sessionKey)) {
       sessionsById.set(sessionKey, session);
     }
@@ -1876,7 +2183,7 @@ const initializeEstimateWindow = () => {
 const formatDate = (value) => {
   const parsed = parseDateValue(value);
   if (!parsed) {
-    return '—';
+    return tr('common.notAvailable');
   }
 
   return parsed.toLocaleString();
@@ -1884,7 +2191,7 @@ const formatDate = (value) => {
 
 const formatInterval = (seconds) => {
   if (!Number.isFinite(seconds)) {
-    return '—';
+    return tr('common.notAvailable');
   }
 
   return `${seconds}s`;
@@ -1892,16 +2199,16 @@ const formatInterval = (seconds) => {
 
 const formatExposure = (camera) => {
   if (!camera) {
-    return '—';
+    return tr('common.notAvailable');
   }
 
   if (!camera.useManualExposure) {
-    return 'Auto';
+    return tr('common.auto');
   }
 
   const shutterMicroseconds = Number(camera.shutterMicroseconds || 0);
   if (!Number.isFinite(shutterMicroseconds) || shutterMicroseconds <= 0) {
-    return '—';
+    return tr('common.notAvailable');
   }
 
   const exposureSeconds = shutterMicroseconds / 1000000;
@@ -1914,16 +2221,16 @@ const formatExposure = (camera) => {
 
 const formatGain = (camera) => {
   if (!camera) {
-    return '—';
+    return tr('common.notAvailable');
   }
 
   if (!camera.useManualGain) {
-    return 'Auto';
+    return tr('common.auto');
   }
 
   const gain = Number(camera.analogGain || 0);
   if (!Number.isFinite(gain) || gain <= 0) {
-    return '—';
+    return tr('common.notAvailable');
   }
 
   return gain >= 10 ? gain.toFixed(0) : gain.toFixed(1).replace(/\.0$/, '');
@@ -1931,7 +2238,7 @@ const formatGain = (camera) => {
 
 const formatCount = (value) => {
   if (!Number.isFinite(value)) {
-    return '—';
+    return tr('common.notAvailable');
   }
 
   return new Intl.NumberFormat().format(value);
@@ -1939,7 +2246,7 @@ const formatCount = (value) => {
 
 const formatDuration = (seconds) => {
   if (!Number.isFinite(seconds) || seconds <= 0) {
-    return '—';
+    return tr('common.notAvailable');
   }
 
   const totalMinutes = Math.round(seconds / 60);
@@ -1959,7 +2266,7 @@ const formatDuration = (seconds) => {
 
 const formatSize = (bytes) => {
   if (!bytes && bytes !== 0) {
-    return '—';
+    return tr('common.notAvailable');
   }
 
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -1977,7 +2284,7 @@ const formatSize = (bytes) => {
 
 const describeArtifact = (artifact) => {
   if (!artifact) {
-    return 'Not generated';
+    return tr('common.notGenerated');
   }
 
   return `${formatDate(artifact.generatedAtUtc)} • ${formatSize(artifact.sizeBytes)}`;
