@@ -110,43 +110,60 @@
           </div>
 
           <div class="mt-5 overflow-hidden rounded-2xl border border-gray-700 bg-black/60">
-            <img
-              v-if="currentImageUrl"
-              :src="currentImageUrl"
-              alt="Latest all-sky frame"
-              class="h-[28rem] w-full object-contain"
-            />
-            <div
-              v-else
-              class="flex h-[28rem] items-center justify-center px-6 text-center text-sm text-gray-500"
-            >
-              No captured frame is available yet. Start a session or wait for the next automatic
-              capture.
-            </div>
-          </div>
-
-          <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-            <div class="rounded-xl border border-gray-700 bg-gray-900/50 p-3">
-              <div class="text-xs uppercase tracking-wide text-gray-500">Session</div>
-              <div class="mt-2 text-sm text-white">
-                {{ currentSession?.id || 'No active session' }}
+            <div class="relative h-[28rem] w-full">
+              <img
+                v-if="currentImageUrl"
+                :src="currentImageUrl"
+                alt="Latest all-sky frame"
+                class="h-full w-full object-contain"
+              />
+              <div
+                v-else
+                class="flex h-full items-center justify-center px-6 text-center text-sm text-gray-500"
+              >
+                No captured frame is available yet. Start a session or wait for the next automatic
+                capture.
               </div>
-            </div>
-            <div class="rounded-xl border border-gray-700 bg-gray-900/50 p-3">
-              <div class="text-xs uppercase tracking-wide text-gray-500">Frames</div>
-              <div class="mt-2 text-sm text-white">{{ currentSession?.captureCount || 0 }}</div>
-            </div>
-            <div class="rounded-xl border border-gray-700 bg-gray-900/50 p-3">
-              <div class="text-xs uppercase tracking-wide text-gray-500">Last Capture</div>
-              <div class="mt-2 text-sm text-white">{{ formatDate(currentSession?.lastCaptureAtUtc) }}</div>
-            </div>
-            <div class="rounded-xl border border-gray-700 bg-gray-900/50 p-3">
-              <div class="text-xs uppercase tracking-wide text-gray-500">Capture Interval</div>
-              <div class="mt-2 text-sm text-white">{{ formatInterval(config?.camera?.intervalSeconds) }}</div>
-            </div>
-            <div class="rounded-xl border border-gray-700 bg-gray-900/50 p-3">
-              <div class="text-xs uppercase tracking-wide text-gray-500">Sequence Poll</div>
-              <div class="mt-2 text-sm text-white">{{ formatInterval(config?.sequencePollIntervalSeconds) }}</div>
+
+              <div class="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/80 via-black/30 to-transparent" />
+              <div class="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
+
+              <div class="pointer-events-none absolute left-4 top-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm">
+                <div class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-300">Session</div>
+                <div class="mt-1 text-sm font-medium text-white">
+                  {{ currentSession?.id || 'No active session' }}
+                </div>
+              </div>
+
+              <div class="pointer-events-none absolute bottom-4 left-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm">
+                <div class="space-y-1 text-sm text-white">
+                  <div>
+                    <span class="text-gray-300">Last Capture:</span>
+                    {{ formatDate(currentSession?.lastCaptureAtUtc) }}
+                  </div>
+                  <div>
+                    <span class="text-gray-300">Frame Count:</span>
+                    {{ formatCount(currentSession?.captureCount || 0) }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="pointer-events-none absolute bottom-4 right-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm">
+                <div class="space-y-1 text-right text-sm text-white">
+                  <div>
+                    <span class="text-gray-300">Capture Interval:</span>
+                    {{ formatInterval(config?.camera?.intervalSeconds) }}
+                  </div>
+                  <div>
+                    <span class="text-gray-300">Exposure:</span>
+                    {{ formatExposure(config?.camera) }}
+                  </div>
+                  <div>
+                    <span class="text-gray-300">Gain:</span>
+                    {{ formatGain(config?.camera) }}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -1701,6 +1718,45 @@ const formatInterval = (seconds) => {
   }
 
   return `${seconds}s`;
+};
+
+const formatExposure = (camera) => {
+  if (!camera) {
+    return '—';
+  }
+
+  if (!camera.useManualExposure) {
+    return 'Auto';
+  }
+
+  const shutterMicroseconds = Number(camera.shutterMicroseconds || 0);
+  if (!Number.isFinite(shutterMicroseconds) || shutterMicroseconds <= 0) {
+    return '—';
+  }
+
+  const exposureSeconds = shutterMicroseconds / 1000000;
+  if (exposureSeconds >= 1) {
+    return `${exposureSeconds.toFixed(exposureSeconds >= 10 ? 0 : 1)}s`;
+  }
+
+  return `${exposureSeconds.toFixed(exposureSeconds >= 0.1 ? 2 : 3)}s`;
+};
+
+const formatGain = (camera) => {
+  if (!camera) {
+    return '—';
+  }
+
+  if (!camera.useManualGain) {
+    return 'Auto';
+  }
+
+  const gain = Number(camera.analogGain || 0);
+  if (!Number.isFinite(gain) || gain <= 0) {
+    return '—';
+  }
+
+  return gain >= 10 ? gain.toFixed(0) : gain.toFixed(1).replace(/\.0$/, '');
 };
 
 const formatCount = (value) => {
