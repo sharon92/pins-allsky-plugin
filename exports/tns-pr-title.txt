@@ -1,0 +1,1 @@
+Add PINS AllSky frontend plugin for Pi camera capture products

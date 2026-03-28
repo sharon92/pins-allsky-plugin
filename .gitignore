@@ -3,6 +3,8 @@
 /_upstream/
 /_vendor/
 /artifacts/
+/exports/*.bundle
+/exports/*.patch
 
 /backend/PinsAllSky/bin/
 /backend/PinsAllSky/obj/
