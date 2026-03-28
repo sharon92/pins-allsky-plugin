@@ -1,6 +1,6 @@
 ## Summary
 
-Adds a `pins-allsky` Touch-N-Stars frontend plugin for the companion `PINS AllSky` backend on Linux/PINS.
+Adds a `pins-allsky` Touch-N-Stars frontend plugin for the companion `PINS AllSky` backend on Linux/PINS. The UI controls the Pi HQ camera during a normal session and renders timelapse, keogram, and startrails products.
 
 ## Backend Install
 
@@ -20,9 +20,12 @@ This installs `PINS AllSky` into `~/.local/share/NINA/Plugins/3.0.0/PINS AllSky`
 1. Update to a TNS release that includes this merged frontend plugin.
 2. Run the backend install commands above once on the Pi.
 3. Open Touch-N-Stars and go to `AllSky Capture`.
-4. Save settings and start capture manually or with `Auto-start with sequence`.
+4. Configure `Automation`, `Camera`, and `Outputs` from the compact modal actions in the header.
+5. Start capture manually or enable `Auto-start with sequence`.
+6. Use `Show Status` to inspect dependencies, storage, and trigger a backend self-update after the backend repo is installed.
 
 ## Notes
 
 - Frontend only. The backend stays in: https://github.com/sharon92/pins-allsky-plugin
 - The frontend expects the local backend API on `127.0.0.1:19091`.
+- Review focus should be the UI/plugin integration in TNS. Backend implementation and installer/update scripts live in the standalone backend repo.

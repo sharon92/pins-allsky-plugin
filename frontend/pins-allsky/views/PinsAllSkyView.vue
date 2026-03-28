@@ -76,13 +76,6 @@
             </template>
           </div>
 
-          <div
-            v-if="actionMessage"
-            class="mt-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100"
-          >
-            {{ actionMessage }}
-          </div>
-
           <div class="mt-6 flex flex-wrap items-center justify-end gap-3">
             <button
               type="button"
@@ -116,6 +109,13 @@
         class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100"
       >
         {{ backendError }}
+      </div>
+
+      <div
+        v-if="actionMessage"
+        class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100"
+      >
+        {{ actionMessage }}
       </div>
 
       <div
@@ -1096,12 +1096,6 @@
             </button>
           </div>
 
-          <div
-            v-if="actionMessage"
-            class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100"
-          >
-            {{ actionMessage }}
-          </div>
         </div>
 
         <div v-if="sectionOpen.recentSessions && recentSessions.length === 0" class="mt-6 rounded-xl border border-dashed border-gray-700 bg-gray-900/40 px-4 py-8 text-center text-sm text-gray-500">
@@ -1372,13 +1366,6 @@ const storage = computed(() => {
   };
 });
 const estimateBaseline = computed(() => status.value?.estimateBaseline || null);
-const estimateBaselineLabel = computed(() => {
-  if (!estimateBaseline.value) {
-    return 'No baseline session yet';
-  }
-
-  return estimateBaseline.value.label || estimateBaseline.value.sessionId;
-});
 const estimateBaselineAverageFrameBytes = computed(() => estimateBaseline.value?.averageFrameBytes || 0);
 
 const dependencyRows = computed(() => [
