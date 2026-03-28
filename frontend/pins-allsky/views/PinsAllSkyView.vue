@@ -2,11 +2,7 @@
   <div class="container py-8 sm:py-12 px-4">
     <div class="mx-auto max-w-7xl space-y-6">
       <section class="rounded-2xl border border-cyan-900/40 bg-gray-800/80 p-6 shadow-2xl">
-        <button
-          type="button"
-          class="flex w-full items-start justify-between gap-4 text-left"
-          @click="toggleSection('overview')"
-        >
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <h1 class="text-3xl font-bold text-white">AllSky Capture</h1>
             <p class="mt-2 max-w-3xl text-sm text-gray-300">
@@ -14,61 +10,63 @@
               keograms, and startrail composites from the captured frames.
             </p>
           </div>
-          <div class="flex items-center gap-3">
-            <span class="rounded-full border border-gray-600 bg-gray-900/70 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gray-300">
-              {{ sectionOpen.overview ? 'Expanded' : 'Collapsed' }}
-            </span>
-            <span class="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-500/40 bg-cyan-500/10 text-lg font-semibold text-cyan-200">
-              {{ sectionOpen.overview ? '-' : '+' }}
-            </span>
-          </div>
-        </button>
-
-        <div v-if="sectionOpen.overview" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-7">
-          <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-            <div class="text-xs uppercase tracking-wide text-gray-400">Backend</div>
-            <div class="mt-2 text-sm font-semibold" :class="status?.advancedApiReachable ? 'text-emerald-400' : 'text-amber-300'">
-              {{ status ? (status.advancedApiReachable ? 'Online' : 'Offline') : 'Loading' }}
-            </div>
-          </div>
-          <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-            <div class="text-xs uppercase tracking-wide text-gray-400">Sequence</div>
-            <div class="mt-2 text-sm font-semibold" :class="status?.sequenceRunning ? 'text-emerald-400' : 'text-gray-300'">
-              {{ status?.sequenceRunning ? 'Running' : 'Idle' }}
-            </div>
-          </div>
-          <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-            <div class="text-xs uppercase tracking-wide text-gray-400">Capture</div>
-            <div class="mt-2 text-sm font-semibold" :class="status?.captureRunning ? 'text-emerald-400' : 'text-gray-300'">
-              {{ status?.captureRunning ? 'Active' : 'Stopped' }}
-            </div>
-          </div>
-          <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-            <div class="text-xs uppercase tracking-wide text-gray-400">Products</div>
-            <div class="mt-2 text-sm font-semibold" :class="status?.generateInProgress ? 'text-cyan-300' : 'text-gray-300'">
-              {{ status?.generateInProgress ? 'Rendering' : 'Ready' }}
-            </div>
-          </div>
-          <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-            <div class="text-xs uppercase tracking-wide text-gray-400">Pi Used</div>
-            <div class="mt-2 text-sm font-semibold text-white">
-              {{ formatSize(storage.diskUsedBytes) }}
-            </div>
-          </div>
-          <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-            <div class="text-xs uppercase tracking-wide text-gray-400">Pi Available</div>
-            <div class="mt-2 text-sm font-semibold" :class="estimateExceedsAvailable ? 'text-amber-300' : 'text-white'">
-              {{ formatSize(storage.diskAvailableBytes) }}
-            </div>
-          </div>
-          <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-            <div class="text-xs uppercase tracking-wide text-gray-400">Plugin Used</div>
-            <div class="mt-2 text-sm font-semibold text-white">
-              {{ formatSize(storage.pluginUsedBytes) }}
-            </div>
+          <div class="flex items-center gap-3 self-start">
+            <button
+              type="button"
+              class="rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-500/20"
+              @click="showStatusModal = true"
+            >
+              Show Status
+            </button>
           </div>
         </div>
       </section>
+
+      <div
+        v-if="showStatusModal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm"
+        @click.self="showStatusModal = false"
+      >
+        <div class="w-full max-w-2xl rounded-2xl border border-gray-700 bg-gray-900/95 p-6 shadow-2xl">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-semibold text-white">AllSky Status</h2>
+              <p class="mt-1 text-sm text-gray-400">
+                Compact runtime and dependency summary for the AllSky plugin.
+              </p>
+            </div>
+            <button
+              type="button"
+              class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-600 bg-gray-800/80 text-gray-200 transition hover:border-cyan-400 hover:text-white"
+              aria-label="Close status dialog"
+              @click="showStatusModal = false"
+            >
+              <XMarkIcon class="h-5 w-5" />
+            </button>
+          </div>
+
+          <div class="mt-6 grid gap-x-8 gap-y-3 sm:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)]">
+            <template v-for="item in statusRows" :key="item.label">
+              <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                {{ item.label }}
+              </div>
+              <div class="text-sm" :class="item.className">
+                {{ item.value }}
+              </div>
+            </template>
+          </div>
+
+          <div class="mt-6 flex justify-end">
+            <button
+              type="button"
+              class="rounded-xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-500"
+              @click="showStatusModal = false"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      </div>
 
       <div
         v-if="error"
@@ -92,170 +90,142 @@
         <span class="font-semibold">{{ missingDependencies.join(', ') }}</span>
       </div>
 
-      <div class="grid gap-6 xl:grid-cols-[1.3fr_1fr]">
-        <section class="rounded-2xl border border-gray-700 bg-gray-800/80 p-5 shadow-xl">
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <h2 class="text-xl font-semibold text-white">Live Preview</h2>
-              <p class="text-sm text-gray-400">
-                Latest captured frame from the current or most recent session.
+      <section class="rounded-2xl border border-gray-700 bg-gray-800/80 p-5 shadow-xl">
+        <h2 class="text-xl font-semibold text-white">Session Control</h2>
+        <p class="mt-1 text-sm text-gray-400">
+          Manual sessions can run alongside automatic sequence-triggered operation.
+        </p>
+
+        <div class="mt-5 flex flex-col gap-6 xl:flex-row">
+          <div class="xl:w-[24rem] xl:flex-none">
+            <div class="space-y-4">
+              <label class="block">
+                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  Manual Session Label
+                </span>
+                <input
+                  v-model="store.manualLabel"
+                  title="Optional label used to identify the next manually started AllSky session."
+                  class="w-full rounded-xl border border-gray-600 bg-gray-900/80 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                  placeholder="Optional label for the next manual session"
+                />
+              </label>
+
+              <div class="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+                <button
+                  class="rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"
+                  :disabled="loading || status?.captureRunning"
+                  @click="startSession"
+                >
+                  Start Capture
+                </button>
+                <button
+                  class="rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 font-semibold text-cyan-100 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                  :disabled="loading || !status?.captureRunning || !currentSession?.captureCount || status?.generateInProgress"
+                  @click="generateArtifacts(currentSession?.id || null)"
+                >
+                  {{ status?.generateInProgress ? 'Rendering Progress…' : 'Render Progress' }}
+                </button>
+                <button
+                  class="rounded-xl bg-rose-600 px-4 py-3 font-semibold text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-40"
+                  :disabled="loading || !status?.captureRunning"
+                  @click="stopSession"
+                >
+                  Stop And Render
+                </button>
+              </div>
+
+              <p class="text-xs text-gray-500">
+                `Render Progress` generates timelapse, keogram, and startrails from frames captured
+                so far without stopping the active capture session.
               </p>
-            </div>
-            <button
-              class="rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-sm font-medium text-cyan-200 transition hover:bg-cyan-500/20"
-              @click="refreshAll"
-            >
-              Refresh
-            </button>
-          </div>
 
-          <div class="mt-5 overflow-hidden rounded-2xl border border-gray-700 bg-black/60">
-            <div class="relative h-[28rem] w-full">
-              <img
-                v-if="currentImageUrl"
-                :src="currentImageUrl"
-                alt="Latest all-sky frame"
-                class="h-full w-full object-contain"
-              />
-              <div
-                v-else
-                class="flex h-full items-center justify-center px-6 text-center text-sm text-gray-500"
+              <button
+                class="w-full rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 font-semibold text-cyan-100 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                :disabled="loading || status?.generateInProgress"
+                @click="generateArtifacts()"
               >
-                No captured frame is available yet. Start a session or wait for the next automatic
-                capture.
-              </div>
-
-              <div class="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/80 via-black/30 to-transparent" />
-              <div class="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
-
-              <div class="pointer-events-none absolute left-4 top-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm">
-                <div class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-300">Session</div>
-                <div class="mt-1 text-sm font-medium text-white">
-                  {{ currentSession?.id || 'No active session' }}
-                </div>
-              </div>
-
-              <div class="pointer-events-none absolute bottom-4 left-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm">
-                <div class="space-y-1 text-sm text-white">
-                  <div>
-                    <span class="text-gray-300">Last Capture:</span>
-                    {{ formatDate(currentSession?.lastCaptureAtUtc) }}
-                  </div>
-                  <div>
-                    <span class="text-gray-300">Frame Count:</span>
-                    {{ formatCount(currentSession?.captureCount || 0) }}
-                  </div>
-                </div>
-              </div>
-
-              <div class="pointer-events-none absolute bottom-4 right-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm">
-                <div class="space-y-1 text-right text-sm text-white">
-                  <div>
-                    <span class="text-gray-300">Capture Interval:</span>
-                    {{ formatInterval(config?.camera?.intervalSeconds) }}
-                  </div>
-                  <div>
-                    <span class="text-gray-300">Exposure:</span>
-                    {{ formatExposure(config?.camera) }}
-                  </div>
-                  <div>
-                    <span class="text-gray-300">Gain:</span>
-                    {{ formatGain(config?.camera) }}
-                  </div>
-                </div>
-              </div>
+                Regenerate Latest Artifacts
+              </button>
             </div>
           </div>
-        </section>
 
-        <section class="rounded-2xl border border-gray-700 bg-gray-800/80 p-5 shadow-xl">
-          <h2 class="text-xl font-semibold text-white">Session Control</h2>
-          <p class="mt-1 text-sm text-gray-400">
-            Manual sessions can run alongside automatic sequence-triggered operation.
-          </p>
-
-          <div class="mt-5 space-y-4">
-            <label class="block">
-              <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Manual Session Label
-              </span>
-              <input
-                v-model="store.manualLabel"
-                title="Optional label used to identify the next manually started AllSky session."
-                class="w-full rounded-xl border border-gray-600 bg-gray-900/80 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                placeholder="Optional label for the next manual session"
-              />
-            </label>
-
-            <div class="grid gap-3 sm:grid-cols-3">
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <h3 class="text-xl font-semibold text-white">Live Preview</h3>
+                <p class="text-sm text-gray-400">
+                  Latest captured frame from the current or most recent session.
+                </p>
+              </div>
               <button
-                class="rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"
-                :disabled="loading || status?.captureRunning"
-                @click="startSession"
+                class="rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-sm font-medium text-cyan-200 transition hover:bg-cyan-500/20"
+                @click="refreshAll"
               >
-                Start Capture
-              </button>
-              <button
-                class="rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 font-semibold text-cyan-100 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                :disabled="loading || !status?.captureRunning || !currentSession?.captureCount || status?.generateInProgress"
-                @click="generateArtifacts(currentSession?.id || null)"
-              >
-                {{ status?.generateInProgress ? 'Rendering Progress…' : 'Render Progress' }}
-              </button>
-              <button
-                class="rounded-xl bg-rose-600 px-4 py-3 font-semibold text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-40"
-                :disabled="loading || !status?.captureRunning"
-                @click="stopSession"
-              >
-                Stop And Render
+                Refresh
               </button>
             </div>
 
-            <p class="text-xs text-gray-500">
-              `Render Progress` generates timelapse, keogram, and startrails from frames captured
-              so far without stopping the active capture session.
-            </p>
+            <div class="mt-5 overflow-hidden rounded-2xl border border-gray-700 bg-black/60">
+              <div class="relative h-[28rem] w-full">
+                <img
+                  v-if="currentImageUrl"
+                  :src="currentImageUrl"
+                  alt="Latest all-sky frame"
+                  class="h-full w-full object-contain"
+                />
+                <div
+                  v-else
+                  class="flex h-full items-center justify-center px-6 text-center text-sm text-gray-500"
+                >
+                  No captured frame is available yet. Start a session or wait for the next automatic
+                  capture.
+                </div>
 
-            <button
-              class="w-full rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 font-semibold text-cyan-100 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-              :disabled="loading || status?.generateInProgress"
-              @click="generateArtifacts()"
-            >
-              Regenerate Latest Artifacts
-            </button>
-          </div>
+                <div class="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/80 via-black/30 to-transparent" />
+                <div class="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
 
-          <div class="mt-6 rounded-xl border border-gray-700 bg-gray-900/60 p-4">
-            <button
-              type="button"
-              class="flex w-full items-center justify-between gap-3 text-left"
-              @click="toggleSection('dependencies')"
-            >
-              <div class="text-sm font-semibold text-white">Backend Dependencies</div>
-              <div class="flex items-center gap-3">
-                <span class="text-xs uppercase tracking-wide text-gray-400">
-                  {{ sectionOpen.dependencies ? 'Expanded' : 'Collapsed' }}
-                </span>
-                <span class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-600 bg-gray-800/80 text-sm font-semibold text-gray-200">
-                  {{ sectionOpen.dependencies ? '-' : '+' }}
-                </span>
-              </div>
-            </button>
-            <div v-if="sectionOpen.dependencies" class="mt-3 grid gap-2">
-              <div
-                v-for="item in dependencyRows"
-                :key="item.label"
-                class="flex items-center justify-between rounded-lg border border-gray-700 bg-gray-800/70 px-3 py-2 text-sm"
-              >
-                <span class="text-gray-300">{{ item.label }}</span>
-                <span :class="item.ready ? 'text-emerald-400' : 'text-amber-300'">
-                  {{ item.ready ? 'Available' : 'Missing' }}
-                </span>
+                <div class="pointer-events-none absolute left-4 top-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm">
+                  <div class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-300">Session</div>
+                  <div class="mt-1 text-sm font-medium text-white">
+                    {{ currentSession?.id || 'No active session' }}
+                  </div>
+                </div>
+
+                <div class="pointer-events-none absolute bottom-4 left-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm">
+                  <div class="space-y-1 text-sm text-white">
+                    <div>
+                      <span class="text-gray-300">Last Capture:</span>
+                      {{ formatDate(currentSession?.lastCaptureAtUtc) }}
+                    </div>
+                    <div>
+                      <span class="text-gray-300">Frame Count:</span>
+                      {{ formatCount(currentSession?.captureCount || 0) }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="pointer-events-none absolute bottom-4 right-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm">
+                  <div class="space-y-1 text-right text-sm text-white">
+                    <div>
+                      <span class="text-gray-300">Capture Interval:</span>
+                      {{ formatInterval(config?.camera?.intervalSeconds) }}
+                    </div>
+                    <div>
+                      <span class="text-gray-300">Exposure:</span>
+                      {{ formatExposure(config?.camera) }}
+                    </div>
+                    <div>
+                      <span class="text-gray-300">Gain:</span>
+                      {{ formatGain(config?.camera) }}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
 
       <section v-if="config" class="rounded-2xl border border-gray-700 bg-gray-800/80 p-6 shadow-xl">
         <button
