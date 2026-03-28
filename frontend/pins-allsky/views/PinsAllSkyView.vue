@@ -1272,13 +1272,14 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import {
   ArrowDownTrayIcon,
   ChevronDownIcon,
   ChevronUpIcon,
   TrashIcon,
+  XMarkIcon,
 } from '@heroicons/vue/24/outline';
 import toggleButton from '@/components/helpers/toggleButton.vue';
 import { usePinsAllSkyStore } from '../store/pinsAllskyStore';
@@ -1298,10 +1299,8 @@ const {
 } = storeToRefs(store);
 
 const sectionOpen = reactive({
-  overview: false,
   captureSettings: false,
   recentSessions: false,
-  dependencies: false,
 });
 
 const sessionDetailOpen = reactive({});
@@ -1309,6 +1308,7 @@ const estimateWindow = reactive({
   startLocal: '',
   endLocal: '',
 });
+const showStatusModal = ref(false);
 
 const currentSession = computed(() => status.value?.currentSession || null);
 const recentSessions = computed(() => status.value?.recentSessions || []);
@@ -1355,6 +1355,72 @@ const dependencyRows = computed(() => [
 const missingDependencies = computed(() =>
   dependencyRows.value.filter((item) => !item.ready).map((item) => item.label)
 );
+const statusRows = computed(() => {
+  const pluginLimitValue = storage.value.limitEnabled
+    ? formatSize(storage.value.maxPluginUsageBytes)
+    : 'Unlimited';
+  const pluginAvailableValue = storage.value.limitEnabled
+    ? formatSize(storage.value.pluginAvailableBytes)
+    : 'Unlimited';
+
+  return [
+    {
+      label: 'Backend',
+      value: status.value?.advancedApiReachable ? 'Online' : 'Offline',
+      className: status.value?.advancedApiReachable ? 'text-emerald-300' : 'text-amber-300',
+    },
+    {
+      label: 'Session',
+      value: currentSession.value?.label || currentSession.value?.id || 'No active session',
+      className: 'text-white',
+    },
+    {
+      label: 'Sequence',
+      value: status.value?.sequenceRunning ? 'Running' : 'Idle',
+      className: status.value?.sequenceRunning ? 'text-emerald-300' : 'text-gray-300',
+    },
+    {
+      label: 'Capture',
+      value: status.value?.captureRunning ? 'Active' : 'Stopped',
+      className: status.value?.captureRunning ? 'text-emerald-300' : 'text-gray-300',
+    },
+    {
+      label: 'Rendering',
+      value: status.value?.generateInProgress ? 'In progress' : 'Idle',
+      className: status.value?.generateInProgress ? 'text-cyan-300' : 'text-gray-300',
+    },
+    {
+      label: 'Pi Used',
+      value: formatSize(storage.value.diskUsedBytes),
+      className: 'text-white',
+    },
+    {
+      label: 'Pi Available',
+      value: formatSize(storage.value.diskAvailableBytes),
+      className: estimateExceedsAvailable.value ? 'text-amber-300' : 'text-white',
+    },
+    {
+      label: 'Plugin Used',
+      value: formatSize(storage.value.pluginUsedBytes),
+      className: 'text-white',
+    },
+    {
+      label: 'Plugin Limit',
+      value: pluginLimitValue,
+      className: 'text-white',
+    },
+    {
+      label: 'Plugin Available',
+      value: pluginAvailableValue,
+      className: storage.value.withinLimit || !storage.value.limitEnabled ? 'text-white' : 'text-amber-300',
+    },
+    ...dependencyRows.value.map((item) => ({
+      label: item.label,
+      value: item.ready ? 'Available' : 'Missing',
+      className: item.ready ? 'text-emerald-300' : 'text-amber-300',
+    })),
+  ];
+});
 
 const parsedEstimateStart = computed(() => parseLocalInputValue(estimateWindow.startLocal));
 const parsedEstimateEnd = computed(() => parseLocalInputValue(estimateWindow.endLocal));
