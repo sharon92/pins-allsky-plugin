@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Globalization;
 using NINA.Core.Utility;
 using NINA.PINS.AllSky.Models;
 
@@ -91,21 +92,24 @@ public sealed class PinsAllSkyHost : IDisposable
         bool sequenceSnapshot;
         bool advancedSnapshot;
         string? errorSnapshot;
+        List<SessionInfo> persistedSessions;
 
         lock (sync)
         {
             sessionSnapshot = currentSession is null ? null : Clone(currentSession);
-            if (sessionSnapshot is not null)
-            {
-                sessionSnapshot.TotalSizeBytes = GetPathSize(paths.GetSessionRoot(sessionSnapshot.Id));
-            }
-
             captureRunning = captureTask is { IsCompleted: false };
             generateSnapshot = generateInProgress;
             sequenceSnapshot = sequenceRunning;
             advancedSnapshot = advancedApiReachable;
             errorSnapshot = lastError;
         }
+
+        if (sessionSnapshot is not null)
+        {
+            PopulateSessionDerivedFields(sessionSnapshot, paths.GetSessionRoot(sessionSnapshot.Id));
+        }
+
+        persistedSessions = GetPersistedSessions();
 
         return new PinsAllSkyStatus
         {
@@ -117,9 +121,10 @@ public sealed class PinsAllSkyHost : IDisposable
             LastError = errorSnapshot,
             CurrentImageUrl = File.Exists(paths.GetCurrentImagePath()) ? "/media/current/latest.jpg" : null,
             CurrentSession = sessionSnapshot,
-            RecentSessions = GetRecentSessions(),
+            RecentSessions = persistedSessions.Take(10).Select(Clone).ToList(),
             Dependencies = GetDependencyStatus(),
-            Storage = GetStorageStatus()
+            Storage = GetStorageStatus(),
+            EstimateBaseline = BuildEstimateBaselineInfo(persistedSessions)
         };
     }
 
@@ -328,6 +333,29 @@ public sealed class PinsAllSkyHost : IDisposable
             .ToList();
     }
 
+    public SessionDetailsInfo? GetSessionDetails(string? sessionId)
+    {
+        if (string.IsNullOrWhiteSpace(sessionId))
+        {
+            return null;
+        }
+
+        var session = LoadSession(sessionId.Trim());
+        if (session is null)
+        {
+            return null;
+        }
+
+        PopulateSessionDerivedFields(session, paths.GetSessionRoot(session.Id));
+
+        return new SessionDetailsInfo
+        {
+            Session = Clone(session),
+            Artifacts = GetSessionArtifacts(session),
+            Frames = GetFrameEntries(session.Id)
+        };
+    }
+
     public async Task<SessionCleanupResult?> DeleteSessionAsync(string? sessionId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(sessionId))
@@ -403,6 +431,16 @@ public sealed class PinsAllSkyHost : IDisposable
             FreedBytes = Math.Max(0, before.PluginUsedBytes - after.PluginUsedBytes),
             Storage = after
         };
+    }
+
+    public async Task<FileCleanupResult?> DeleteArtifactAsync(string? sessionId, string? relativePath, CancellationToken cancellationToken)
+    {
+        return await DeleteSessionFileAsync(sessionId, relativePath, "products", true, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<FileCleanupResult?> DeleteFrameAsync(string? sessionId, string? relativePath, CancellationToken cancellationToken)
+    {
+        return await DeleteSessionFileAsync(sessionId, relativePath, "frames", false, cancellationToken).ConfigureAwait(false);
     }
 
     public void Dispose()
@@ -1017,6 +1055,61 @@ public sealed class PinsAllSkyHost : IDisposable
         InvalidateStorageStatus();
     }
 
+    private async Task<FileCleanupResult?> DeleteSessionFileAsync(
+        string? sessionId,
+        string? relativePath,
+        string folderName,
+        bool isArtifact,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(sessionId) || string.IsNullOrWhiteSpace(relativePath))
+        {
+            return null;
+        }
+
+        sessionId = sessionId.Trim();
+        relativePath = relativePath.Trim();
+
+        EnsureSessionFilesCanBeModified(sessionId);
+
+        var resolvedPath = ResolveSessionFilePath(sessionId, relativePath, folderName);
+        if (resolvedPath is null || !File.Exists(resolvedPath))
+        {
+            return null;
+        }
+
+        var before = GetStorageStatus(forceRefresh: true);
+        var freedBytes = new FileInfo(resolvedPath).Length;
+        File.Delete(resolvedPath);
+
+        var session = LoadSession(sessionId);
+        if (session is not null)
+        {
+            if (isArtifact)
+            {
+                RemoveArtifactReference(session, relativePath);
+            }
+            else
+            {
+                RefreshSessionFrameMetadata(session);
+            }
+
+            PopulateSessionDerivedFields(session, paths.GetSessionRoot(session.Id));
+            await SaveSessionAsync(session, cancellationToken).ConfigureAwait(false);
+        }
+
+        SyncCurrentImageToLatestPersistedFrame();
+        InvalidateStorageStatus();
+
+        return new FileCleanupResult
+        {
+            SessionId = sessionId,
+            RelativePath = relativePath,
+            FreedBytes = Math.Max(0, freedBytes),
+            Storage = GetStorageStatus(forceRefresh: true)
+        };
+    }
+
     private List<SessionInfo> GetPersistedSessions()
     {
         if (!Directory.Exists(paths.SessionsRoot))
@@ -1041,7 +1134,7 @@ public sealed class PinsAllSkyHost : IDisposable
                     continue;
                 }
 
-                session.TotalSizeBytes = GetPathSize(sessionDirectory);
+                PopulateSessionDerivedFields(session, sessionDirectory);
                 sessions.Add(session);
             }
             catch (Exception ex)
@@ -1106,6 +1199,7 @@ public sealed class PinsAllSkyHost : IDisposable
             PluginAvailableBytes = maxPluginUsageBytes is > 0 ? Math.Max(0, maxPluginUsageBytes.Value - pluginUsedBytes) : null,
             MaxPluginUsageBytes = maxPluginUsageBytes,
             DiskAvailableBytes = diskAvailableBytes,
+            DiskUsedBytes = Math.Max(0, diskTotalBytes - diskAvailableBytes),
             DiskTotalBytes = diskTotalBytes,
             LimitEnabled = maxPluginUsageBytes is > 0,
             WithinLimit = maxPluginUsageBytes is not > 0 || pluginUsedBytes <= maxPluginUsageBytes.Value
@@ -1251,10 +1345,229 @@ public sealed class PinsAllSkyHost : IDisposable
         PluginAvailableBytes = source.PluginAvailableBytes,
         MaxPluginUsageBytes = source.MaxPluginUsageBytes,
         DiskAvailableBytes = source.DiskAvailableBytes,
+        DiskUsedBytes = source.DiskUsedBytes,
         DiskTotalBytes = source.DiskTotalBytes,
         LimitEnabled = source.LimitEnabled,
         WithinLimit = source.WithinLimit
     };
+
+    private EstimateBaselineInfo? BuildEstimateBaselineInfo(IEnumerable<SessionInfo> sessions)
+    {
+        var preferred = sessions.FirstOrDefault(session =>
+            !string.IsNullOrWhiteSpace(session.Label)
+            && string.Equals(session.Label, "test-maja", StringComparison.OrdinalIgnoreCase)
+            && session.StoredFrameCount > 0);
+
+        var baseline = preferred ?? sessions.FirstOrDefault(session => session.StoredFrameCount > 0);
+        if (baseline is null)
+        {
+            return null;
+        }
+
+        var timelapseBytes = baseline.Products.Timelapse?.SizeBytes ?? 0;
+        var keogramBytes = baseline.Products.Keogram?.SizeBytes ?? 0;
+        var startrailsBytes = baseline.Products.Startrails?.SizeBytes ?? 0;
+        var frameBytes = Math.Max(0, baseline.TotalSizeBytes - timelapseBytes - keogramBytes - startrailsBytes);
+
+        return new EstimateBaselineInfo
+        {
+            SessionId = baseline.Id,
+            Label = baseline.Label,
+            StoredFrameCount = baseline.StoredFrameCount,
+            SourceSessionBytes = baseline.TotalSizeBytes,
+            AverageFrameBytes = baseline.StoredFrameCount > 0 ? frameBytes / baseline.StoredFrameCount : 0,
+            TimelapseBytes = timelapseBytes,
+            KeogramBytes = keogramBytes,
+            StartrailsBytes = startrailsBytes
+        };
+    }
+
+    private void PopulateSessionDerivedFields(SessionInfo session, string sessionDirectory)
+    {
+        if (!Directory.Exists(sessionDirectory))
+        {
+            session.TotalSizeBytes = 0;
+            session.StoredFrameCount = 0;
+            return;
+        }
+
+        var framesRoot = Path.GetFullPath(paths.GetFramesRoot(session.Id));
+        long totalSizeBytes = 0;
+        var storedFrameCount = 0;
+
+        foreach (var filePath in Directory.EnumerateFiles(sessionDirectory, "*", SearchOption.AllDirectories))
+        {
+            try
+            {
+                var info = new FileInfo(filePath);
+                totalSizeBytes += info.Length;
+
+                if (string.Equals(info.Extension, ".jpg", StringComparison.OrdinalIgnoreCase)
+                    && IsPathWithinDirectory(info.FullName, framesRoot))
+                {
+                    storedFrameCount += 1;
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        session.TotalSizeBytes = totalSizeBytes;
+        session.StoredFrameCount = storedFrameCount;
+    }
+
+    private List<ArtifactInfo> GetSessionArtifacts(SessionInfo session)
+    {
+        var artifacts = new List<ArtifactInfo>();
+
+        AddArtifactIfPresent(artifacts, session.Products.Timelapse);
+        AddArtifactIfPresent(artifacts, session.Products.Keogram);
+        AddArtifactIfPresent(artifacts, session.Products.Startrails);
+
+        return artifacts
+            .OrderBy(artifact => artifact.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private void AddArtifactIfPresent(List<ArtifactInfo> artifacts, ArtifactInfo? artifact)
+    {
+        if (artifact is null || string.IsNullOrWhiteSpace(artifact.RelativePath))
+        {
+            return;
+        }
+
+        var artifactPath = Path.Combine(paths.DataRoot, artifact.RelativePath.Replace('/', Path.DirectorySeparatorChar));
+        if (!File.Exists(artifactPath))
+        {
+            return;
+        }
+
+        artifacts.Add(new ArtifactInfo
+        {
+            Name = artifact.Name,
+            RelativePath = artifact.RelativePath,
+            GeneratedAtUtc = artifact.GeneratedAtUtc,
+            SizeBytes = artifact.SizeBytes > 0 ? artifact.SizeBytes : new FileInfo(artifactPath).Length
+        });
+    }
+
+    private List<FrameInfo> GetFrameEntries(string sessionId)
+    {
+        var framesRoot = paths.GetFramesRoot(sessionId);
+        if (!Directory.Exists(framesRoot))
+        {
+            return [];
+        }
+
+        return Directory.EnumerateFiles(framesRoot, "*.jpg", SearchOption.TopDirectoryOnly)
+            .Select(framePath =>
+            {
+                var info = new FileInfo(framePath);
+                return new FrameInfo
+                {
+                    Name = info.Name,
+                    RelativePath = paths.GetRelativePath(info.FullName),
+                    CapturedAtUtc = ParseFrameTimestamp(info.Name) ?? new DateTimeOffset(info.LastWriteTimeUtc, TimeSpan.Zero),
+                    SizeBytes = info.Length
+                };
+            })
+            .OrderByDescending(frame => frame.CapturedAtUtc ?? DateTimeOffset.MinValue)
+            .ThenByDescending(frame => frame.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static DateTimeOffset? ParseFrameTimestamp(string fileName)
+    {
+        const string prefix = "frame-";
+        const string suffix = ".jpg";
+
+        if (!fileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+            || !fileName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var timestamp = fileName[prefix.Length..^suffix.Length];
+        if (!DateTime.TryParseExact(
+                timestamp,
+                "yyyyMMdd'T'HHmmssfff",
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+                out var parsed))
+        {
+            return null;
+        }
+
+        return new DateTimeOffset(parsed, TimeSpan.Zero);
+    }
+
+    private void RemoveArtifactReference(SessionInfo session, string relativePath)
+    {
+        if (session.Products.Timelapse is not null && string.Equals(session.Products.Timelapse.RelativePath, relativePath, StringComparison.Ordinal))
+        {
+            session.Products.Timelapse = null;
+        }
+
+        if (session.Products.Keogram is not null && string.Equals(session.Products.Keogram.RelativePath, relativePath, StringComparison.Ordinal))
+        {
+            session.Products.Keogram = null;
+        }
+
+        if (session.Products.Startrails is not null && string.Equals(session.Products.Startrails.RelativePath, relativePath, StringComparison.Ordinal))
+        {
+            session.Products.Startrails = null;
+        }
+    }
+
+    private void RefreshSessionFrameMetadata(SessionInfo session)
+    {
+        var frames = GetFrameEntries(session.Id);
+        session.StoredFrameCount = frames.Count;
+
+        var latest = frames.FirstOrDefault();
+        session.LastFrameRelativePath = latest?.RelativePath;
+        session.LastCaptureAtUtc = latest?.CapturedAtUtc;
+    }
+
+    private void EnsureSessionFilesCanBeModified(string sessionId)
+    {
+        lock (sync)
+        {
+            if (generateInProgress)
+            {
+                throw new InvalidOperationException("Files cannot be deleted while products are rendering.");
+            }
+
+            if (captureTask is { IsCompleted: false } && string.Equals(currentSession?.Id, sessionId, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Files cannot be deleted from the active capture session.");
+            }
+        }
+    }
+
+    private string? ResolveSessionFilePath(string sessionId, string relativePath, string folderName)
+    {
+        var candidatePath = Path.GetFullPath(Path.Combine(paths.DataRoot, relativePath.Replace('/', Path.DirectorySeparatorChar)));
+        var expectedRoot = Path.GetFullPath(Path.Combine(paths.GetSessionRoot(sessionId), folderName));
+
+        if (!IsPathWithinDirectory(candidatePath, expectedRoot))
+        {
+            return null;
+        }
+
+        return candidatePath;
+    }
+
+    private static bool IsPathWithinDirectory(string candidatePath, string directoryPath)
+    {
+        var normalizedDirectory = Path.GetFullPath(directoryPath)
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+            + Path.DirectorySeparatorChar;
+        var normalizedCandidate = Path.GetFullPath(candidatePath);
+
+        return normalizedCandidate.StartsWith(normalizedDirectory, StringComparison.Ordinal);
+    }
 
     private static long GetPathSize(string path)
     {

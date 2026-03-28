@@ -24,7 +24,7 @@
           </div>
         </button>
 
-        <div v-if="sectionOpen.overview" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div v-if="sectionOpen.overview" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-7">
           <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
             <div class="text-xs uppercase tracking-wide text-gray-400">Backend</div>
             <div class="mt-2 text-sm font-semibold" :class="status?.advancedApiReachable ? 'text-emerald-400' : 'text-amber-300'">
@@ -47,6 +47,24 @@
             <div class="text-xs uppercase tracking-wide text-gray-400">Products</div>
             <div class="mt-2 text-sm font-semibold" :class="status?.generateInProgress ? 'text-cyan-300' : 'text-gray-300'">
               {{ status?.generateInProgress ? 'Rendering' : 'Ready' }}
+            </div>
+          </div>
+          <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
+            <div class="text-xs uppercase tracking-wide text-gray-400">Pi Used</div>
+            <div class="mt-2 text-sm font-semibold text-white">
+              {{ formatSize(storage.diskUsedBytes) }}
+            </div>
+          </div>
+          <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
+            <div class="text-xs uppercase tracking-wide text-gray-400">Pi Available</div>
+            <div class="mt-2 text-sm font-semibold" :class="estimateExceedsAvailable ? 'text-amber-300' : 'text-white'">
+              {{ formatSize(storage.diskAvailableBytes) }}
+            </div>
+          </div>
+          <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
+            <div class="text-xs uppercase tracking-wide text-gray-400">Plugin Used</div>
+            <div class="mt-2 text-sm font-semibold text-white">
+              {{ formatSize(storage.pluginUsedBytes) }}
             </div>
           </div>
         </div>
@@ -266,6 +284,11 @@
                 @update:statusValue="setRootConfigValue('autoStartWithSequence', $event)"
               />
             </label>
+            <div class="rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-100">
+              When enabled, AllSky starts a capture session as soon as the PINS Advanced API reports
+              an active sequence, then stops capture and renders products automatically when the
+              sequence ends.
+            </div>
             <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
               <span class="text-sm text-gray-300">Advanced API enabled</span>
               <toggleButton
@@ -364,6 +387,76 @@
                 backend deletes the oldest completed sessions when usage grows beyond this cap.
               </span>
             </label>
+
+            <div class="space-y-4 rounded-xl border border-gray-700 bg-gray-800/70 p-4">
+              <div>
+                <div class="text-sm font-semibold text-white">Session Estimate</div>
+                <p class="mt-1 text-xs text-gray-400">
+                  Uses the average stored frame size from
+                  <span class="font-semibold text-gray-200">{{ estimateBaselineLabel }}</span>
+                  to estimate session storage before capture starts.
+                </p>
+              </div>
+
+              <div class="grid gap-4 sm:grid-cols-2">
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Start
+                  </span>
+                  <input
+                    v-model="estimateWindow.startLocal"
+                    type="datetime-local"
+                    title="Planned capture start time used for the storage estimate. Defaults to the current local time."
+                    class="w-full rounded-xl border border-gray-600 bg-gray-900/80 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                  />
+                </label>
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    End
+                  </span>
+                  <input
+                    v-model="estimateWindow.endLocal"
+                    type="datetime-local"
+                    title="Planned capture stop time used for the storage estimate. Defaults to tomorrow at 08:00 local time."
+                    class="w-full rounded-xl border border-gray-600 bg-gray-900/80 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                  />
+                </label>
+              </div>
+
+              <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
+                  <div class="text-xs uppercase tracking-wide text-gray-500">Expected Duration</div>
+                  <div class="mt-2 text-sm text-white">{{ estimateDurationLabel }}</div>
+                </div>
+                <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
+                  <div class="text-xs uppercase tracking-wide text-gray-500">Expected Frames</div>
+                  <div class="mt-2 text-sm text-white">{{ formatCount(estimatedFrameCount) }}</div>
+                </div>
+                <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
+                  <div class="text-xs uppercase tracking-wide text-gray-500">Expected Storage</div>
+                  <div class="mt-2 text-sm font-semibold" :class="estimateExceedsAvailable ? 'text-amber-300' : 'text-white'">
+                    {{ formatSize(estimatedStorageBytes) }}
+                  </div>
+                </div>
+                <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
+                  <div class="text-xs uppercase tracking-wide text-gray-500">Frame Baseline</div>
+                  <div class="mt-2 text-sm text-white">{{ formatSize(estimateBaselineAverageFrameBytes) }}</div>
+                </div>
+              </div>
+
+              <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3 text-xs text-gray-400">
+                Uses <code class="font-mono text-gray-300">{{ formatInterval(config.camera.intervalSeconds) }}</code>
+                frame cadence. Timelapse size is estimated from the configured bitrate/FPS. Keogram
+                and startrails reuse the last baseline output sizes.
+              </div>
+
+              <div
+                v-if="estimateWarning"
+                class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100"
+              >
+                {{ estimateWarning }}
+              </div>
+            </div>
           </div>
 
           <div class="space-y-4 rounded-2xl border border-gray-700 bg-gray-900/50 p-4">
@@ -956,52 +1049,35 @@
         </button>
 
         <div v-if="sectionOpen.recentSessions" class="mt-6 space-y-4">
-          <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <div class="rounded-xl border border-gray-700 bg-gray-900/50 p-3">
-              <div class="text-xs uppercase tracking-wide text-gray-500">Plugin Used</div>
-              <div class="mt-2 text-sm text-white">{{ formatSize(storage.pluginUsedBytes) }}</div>
-            </div>
-            <div class="rounded-xl border border-gray-700 bg-gray-900/50 p-3">
-              <div class="text-xs uppercase tracking-wide text-gray-500">Plugin Limit</div>
-              <div class="mt-2 text-sm text-white">
-                {{ storage.limitEnabled ? formatSize(storage.maxPluginUsageBytes) : 'Unlimited' }}
-              </div>
-            </div>
-            <div class="rounded-xl border border-gray-700 bg-gray-900/50 p-3">
-              <div class="text-xs uppercase tracking-wide text-gray-500">Plugin Available</div>
-              <div class="mt-2 text-sm text-white">
-                {{ storage.limitEnabled ? formatSize(storage.pluginAvailableBytes) : 'Unlimited' }}
-              </div>
-            </div>
-            <div class="rounded-xl border border-gray-700 bg-gray-900/50 p-3">
-              <div class="text-xs uppercase tracking-wide text-gray-500">Disk Available</div>
-              <div class="mt-2 text-sm text-white">{{ formatSize(storage.diskAvailableBytes) }}</div>
-            </div>
-          </div>
-
           <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-900/50 px-4 py-3">
             <div class="text-sm text-gray-300">
               <span :class="storage.withinLimit ? 'text-emerald-300' : 'text-amber-200'">
                 {{ storage.withinLimit || !storage.limitEnabled ? 'Storage within limit.' : 'Storage limit exceeded.' }}
               </span>
-              <span v-if="storage.limitEnabled" class="text-gray-500">
-                Oldest completed sessions are pruned automatically when needed.
+              <span class="text-gray-500">
+                Plugin available:
+                {{ storage.limitEnabled ? formatSize(storage.pluginAvailableBytes) : 'Unlimited' }}.
+              </span>
+              <span class="text-gray-500">
+                Pi available: {{ formatSize(storage.diskAvailableBytes) }}.
               </span>
             </div>
             <button
-              class="rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm font-medium text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+              class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-rose-500/40 bg-rose-500/10 text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
               :disabled="cleanupBusy || status?.captureRunning || status?.generateInProgress || recentSessions.length === 0"
+              title="Delete all stored sessions, frames, and generated products"
+              aria-label="Delete all sessions"
               @click.stop="deleteAllSessions"
             >
-              {{ cleanupBusy ? 'Cleaning…' : 'Delete All' }}
+              <TrashIcon class="h-5 w-5" />
             </button>
           </div>
 
           <div
-            v-if="cleanupSummary"
+            v-if="actionMessage"
             class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100"
           >
-            {{ cleanupSummary }}
+            {{ actionMessage }}
           </div>
         </div>
 
@@ -1042,59 +1118,162 @@
                   Regenerate
                 </button>
                 <button
-                  class="rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm font-medium text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                  class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-rose-500/40 bg-rose-500/10 text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
                   :disabled="cleanupBusy || status?.captureRunning || status?.generateInProgress || session.id === currentSession?.id"
+                  title="Delete this session"
+                  aria-label="Delete this session"
                   @click="deleteSession(session)"
                 >
-                  Delete
+                  <TrashIcon class="h-5 w-5" />
                 </button>
-                <a
-                  v-if="session.products?.timelapse"
-                  class="rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-sm text-white transition hover:border-cyan-400"
-                  :href="artifactUrl(session.products.timelapse.relativePath)"
-                  target="_blank"
-                  rel="noreferrer"
+                <button
+                  class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-sm text-white transition hover:border-cyan-400"
+                  :title="isSessionDetailsOpen(session.id) ? 'Hide stored files' : 'Show stored files'"
+                  :aria-label="isSessionDetailsOpen(session.id) ? 'Hide stored files' : 'Show stored files'"
+                  @click="toggleSessionDetails(session.id)"
                 >
-                  Timelapse
-                </a>
-                <a
-                  v-if="session.products?.keogram"
-                  class="rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-sm text-white transition hover:border-cyan-400"
-                  :href="artifactUrl(session.products.keogram.relativePath)"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Keogram
-                </a>
-                <a
-                  v-if="session.products?.startrails"
-                  class="rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-sm text-white transition hover:border-cyan-400"
-                  :href="artifactUrl(session.products.startrails.relativePath)"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Startrails
-                </a>
+                  <span>Files</span>
+                  <ChevronUpIcon v-if="isSessionDetailsOpen(session.id)" class="h-4 w-4" />
+                  <ChevronDownIcon v-else class="h-4 w-4" />
+                </button>
               </div>
             </div>
 
             <div class="mt-4 grid gap-3 sm:grid-cols-3">
               <div class="rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-sm text-gray-300">
                 <div class="text-xs uppercase tracking-wide text-gray-500">Timelapse</div>
-                <div class="mt-2">
-                  {{ describeArtifact(session.products?.timelapse) }}
+                <div class="mt-2 flex items-start justify-between gap-3">
+                  <div>{{ describeArtifact(session.products?.timelapse) }}</div>
+                  <div v-if="session.products?.timelapse" class="flex items-center gap-2">
+                    <button
+                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
+                      title="Download timelapse"
+                      aria-label="Download timelapse"
+                      @click="downloadRelativePath(session.products.timelapse.relativePath)"
+                    >
+                      <ArrowDownTrayIcon class="h-4 w-4" />
+                    </button>
+                    <button
+                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-rose-500/40 bg-rose-500/10 text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                      :disabled="cleanupBusy || status?.generateInProgress || session.id === currentSession?.id"
+                      title="Delete timelapse"
+                      aria-label="Delete timelapse"
+                      @click="deleteArtifact(session, session.products.timelapse)"
+                    >
+                      <TrashIcon class="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
               <div class="rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-sm text-gray-300">
                 <div class="text-xs uppercase tracking-wide text-gray-500">Keogram</div>
-                <div class="mt-2">
-                  {{ describeArtifact(session.products?.keogram) }}
+                <div class="mt-2 flex items-start justify-between gap-3">
+                  <div>{{ describeArtifact(session.products?.keogram) }}</div>
+                  <div v-if="session.products?.keogram" class="flex items-center gap-2">
+                    <button
+                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
+                      title="Download keogram"
+                      aria-label="Download keogram"
+                      @click="downloadRelativePath(session.products.keogram.relativePath)"
+                    >
+                      <ArrowDownTrayIcon class="h-4 w-4" />
+                    </button>
+                    <button
+                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-rose-500/40 bg-rose-500/10 text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                      :disabled="cleanupBusy || status?.generateInProgress || session.id === currentSession?.id"
+                      title="Delete keogram"
+                      aria-label="Delete keogram"
+                      @click="deleteArtifact(session, session.products.keogram)"
+                    >
+                      <TrashIcon class="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
               <div class="rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-sm text-gray-300">
                 <div class="text-xs uppercase tracking-wide text-gray-500">Startrails</div>
-                <div class="mt-2">
-                  {{ describeArtifact(session.products?.startrails) }}
+                <div class="mt-2 flex items-start justify-between gap-3">
+                  <div>{{ describeArtifact(session.products?.startrails) }}</div>
+                  <div v-if="session.products?.startrails" class="flex items-center gap-2">
+                    <button
+                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
+                      title="Download startrails"
+                      aria-label="Download startrails"
+                      @click="downloadRelativePath(session.products.startrails.relativePath)"
+                    >
+                      <ArrowDownTrayIcon class="h-4 w-4" />
+                    </button>
+                    <button
+                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-rose-500/40 bg-rose-500/10 text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                      :disabled="cleanupBusy || status?.generateInProgress || session.id === currentSession?.id"
+                      title="Delete startrails"
+                      aria-label="Delete startrails"
+                      @click="deleteArtifact(session, session.products.startrails)"
+                    >
+                      <TrashIcon class="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="isSessionDetailsOpen(session.id)" class="mt-4 rounded-2xl border border-gray-700 bg-gray-800/50 p-4">
+              <div class="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <div class="text-sm font-semibold text-white">Stored Frames</div>
+                  <div class="text-xs text-gray-400">
+                    {{ formatCount(sessionDetails(session.id)?.frames?.length ?? session.storedFrameCount ?? 0) }}
+                    retained frame(s)
+                  </div>
+                </div>
+                <button
+                  class="rounded-lg border border-gray-600 bg-gray-900/70 px-3 py-2 text-xs text-gray-200 transition hover:border-cyan-400"
+                  @click="refreshSessionDetails(session.id)"
+                >
+                  Refresh Files
+                </button>
+              </div>
+
+              <div v-if="sessionDetailsLoading(session.id)" class="rounded-xl border border-dashed border-gray-700 bg-gray-900/40 px-4 py-6 text-center text-sm text-gray-500">
+                Loading stored files…
+              </div>
+              <div
+                v-else-if="!sessionDetails(session.id)?.frames?.length"
+                class="rounded-xl border border-dashed border-gray-700 bg-gray-900/40 px-4 py-6 text-center text-sm text-gray-500"
+              >
+                No stored frames are available for this session.
+              </div>
+              <div v-else class="max-h-80 space-y-2 overflow-y-auto pr-1">
+                <div
+                  v-for="frame in sessionDetails(session.id).frames"
+                  :key="frame.relativePath"
+                  class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2"
+                >
+                  <div class="min-w-0">
+                    <div class="truncate text-sm text-white">{{ frame.name }}</div>
+                    <div class="text-xs text-gray-400">
+                      {{ formatDate(frame.capturedAtUtc) }} • {{ formatSize(frame.sizeBytes) }}
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <button
+                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
+                      :title="`Download ${frame.name}`"
+                      :aria-label="`Download ${frame.name}`"
+                      @click="downloadRelativePath(frame.relativePath, frame.name)"
+                    >
+                      <ArrowDownTrayIcon class="h-4 w-4" />
+                    </button>
+                    <button
+                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-rose-500/40 bg-rose-500/10 text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                      :disabled="cleanupBusy || status?.generateInProgress || session.id === currentSession?.id"
+                      :title="`Delete ${frame.name}`"
+                      :aria-label="`Delete ${frame.name}`"
+                      @click="deleteFrame(session, frame)"
+                    >
+                      <TrashIcon class="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1108,31 +1287,64 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive } from 'vue';
 import { storeToRefs } from 'pinia';
+import {
+  ArrowDownTrayIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  TrashIcon,
+} from '@heroicons/vue/24/outline';
 import toggleButton from '@/components/helpers/toggleButton.vue';
 import { usePinsAllSkyStore } from '../store/pinsAllskyStore';
 
 const store = usePinsAllSkyStore();
-const { status, config, error, loading, saving, cleanupBusy, cleanupResult, currentImageUrl } = storeToRefs(store);
+const {
+  status,
+  config,
+  error,
+  loading,
+  saving,
+  cleanupBusy,
+  actionMessage,
+  currentImageUrl,
+  sessionDetailsById,
+  detailsLoadingById,
+} = storeToRefs(store);
+
+const sectionOpen = reactive({
+  overview: false,
+  captureSettings: false,
+  recentSessions: false,
+  dependencies: false,
+});
+
+const sessionDetailOpen = reactive({});
+const estimateWindow = reactive({
+  startLocal: '',
+  endLocal: '',
+});
 
 const currentSession = computed(() => status.value?.currentSession || null);
 const recentSessions = computed(() => status.value?.recentSessions || []);
 const backendError = computed(() => status.value?.lastError || null);
-const storage = computed(() => status.value?.storage || {});
-const cleanupSummary = computed(() => {
-  if (!cleanupResult.value) {
-    return null;
-  }
+const storage = computed(() => {
+  const raw = status.value?.storage || {};
+  const diskAvailableBytes = Number(raw.diskAvailableBytes || 0);
+  const diskTotalBytes = Number(raw.diskTotalBytes || 0);
 
-  const deletedSessionCount = cleanupResult.value.deletedSessionCount || 0;
-  const freedBytes = cleanupResult.value.freedBytes || 0;
-  const remainingUsed = cleanupResult.value.storage?.pluginUsedBytes ?? 0;
-
-  if (deletedSessionCount === 0) {
-    return 'No sessions were deleted.';
-  }
-
-  return `Deleted ${deletedSessionCount} session${deletedSessionCount === 1 ? '' : 's'}, freed ${formatSize(freedBytes)}, remaining plugin usage ${formatSize(remainingUsed)}.`;
+  return {
+    ...raw,
+    diskUsedBytes: Number(raw.diskUsedBytes ?? Math.max(0, diskTotalBytes - diskAvailableBytes)),
+  };
 });
+const estimateBaseline = computed(() => status.value?.estimateBaseline || null);
+const estimateBaselineLabel = computed(() => {
+  if (!estimateBaseline.value) {
+    return 'No baseline session yet';
+  }
+
+  return estimateBaseline.value.label || estimateBaseline.value.sessionId;
+});
+const estimateBaselineAverageFrameBytes = computed(() => estimateBaseline.value?.averageFrameBytes || 0);
 
 const dependencyRows = computed(() => [
   {
@@ -1157,11 +1369,105 @@ const missingDependencies = computed(() =>
   dependencyRows.value.filter((item) => !item.ready).map((item) => item.label)
 );
 
-const sectionOpen = reactive({
-  overview: false,
-  captureSettings: false,
-  recentSessions: false,
-  dependencies: false,
+const parsedEstimateStart = computed(() => parseLocalInputValue(estimateWindow.startLocal));
+const parsedEstimateEnd = computed(() => parseLocalInputValue(estimateWindow.endLocal));
+const estimateDurationSeconds = computed(() => {
+  if (!parsedEstimateStart.value || !parsedEstimateEnd.value) {
+    return 0;
+  }
+
+  return Math.max(0, Math.round((parsedEstimateEnd.value.getTime() - parsedEstimateStart.value.getTime()) / 1000));
+});
+const estimatedFrameCount = computed(() => {
+  const intervalSeconds = Number(config.value?.camera?.intervalSeconds || 0);
+  if (intervalSeconds <= 0 || estimateDurationSeconds.value <= 0) {
+    return 0;
+  }
+
+  return Math.floor(estimateDurationSeconds.value / intervalSeconds) + 1;
+});
+const estimatedFrameStorageBytes = computed(() => {
+  if (!config.value?.products?.keepFrames) {
+    return 0;
+  }
+
+  return estimateBaselineAverageFrameBytes.value * estimatedFrameCount.value;
+});
+const estimatedTimelapseBytes = computed(() => {
+  if (!config.value?.products?.timelapseEnabled || estimatedFrameCount.value <= 0) {
+    return 0;
+  }
+
+  const fps = Math.max(1, Number(config.value?.products?.timelapseFps || 1));
+  const bitrateKbps = Math.max(1000, Number(config.value?.products?.timelapseBitrateKbps || 1000));
+  const videoSeconds = estimatedFrameCount.value / fps;
+  return Math.round(videoSeconds * bitrateKbps * 1000 / 8);
+});
+const estimatedKeogramBytes = computed(() =>
+  config.value?.products?.keogramEnabled ? Number(estimateBaseline.value?.keogramBytes || 0) : 0
+);
+const estimatedStartrailsBytes = computed(() =>
+  config.value?.products?.startrailsEnabled ? Number(estimateBaseline.value?.startrailsBytes || 0) : 0
+);
+const estimatedStorageBytes = computed(() =>
+  estimatedFrameStorageBytes.value
+  + estimatedTimelapseBytes.value
+  + estimatedKeogramBytes.value
+  + estimatedStartrailsBytes.value
+);
+const estimateDurationLabel = computed(() => formatDuration(estimateDurationSeconds.value));
+const estimateExceedsAvailable = computed(() => {
+  if (estimatedStorageBytes.value <= 0) {
+    return false;
+  }
+
+  const diskAvailableBytes = Number(storage.value.diskAvailableBytes || 0);
+  if (diskAvailableBytes > 0 && estimatedStorageBytes.value > diskAvailableBytes) {
+    return true;
+  }
+
+  if (storage.value.limitEnabled) {
+    const pluginAvailableBytes = Number(storage.value.pluginAvailableBytes || 0);
+    return estimatedStorageBytes.value > pluginAvailableBytes;
+  }
+
+  return false;
+});
+const estimateWarning = computed(() => {
+  if (!parsedEstimateStart.value || !parsedEstimateEnd.value) {
+    return 'Set a valid start and end time to estimate storage.';
+  }
+
+  if (estimateDurationSeconds.value <= 0) {
+    return 'End time must be later than start time.';
+  }
+
+  if (!estimateBaseline.value) {
+    return 'No completed baseline session is available yet. Finish one session first to estimate storage reliably.';
+  }
+
+  if (estimatedStorageBytes.value <= 0) {
+    return null;
+  }
+
+  const warnings = [];
+  const diskAvailableBytes = Number(storage.value.diskAvailableBytes || 0);
+  if (diskAvailableBytes > 0 && estimatedStorageBytes.value > diskAvailableBytes) {
+    warnings.push(`Pi free space (${formatSize(diskAvailableBytes)})`);
+  }
+
+  if (storage.value.limitEnabled) {
+    const pluginAvailableBytes = Number(storage.value.pluginAvailableBytes || 0);
+    if (estimatedStorageBytes.value > pluginAvailableBytes) {
+      warnings.push(`plugin limit remaining (${formatSize(pluginAvailableBytes)})`);
+    }
+  }
+
+  if (warnings.length === 0) {
+    return null;
+  }
+
+  return `Expected storage ${formatSize(estimatedStorageBytes.value)} exceeds ${warnings.join(' and ')}.`;
 });
 
 const meteringOptions = [
@@ -1263,7 +1569,49 @@ const deleteAllSessions = async () => {
   await store.deleteAllSessions();
 };
 
-const artifactUrl = (relativePath) => store.artifactUrl(relativePath);
+const deleteArtifact = async (session, artifact) => {
+  if (!artifact?.relativePath) {
+    return;
+  }
+
+  const artifactName = artifact.name || artifact.relativePath.split('/').pop() || 'this artifact';
+  if (!window.confirm(`Delete ${artifactName}?`)) {
+    return;
+  }
+
+  await store.deleteArtifact(session.id, artifact.relativePath);
+};
+
+const deleteFrame = async (session, frame) => {
+  if (!frame?.relativePath) {
+    return;
+  }
+
+  const frameName = frame.name || frame.relativePath.split('/').pop() || 'this frame';
+  if (!window.confirm(`Delete ${frameName}?`)) {
+    return;
+  }
+
+  await store.deleteFrame(session.id, frame.relativePath);
+};
+
+const downloadRelativePath = async (relativePath, fallbackName = null) => {
+  const derivedName = fallbackName || relativePath?.split('/').pop() || 'download';
+  await store.downloadFile(relativePath, derivedName);
+};
+
+const sessionDetails = (sessionId) => sessionDetailsById.value?.[sessionId] || null;
+const sessionDetailsLoading = (sessionId) => Boolean(detailsLoadingById.value?.[sessionId]);
+const isSessionDetailsOpen = (sessionId) => Boolean(sessionDetailOpen[sessionId]);
+const refreshSessionDetails = async (sessionId) => {
+  await store.fetchSessionDetails(sessionId);
+};
+const toggleSessionDetails = async (sessionId) => {
+  sessionDetailOpen[sessionId] = !sessionDetailOpen[sessionId];
+  if (sessionDetailOpen[sessionId]) {
+    await store.fetchSessionDetails(sessionId);
+  }
+};
 
 const parseDateValue = (value) => {
   if (!value) {
@@ -1310,6 +1658,34 @@ const parseDateValue = (value) => {
   return null;
 };
 
+const parseLocalInputValue = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const toLocalInputValue = (date) => {
+  const localTime = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return localTime.toISOString().slice(0, 16);
+};
+
+const initializeEstimateWindow = () => {
+  if (estimateWindow.startLocal && estimateWindow.endLocal) {
+    return;
+  }
+
+  const now = new Date();
+  const nextMorning = new Date(now);
+  nextMorning.setDate(nextMorning.getDate() + 1);
+  nextMorning.setHours(8, 0, 0, 0);
+
+  estimateWindow.startLocal = toLocalInputValue(now);
+  estimateWindow.endLocal = toLocalInputValue(nextMorning);
+};
+
 const formatDate = (value) => {
   const parsed = parseDateValue(value);
   if (!parsed) {
@@ -1325,6 +1701,34 @@ const formatInterval = (seconds) => {
   }
 
   return `${seconds}s`;
+};
+
+const formatCount = (value) => {
+  if (!Number.isFinite(value)) {
+    return '—';
+  }
+
+  return new Intl.NumberFormat().format(value);
+};
+
+const formatDuration = (seconds) => {
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return '—';
+  }
+
+  const totalMinutes = Math.round(seconds / 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours === 0) {
+    return `${minutes}m`;
+  }
+
+  if (minutes === 0) {
+    return `${hours}h`;
+  }
+
+  return `${hours}h ${minutes}m`;
 };
 
 const formatSize = (bytes) => {
@@ -1354,6 +1758,7 @@ const describeArtifact = (artifact) => {
 };
 
 onMounted(async () => {
+  initializeEstimateWindow();
   await refreshAll();
   store.startPolling();
 });

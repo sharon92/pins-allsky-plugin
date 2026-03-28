@@ -52,6 +52,16 @@ public sealed class PinsAllSkyController : WebApiController
         return ApiResponse<List<SessionInfo>>.Ok(PinsAllSkyPlugin.Host.GetRecentSessions());
     }
 
+    [Route(HttpVerbs.Post, "/session/details")]
+    public async Task<ApiResponse<SessionDetailsInfo>> GetSessionDetails()
+    {
+        var request = await ReadCamelCaseRequestAsync<SessionReferenceRequest>(HttpContext).ConfigureAwait(false);
+        var result = PinsAllSkyPlugin.Host.GetSessionDetails(request.SessionId);
+        return result is null
+            ? ApiResponse<SessionDetailsInfo>.Fail("The requested session does not exist.")
+            : ApiResponse<SessionDetailsInfo>.Ok(result);
+    }
+
     [Route(HttpVerbs.Post, "/session/delete")]
     public async Task<ApiResponse<SessionCleanupResult>> DeleteSession()
     {
@@ -67,6 +77,42 @@ public sealed class PinsAllSkyController : WebApiController
     {
         var result = await PinsAllSkyPlugin.Host.DeleteAllSessionsAsync(HttpContext.CancellationToken).ConfigureAwait(false);
         return ApiResponse<SessionCleanupResult>.Ok(result);
+    }
+
+    [Route(HttpVerbs.Post, "/session/artifact/delete")]
+    public async Task<ApiResponse<FileCleanupResult>> DeleteArtifact()
+    {
+        var request = await ReadCamelCaseRequestAsync<DeleteSessionFileRequest>(HttpContext).ConfigureAwait(false);
+
+        try
+        {
+            var result = await PinsAllSkyPlugin.Host.DeleteArtifactAsync(request.SessionId, request.RelativePath, HttpContext.CancellationToken).ConfigureAwait(false);
+            return result is null
+                ? ApiResponse<FileCleanupResult>.Fail("The requested artifact does not exist.")
+                : ApiResponse<FileCleanupResult>.Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return ApiResponse<FileCleanupResult>.Fail(ex.Message);
+        }
+    }
+
+    [Route(HttpVerbs.Post, "/session/frame/delete")]
+    public async Task<ApiResponse<FileCleanupResult>> DeleteFrame()
+    {
+        var request = await ReadCamelCaseRequestAsync<DeleteSessionFileRequest>(HttpContext).ConfigureAwait(false);
+
+        try
+        {
+            var result = await PinsAllSkyPlugin.Host.DeleteFrameAsync(request.SessionId, request.RelativePath, HttpContext.CancellationToken).ConfigureAwait(false);
+            return result is null
+                ? ApiResponse<FileCleanupResult>.Fail("The requested frame does not exist.")
+                : ApiResponse<FileCleanupResult>.Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return ApiResponse<FileCleanupResult>.Fail(ex.Message);
+        }
     }
 
     [Route(HttpVerbs.Post, "/session/start")]

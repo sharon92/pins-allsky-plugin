@@ -15,7 +15,9 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
     saving: false,
     cleanupBusy: false,
     manualLabel: '',
-    cleanupResult: null,
+    actionMessage: null,
+    sessionDetailsById: {},
+    detailsLoadingById: {},
     imageNonce: Date.now(),
     pollTimer: null,
   }),
@@ -148,7 +150,14 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
           throw new Error(data.error || 'Unable to delete the selected session.');
         }
 
-        this.cleanupResult = data.data;
+        const deletedSessionCount = data.data?.deletedSessionCount || 0;
+        const freedBytes = data.data?.freedBytes || 0;
+        const remainingUsed = data.data?.storage?.pluginUsedBytes ?? 0;
+        this.actionMessage = deletedSessionCount === 0
+          ? 'No sessions were deleted.'
+          : `Deleted ${deletedSessionCount} session${deletedSessionCount === 1 ? '' : 's'}, freed ${this.formatSize(freedBytes)}, remaining plugin usage ${this.formatSize(remainingUsed)}.`;
+        delete this.sessionDetailsById[sessionId];
+        delete this.detailsLoadingById[sessionId];
         await this.fetchStatus();
         this.error = null;
       } catch (error) {
@@ -167,7 +176,14 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
           throw new Error(data.error || 'Unable to delete stored sessions.');
         }
 
-        this.cleanupResult = data.data;
+        const deletedSessionCount = data.data?.deletedSessionCount || 0;
+        const freedBytes = data.data?.freedBytes || 0;
+        const remainingUsed = data.data?.storage?.pluginUsedBytes ?? 0;
+        this.actionMessage = deletedSessionCount === 0
+          ? 'No sessions were deleted.'
+          : `Deleted ${deletedSessionCount} session${deletedSessionCount === 1 ? '' : 's'}, freed ${this.formatSize(freedBytes)}, remaining plugin usage ${this.formatSize(remainingUsed)}.`;
+        this.sessionDetailsById = {};
+        this.detailsLoadingById = {};
         await this.fetchStatus();
         this.error = null;
       } catch (error) {
@@ -177,8 +193,88 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
       }
     },
 
-    clearCleanupResult() {
-      this.cleanupResult = null;
+    async fetchSessionDetails(sessionId) {
+      if (!sessionId) {
+        return null;
+      }
+
+      this.detailsLoadingById = {
+        ...this.detailsLoadingById,
+        [sessionId]: true,
+      };
+
+      try {
+        const { data } = await axios.post(`${this.backendBaseUrl}/api/session/details`, {
+          sessionId,
+        });
+
+        if (!data.success) {
+          throw new Error(data.error || 'Unable to load session details.');
+        }
+
+        this.sessionDetailsById = {
+          ...this.sessionDetailsById,
+          [sessionId]: data.data,
+        };
+        this.error = null;
+        return data.data;
+      } catch (error) {
+        this.error = error?.message || 'Unable to load session details.';
+        return null;
+      } finally {
+        this.detailsLoadingById = {
+          ...this.detailsLoadingById,
+          [sessionId]: false,
+        };
+      }
+    },
+
+    async deleteArtifact(sessionId, relativePath) {
+      this.cleanupBusy = true;
+      try {
+        const { data } = await axios.post(`${this.backendBaseUrl}/api/session/artifact/delete`, {
+          sessionId,
+          relativePath,
+        });
+
+        if (!data.success) {
+          throw new Error(data.error || 'Unable to delete the selected artifact.');
+        }
+
+        this.actionMessage = `Deleted artifact and freed ${this.formatSize(data.data?.freedBytes || 0)}.`;
+        await Promise.all([this.fetchStatus(), this.fetchSessionDetails(sessionId)]);
+        this.error = null;
+      } catch (error) {
+        this.error = error?.message || 'Unable to delete the selected artifact.';
+      } finally {
+        this.cleanupBusy = false;
+      }
+    },
+
+    async deleteFrame(sessionId, relativePath) {
+      this.cleanupBusy = true;
+      try {
+        const { data } = await axios.post(`${this.backendBaseUrl}/api/session/frame/delete`, {
+          sessionId,
+          relativePath,
+        });
+
+        if (!data.success) {
+          throw new Error(data.error || 'Unable to delete the selected frame.');
+        }
+
+        this.actionMessage = `Deleted frame and freed ${this.formatSize(data.data?.freedBytes || 0)}.`;
+        await Promise.all([this.fetchStatus(), this.fetchSessionDetails(sessionId)]);
+        this.error = null;
+      } catch (error) {
+        this.error = error?.message || 'Unable to delete the selected frame.';
+      } finally {
+        this.cleanupBusy = false;
+      }
+    },
+
+    clearActionMessage() {
+      this.actionMessage = null;
     },
 
     artifactUrl(relativePath) {
@@ -187,6 +283,53 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
       }
 
       return `${this.backendBaseUrl}/media/${relativePath}`;
+    },
+
+    async downloadFile(relativePath, fallbackName = 'download') {
+      const url = this.artifactUrl(relativePath);
+      if (!url) {
+        return;
+      }
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Download failed with status ${response.status}.`);
+        }
+
+        const blob = await response.blob();
+        const objectUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = objectUrl;
+        link.download = fallbackName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => {
+          window.URL.revokeObjectURL(objectUrl);
+        }, 1000);
+        this.error = null;
+      } catch (error) {
+        this.error = error?.message || 'Unable to download the selected file.';
+      }
+    },
+
+    formatSize(bytes) {
+      if (!bytes && bytes !== 0) {
+        return '—';
+      }
+
+      const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+      let value = bytes;
+      let unitIndex = 0;
+
+      while (value >= 1024 && unitIndex < units.length - 1) {
+        value /= 1024;
+        unitIndex += 1;
+      }
+
+      const precision = unitIndex === 0 ? 0 : value >= 100 ? 0 : 1;
+      return `${value.toFixed(precision)} ${units[unitIndex]}`;
     },
 
     startPolling() {

@@ -11,6 +11,7 @@ public sealed class SessionInfo
     public DateTimeOffset StartedAtUtc { get; set; }
     public DateTimeOffset? EndedAtUtc { get; set; }
     public int CaptureCount { get; set; }
+    public int StoredFrameCount { get; set; }
     public DateTimeOffset? LastCaptureAtUtc { get; set; }
     public string? LastFrameRelativePath { get; set; }
     public string? LastError { get; set; }

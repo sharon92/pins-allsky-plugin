@@ -20,6 +20,17 @@ public sealed class DeleteSessionRequest
     public string? SessionId { get; set; }
 }
 
+public sealed class SessionReferenceRequest
+{
+    public string? SessionId { get; set; }
+}
+
+public sealed class DeleteSessionFileRequest
+{
+    public string? SessionId { get; set; }
+    public string? RelativePath { get; set; }
+}
+
 public sealed class ApiResponse<T>
 {
     public bool Success { get; init; }
