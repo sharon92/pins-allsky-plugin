@@ -45,7 +45,7 @@
             </button>
           </div>
 
-          <div class="mt-6 grid gap-x-8 gap-y-3 sm:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)]">
+          <div class="mt-6 grid grid-cols-[auto_minmax(0,1fr)] gap-x-8 gap-y-3 lg:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)]">
             <template v-for="item in statusRows" :key="item.label">
               <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">
                 {{ item.label }}
