@@ -142,4 +142,21 @@ public sealed class PinsAllSkyController : WebApiController
             ? ApiResponse<SessionInfo>.Fail("No session is available for artifact generation.")
             : ApiResponse<SessionInfo>.Ok(session);
     }
+
+    [Route(HttpVerbs.Post, "/backend/update")]
+    public ApiResponse<BackendUpdateResult> TriggerBackendUpdate()
+    {
+        try
+        {
+            return ApiResponse<BackendUpdateResult>.Ok(PinsAllSkyPlugin.Host.TriggerBackendUpdate());
+        }
+        catch (InvalidOperationException ex)
+        {
+            return ApiResponse<BackendUpdateResult>.Fail(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<BackendUpdateResult>.Fail($"Unable to start backend update: {ex.Message}");
+        }
+    }
 }

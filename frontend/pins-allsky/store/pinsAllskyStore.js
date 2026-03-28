@@ -14,6 +14,7 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
     loading: false,
     saving: false,
     cleanupBusy: false,
+    backendUpdateBusy: false,
     manualLabel: '',
     actionMessage: null,
     sessionDetailsById: {},
@@ -270,6 +271,27 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
         this.error = error?.message || 'Unable to delete the selected frame.';
       } finally {
         this.cleanupBusy = false;
+      }
+    },
+
+    async updateBackend() {
+      this.backendUpdateBusy = true;
+      try {
+        const { data } = await axios.post(`${this.backendBaseUrl}/api/backend/update`, {});
+
+        if (!data.success) {
+          throw new Error(data.error || 'Unable to start the backend update.');
+        }
+
+        this.actionMessage = data.data?.message
+          || 'Backend update started. PINS will restart when installation finishes.';
+        this.error = null;
+        return data.data;
+      } catch (error) {
+        this.error = error?.message || 'Unable to start the backend update.';
+        return null;
+      } finally {
+        this.backendUpdateBusy = false;
       }
     },
 

@@ -31,6 +31,13 @@ public sealed class DeleteSessionFileRequest
     public string? RelativePath { get; set; }
 }
 
+public sealed class BackendUpdateResult
+{
+    public string? Message { get; set; }
+    public string? LogPath { get; set; }
+    public string? RepoDirectory { get; set; }
+}
+
 public sealed class ApiResponse<T>
 {
     public bool Success { get; init; }

@@ -15,6 +15,7 @@ public sealed class PinsAllSkyPaths
         DataRoot = Path.Combine(home, ".local", "share", "NINA", "PluginData", "PinsAllSky");
         SessionsRoot = Path.Combine(DataRoot, "sessions");
         CurrentRoot = Path.Combine(DataRoot, "current");
+        UpdatesRoot = Path.Combine(DataRoot, "updates");
         ConfigFile = Path.Combine(DataRoot, "config.json");
         ToolsRoot = Path.Combine(PluginRoot, "tools");
         KeogramTool = Path.Combine(ToolsRoot, "keogram");
@@ -25,6 +26,7 @@ public sealed class PinsAllSkyPaths
     public string DataRoot { get; }
     public string SessionsRoot { get; }
     public string CurrentRoot { get; }
+    public string UpdatesRoot { get; }
     public string ConfigFile { get; }
     public string ToolsRoot { get; }
     public string KeogramTool { get; }
@@ -47,5 +49,6 @@ public sealed class PinsAllSkyPaths
         Directory.CreateDirectory(DataRoot);
         Directory.CreateDirectory(SessionsRoot);
         Directory.CreateDirectory(CurrentRoot);
+        Directory.CreateDirectory(UpdatesRoot);
     }
 }

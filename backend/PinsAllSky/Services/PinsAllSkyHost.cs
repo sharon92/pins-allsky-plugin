@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Globalization;
+using System.Diagnostics;
 using NINA.Core.Utility;
 using NINA.PINS.AllSky.Models;
 
@@ -323,6 +324,63 @@ public sealed class PinsAllSkyHost : IDisposable
                 generateInProgress = false;
             }
         }
+    }
+
+    public BackendUpdateResult TriggerBackendUpdate()
+    {
+        bool captureRunning;
+        bool renderRunning;
+
+        lock (sync)
+        {
+            captureRunning = captureTask is { IsCompleted: false };
+            renderRunning = generateInProgress;
+        }
+
+        if (captureRunning || renderRunning)
+        {
+            throw new InvalidOperationException("Stop capture and rendering before updating the backend.");
+        }
+
+        var scriptPath = Path.Combine(paths.PluginRoot, "scripts", "update-backend-plugin.sh");
+        if (!File.Exists(scriptPath))
+        {
+            throw new InvalidOperationException("The packaged backend updater script is not available in this plugin install.");
+        }
+
+        Directory.CreateDirectory(paths.UpdatesRoot);
+        var logPath = Path.Combine(paths.UpdatesRoot, $"backend-update-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.log");
+        var repoDirectory = ResolvePreferredRepoDirectory();
+        var command = $"nohup {ShellQuote(scriptPath)} > {ShellQuote(logPath)} 2>&1 &";
+
+        using var process = new Process();
+        process.StartInfo.FileName = "/bin/bash";
+        process.StartInfo.WorkingDirectory = paths.PluginRoot;
+        process.StartInfo.UseShellExecute = false;
+        process.StartInfo.CreateNoWindow = true;
+        process.StartInfo.RedirectStandardOutput = false;
+        process.StartInfo.RedirectStandardError = false;
+        process.StartInfo.ArgumentList.Add("-lc");
+        process.StartInfo.ArgumentList.Add(command);
+
+        if (!string.IsNullOrWhiteSpace(repoDirectory))
+        {
+            process.StartInfo.Environment["PINS_ALLSKY_REPO_DIR"] = repoDirectory;
+        }
+
+        if (!process.Start())
+        {
+            throw new InvalidOperationException("Unable to launch the backend updater.");
+        }
+
+        Logger.Info($"PINS AllSky backend update triggered. Log: {logPath}");
+
+        return new BackendUpdateResult
+        {
+            Message = $"Backend update started. PINS will restart when installation finishes. Log: {logPath}",
+            LogPath = logPath,
+            RepoDirectory = repoDirectory
+        };
     }
 
     public List<SessionInfo> GetRecentSessions()
@@ -1280,6 +1338,24 @@ public sealed class PinsAllSkyHost : IDisposable
         Logger.Info($"PINS AllSky removed {result.DeletedSessionCount} session(s) during '{reason}' storage cleanup and freed {result.FreedBytes} bytes.");
         await Task.CompletedTask.ConfigureAwait(false);
         return result;
+    }
+
+    private string ResolvePreferredRepoDirectory()
+    {
+        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var candidates = new[]
+        {
+            Path.Combine(home, "pins-allsky-plugin"),
+            Path.Combine(home, "Projects", "piplugin")
+        };
+
+        return candidates.FirstOrDefault(candidate => Directory.Exists(Path.Combine(candidate, ".git")))
+            ?? candidates[0];
+    }
+
+    private static string ShellQuote(string value)
+    {
+        return $"'{value.Replace("'", "'\"'\"'")}'";
     }
 
     private string? GetActiveSessionId()

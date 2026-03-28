@@ -76,7 +76,23 @@
             </template>
           </div>
 
-          <div class="mt-6 flex justify-end">
+          <div
+            v-if="actionMessage"
+            class="mt-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100"
+          >
+            {{ actionMessage }}
+          </div>
+
+          <div class="mt-6 flex flex-wrap items-center justify-end gap-3">
+            <button
+              type="button"
+              class="rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+              :disabled="backendUpdateBusy || status?.captureRunning || status?.generateInProgress"
+              title="Pull the latest backend repo, reinstall the PINS AllSky backend plugin, and restart PINS."
+              @click="updateBackend"
+            >
+              {{ backendUpdateBusy ? 'Starting Update…' : 'Update Backend' }}
+            </button>
             <button
               type="button"
               class="rounded-xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-500"
@@ -1319,6 +1335,7 @@ const {
   loading,
   saving,
   cleanupBusy,
+  backendUpdateBusy,
   actionMessage,
   currentImageUrl,
   sessionDetailsById,
@@ -1683,6 +1700,10 @@ const stopSession = async () => {
 
 const generateArtifacts = async (sessionId = null) => {
   await store.generateArtifacts(sessionId);
+};
+
+const updateBackend = async () => {
+  await store.updateBackend();
 };
 
 const deleteSession = async (session) => {

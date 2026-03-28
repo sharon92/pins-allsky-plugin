@@ -36,7 +36,7 @@ fi
 "$DOTNET_BIN" build "$BACKEND_PROJECT" -c Release
 
 rm -rf "$BACKEND_PACKAGE_DIR"
-mkdir -p "$BACKEND_PACKAGE_DIR/tools" "$BACKEND_PACKAGE_DIR/licenses"
+mkdir -p "$BACKEND_PACKAGE_DIR/tools" "$BACKEND_PACKAGE_DIR/licenses" "$BACKEND_PACKAGE_DIR/scripts"
 
 for file in \
   NINA.PINS.AllSky.dll \
@@ -53,6 +53,8 @@ cp "$BACKEND_OUTPUT/tools/keogram" "$BACKEND_PACKAGE_DIR/tools/"
 cp "$BACKEND_OUTPUT/tools/startrails" "$BACKEND_PACKAGE_DIR/tools/"
 cp "$ROOT_DIR/THIRD_PARTY_NOTICES.md" "$BACKEND_PACKAGE_DIR/"
 cp "$ROOT_DIR/licenses/AllSky-LICENSE.txt" "$BACKEND_PACKAGE_DIR/licenses/"
+cp "$ROOT_DIR/scripts/update-backend-plugin.sh" "$BACKEND_PACKAGE_DIR/scripts/"
+chmod +x "$BACKEND_PACKAGE_DIR/scripts/update-backend-plugin.sh"
 
 mkdir -p "$PLUGIN_ROOT" "$INSTALL_BACKUPS_DIR/plugins"
 
@@ -65,6 +67,7 @@ cp -a "$BACKEND_PACKAGE_DIR" "$BACKEND_INSTALL_DIR"
 echo "Installed backend plugin to: $BACKEND_INSTALL_DIR"
 
 if [[ "$RESTART_PINS" == true ]]; then
+  old_pid="$(pgrep -xo -f "^$PINS_BIN$" || true)"
   if pgrep -f "^$PINS_BIN$" >/dev/null 2>&1; then
     pkill -f "^$PINS_BIN$"
     for _ in $(seq 1 30); do
@@ -80,8 +83,25 @@ if [[ "$RESTART_PINS" == true ]]; then
     exit 1
   fi
 
-  nohup bash -lc "cd \"$PINS_WORKDIR\" && export LD_LIBRARY_PATH=\"$PINS_LD_LIBRARY_PATH\" && exec \"$PINS_BIN\"" >/tmp/pins-allsky-pins.log 2>&1 &
-  echo "Restarted PINS using $PINS_BIN from $PINS_WORKDIR with LD_LIBRARY_PATH=$PINS_LD_LIBRARY_PATH"
+  restarted_via_systemd=false
+  if command -v systemctl >/dev/null 2>&1 && systemctl status pins.service >/dev/null 2>&1; then
+    for _ in $(seq 1 60); do
+      new_pid="$(pgrep -xo -f "^$PINS_BIN$" || true)"
+      if [[ -n "$new_pid" && "$new_pid" != "$old_pid" ]]; then
+        restarted_via_systemd=true
+        break
+      fi
+      sleep 1
+    done
+  fi
+
+  if [[ "$restarted_via_systemd" == true ]]; then
+    echo "PINS restarted under systemd management."
+  else
+    nohup bash -lc "cd \"$PINS_WORKDIR\" && export LD_LIBRARY_PATH=\"$PINS_LD_LIBRARY_PATH\" && exec \"$PINS_BIN\"" >/tmp/pins-allsky-pins.log 2>&1 &
+    echo "Restarted PINS using $PINS_BIN from $PINS_WORKDIR with LD_LIBRARY_PATH=$PINS_LD_LIBRARY_PATH"
+  fi
+
   echo "PINS can take around a minute to finish loading plugins and bind its web ports."
 else
   echo "PINS was not restarted. Restart it manually before using the backend plugin."

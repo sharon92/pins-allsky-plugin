@@ -35,7 +35,7 @@ mkdir -p "$ARTIFACTS_DIR/backend-plugin" "$ARTIFACTS_DIR" "$BUILD_BACKUPS_DIR/tn
 if [[ -d "$BACKEND_PACKAGE_DIR" ]]; then
   mv "$BACKEND_PACKAGE_DIR" "${BACKEND_PACKAGE_DIR}.bak-$TIMESTAMP"
 fi
-mkdir -p "$BACKEND_PACKAGE_DIR/tools" "$BACKEND_PACKAGE_DIR/licenses"
+mkdir -p "$BACKEND_PACKAGE_DIR/tools" "$BACKEND_PACKAGE_DIR/licenses" "$BACKEND_PACKAGE_DIR/scripts"
 
 for file in \
   NINA.PINS.AllSky.dll \
@@ -52,6 +52,8 @@ cp "$BACKEND_OUTPUT/tools/keogram" "$BACKEND_PACKAGE_DIR/tools/"
 cp "$BACKEND_OUTPUT/tools/startrails" "$BACKEND_PACKAGE_DIR/tools/"
 cp "$ROOT_DIR/THIRD_PARTY_NOTICES.md" "$BACKEND_PACKAGE_DIR/"
 cp "$ROOT_DIR/licenses/AllSky-LICENSE.txt" "$BACKEND_PACKAGE_DIR/licenses/"
+cp "$ROOT_DIR/scripts/update-backend-plugin.sh" "$BACKEND_PACKAGE_DIR/scripts/"
+chmod +x "$BACKEND_PACKAGE_DIR/scripts/update-backend-plugin.sh"
 
 if [[ -d "$TNS_PLUGIN_DIR" ]]; then
   mv "$TNS_PLUGIN_DIR" "$BUILD_BACKUPS_DIR/tns-plugins/pins-allsky-$TIMESTAMP"
