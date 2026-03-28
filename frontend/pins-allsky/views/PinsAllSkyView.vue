@@ -88,186 +88,253 @@
       <section class="rounded-2xl border border-gray-700 bg-gray-800/80 p-5 shadow-xl">
         <h2 class="text-xl font-semibold text-white">Session Control</h2>
 
-        <div class="mt-5 flex flex-col gap-6 xl:flex-row">
-          <div class="xl:w-[22rem] xl:flex-none">
-            <div class="flex flex-wrap items-stretch gap-2">
-              <input
-                v-model="manualLabelInput"
-                :title="`Session label for the next manual capture. Defaults to ${defaultManualLabel}.`"
-                class="min-w-0 flex-1 rounded-xl border border-gray-600 bg-gray-900/80 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                placeholder="Session label"
-              />
+        <div class="mt-5 space-y-5">
+          <div class="flex flex-wrap items-stretch gap-2">
+            <input
+              v-model="manualLabelInput"
+              :title="`Session label for the next manual capture. Defaults to ${defaultManualLabel}.`"
+              class="min-w-0 flex-1 rounded-xl border border-gray-600 bg-gray-900/80 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+              placeholder="Session label"
+            />
 
-              <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                title="Start Capture"
+                aria-label="Start Capture"
+                class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-600 text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"
+                :disabled="loading || status?.captureRunning"
+                @click="startSession"
+              >
+                <PlayIcon class="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                :title="status?.generateInProgress ? 'Rendering Progress…' : 'Render Progress'"
+                :aria-label="status?.generateInProgress ? 'Rendering Progress' : 'Render Progress'"
+                class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                :disabled="loading || !status?.captureRunning || !currentSession?.captureCount || status?.generateInProgress"
+                @click="generateArtifacts(currentSession?.id || null)"
+              >
+                <ArrowDownTrayIcon class="h-5 w-5" :class="status?.generateInProgress ? 'animate-pulse' : ''" />
+              </button>
+              <button
+                type="button"
+                title="Stop And Render"
+                aria-label="Stop And Render"
+                class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-rose-600 text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-40"
+                :disabled="loading || !status?.captureRunning"
+                @click="stopSession"
+              >
+                <StopIcon class="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          <div class="overflow-hidden rounded-2xl border border-gray-700 bg-black/60">
+            <div class="relative h-[28rem] w-full">
+              <img
+                v-if="currentImageUrl"
+                :src="currentImageUrl"
+                alt="Latest all-sky frame"
+                class="h-full w-full object-contain"
+              />
+              <div
+                v-else
+                class="flex h-full items-center justify-center px-6 text-center text-sm text-gray-500"
+              >
+                No captured frame is available yet. Start a session or wait for the next automatic
+                capture.
+              </div>
+
+              <div class="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/80 via-black/30 to-transparent" />
+              <div class="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
+
+              <div class="absolute right-4 top-4 z-10 flex items-center gap-2">
+                <div class="pointer-events-none rounded-xl border border-white/10 bg-black/45 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-300 backdrop-blur-sm">
+                  Live Preview
+                </div>
                 <button
                   type="button"
-                  title="Start Capture"
-                  aria-label="Start Capture"
-                  class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-600 text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"
-                  :disabled="loading || status?.captureRunning"
-                  @click="startSession"
+                  :title="loading ? 'Refreshing Preview…' : 'Refresh Preview'"
+                  :aria-label="loading ? 'Refreshing Preview' : 'Refresh Preview'"
+                  class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-black/45 text-gray-200 backdrop-blur-sm transition hover:border-cyan-400 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                  :disabled="loading"
+                  @click="refreshAll"
                 >
-                  <PlayIcon class="h-5 w-5" />
+                  <ArrowPathIcon class="h-5 w-5" :class="loading ? 'animate-spin' : ''" />
                 </button>
-                <button
-                  type="button"
-                  :title="status?.generateInProgress ? 'Rendering Progress…' : 'Render Progress'"
-                  :aria-label="status?.generateInProgress ? 'Rendering Progress' : 'Render Progress'"
-                  class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                  :disabled="loading || !status?.captureRunning || !currentSession?.captureCount || status?.generateInProgress"
-                  @click="generateArtifacts(currentSession?.id || null)"
-                >
-                  <ArrowDownTrayIcon class="h-5 w-5" :class="status?.generateInProgress ? 'animate-pulse' : ''" />
-                </button>
-                <button
-                  type="button"
-                  title="Stop And Render"
-                  aria-label="Stop And Render"
-                  class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-rose-600 text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-40"
-                  :disabled="loading || !status?.captureRunning"
-                  @click="stopSession"
-                >
-                  <StopIcon class="h-5 w-5" />
-                </button>
+              </div>
+
+              <div class="pointer-events-none absolute left-4 top-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm">
+                <div class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-300">Session</div>
+                <div class="mt-1 text-sm font-medium text-white">
+                  {{ currentSession?.id || 'No active session' }}
+                </div>
+              </div>
+
+              <div class="pointer-events-none absolute bottom-4 left-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm">
+                <div class="space-y-1 text-sm text-white">
+                  <div>
+                    <span class="text-gray-300">Last Capture:</span>
+                    {{ formatDate(currentSession?.lastCaptureAtUtc) }}
+                  </div>
+                  <div>
+                    <span class="text-gray-300">Frame Count:</span>
+                    {{ formatCount(currentSession?.captureCount || 0) }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="pointer-events-none absolute bottom-4 right-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm">
+                <div class="space-y-1 text-right text-sm text-white">
+                  <div>
+                    <span class="text-gray-300">Capture Interval:</span>
+                    {{ formatInterval(config?.camera?.intervalSeconds) }}
+                  </div>
+                  <div>
+                    <span class="text-gray-300">Exposure:</span>
+                    {{ formatExposure(config?.camera) }}
+                  </div>
+                  <div>
+                    <span class="text-gray-300">Gain:</span>
+                    {{ formatGain(config?.camera) }}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="min-w-0 flex-1">
-            <div class="overflow-hidden rounded-2xl border border-gray-700 bg-black/60">
-              <div class="relative h-[28rem] w-full">
-                <img
-                  v-if="currentImageUrl"
-                  :src="currentImageUrl"
-                  alt="Latest all-sky frame"
-                  class="h-full w-full object-contain"
+          <div class="rounded-2xl border border-gray-700 bg-gray-900/50 p-4">
+            <div class="text-sm font-semibold text-white">Session Estimate</div>
+            <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+              <label class="block rounded-xl border border-gray-700 bg-gray-900/60 p-3">
+                <span class="block text-xs uppercase tracking-wide text-gray-500">Start</span>
+                <input
+                  v-model="estimateWindow.startLocal"
+                  type="datetime-local"
+                  title="Planned capture start time used for the storage estimate. Defaults to the current local time."
+                  class="mt-2 w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
-                <div
-                  v-else
-                  class="flex h-full items-center justify-center px-6 text-center text-sm text-gray-500"
-                >
-                  No captured frame is available yet. Start a session or wait for the next automatic
-                  capture.
-                </div>
-
-                <div class="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/80 via-black/30 to-transparent" />
-                <div class="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
-
-                <div class="absolute right-4 top-4 z-10 flex items-center gap-2">
-                  <div class="pointer-events-none rounded-xl border border-white/10 bg-black/45 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-300 backdrop-blur-sm">
-                    Live Preview
-                  </div>
-                  <button
-                    type="button"
-                    :title="loading ? 'Refreshing Preview…' : 'Refresh Preview'"
-                    :aria-label="loading ? 'Refreshing Preview' : 'Refresh Preview'"
-                    class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-black/45 text-gray-200 backdrop-blur-sm transition hover:border-cyan-400 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-                    :disabled="loading"
-                    @click="refreshAll"
-                  >
-                    <ArrowPathIcon class="h-5 w-5" :class="loading ? 'animate-spin' : ''" />
-                  </button>
-                </div>
-
-                <div class="pointer-events-none absolute left-4 top-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm">
-                  <div class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-300">Session</div>
-                  <div class="mt-1 text-sm font-medium text-white">
-                    {{ currentSession?.id || 'No active session' }}
-                  </div>
-                </div>
-
-                <div class="pointer-events-none absolute bottom-4 left-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm">
-                  <div class="space-y-1 text-sm text-white">
-                    <div>
-                      <span class="text-gray-300">Last Capture:</span>
-                      {{ formatDate(currentSession?.lastCaptureAtUtc) }}
-                    </div>
-                    <div>
-                      <span class="text-gray-300">Frame Count:</span>
-                      {{ formatCount(currentSession?.captureCount || 0) }}
-                    </div>
-                  </div>
-                </div>
-
-                <div class="pointer-events-none absolute bottom-4 right-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm">
-                  <div class="space-y-1 text-right text-sm text-white">
-                    <div>
-                      <span class="text-gray-300">Capture Interval:</span>
-                      {{ formatInterval(config?.camera?.intervalSeconds) }}
-                    </div>
-                    <div>
-                      <span class="text-gray-300">Exposure:</span>
-                      {{ formatExposure(config?.camera) }}
-                    </div>
-                    <div>
-                      <span class="text-gray-300">Gain:</span>
-                      {{ formatGain(config?.camera) }}
-                    </div>
-                  </div>
+              </label>
+              <label class="block rounded-xl border border-gray-700 bg-gray-900/60 p-3">
+                <span class="block text-xs uppercase tracking-wide text-gray-500">End</span>
+                <input
+                  v-model="estimateWindow.endLocal"
+                  type="datetime-local"
+                  title="Planned capture stop time used for the storage estimate. Defaults to tomorrow at 08:00 local time."
+                  class="mt-2 w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                />
+              </label>
+              <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
+                <div class="text-xs uppercase tracking-wide text-gray-500">Expected Duration</div>
+                <div class="mt-2 text-sm text-white">{{ estimateDurationLabel }}</div>
+              </div>
+              <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
+                <div class="text-xs uppercase tracking-wide text-gray-500">Expected Frames</div>
+                <div class="mt-2 text-sm text-white">{{ formatCount(estimatedFrameCount) }}</div>
+              </div>
+              <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
+                <div class="text-xs uppercase tracking-wide text-gray-500">Expected Storage</div>
+                <div class="mt-2 text-sm font-semibold" :class="estimateExceedsAvailable ? 'text-amber-300' : 'text-white'">
+                  {{ formatSize(estimatedStorageBytes) }}
                 </div>
               </div>
             </div>
+
+            <div
+              v-if="estimateWarning"
+              class="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100"
+            >
+              {{ estimateWarning }}
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              title="Automation"
+              aria-label="Automation"
+              class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
+              @click="openSettingsModal('automation')"
+            >
+              <Cog6ToothIcon class="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              title="Camera"
+              aria-label="Camera"
+              class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
+              @click="openSettingsModal('camera')"
+            >
+              <CameraIcon class="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              title="Outputs"
+              aria-label="Outputs"
+              class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
+              @click="openSettingsModal('outputs')"
+            >
+              <PhotoIcon class="h-5 w-5" />
+            </button>
           </div>
         </div>
       </section>
 
-      <section v-if="config" class="rounded-2xl border border-gray-700 bg-gray-800/80 p-6 shadow-xl">
-        <button
-          type="button"
-          class="flex w-full flex-col gap-4 text-left lg:flex-row lg:items-start lg:justify-between"
-          @click="toggleSection('captureSettings')"
-        >
-          <div>
-            <h2 class="text-xl font-semibold text-white">Capture And Product Settings</h2>
-            <p class="text-sm text-gray-400">
-              The backend persists these settings on the Pi and uses them for automatic sequence
-              monitoring as well as manual runs.
-            </p>
-          </div>
-          <div class="flex items-center gap-3 self-start lg:self-auto">
-            <span class="rounded-full border border-gray-600 bg-gray-900/70 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gray-300">
-              {{ sectionOpen.captureSettings ? 'Expanded' : 'Collapsed' }}
-            </span>
-            <span class="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-500/40 bg-cyan-500/10 text-lg font-semibold text-cyan-200">
-              {{ sectionOpen.captureSettings ? '-' : '+' }}
-            </span>
-          </div>
-        </button>
-
-        <div v-if="sectionOpen.captureSettings" class="mt-6">
-          <div class="flex justify-end">
+      <div
+        v-if="settingsModal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm"
+        @click.self="closeSettingsModal()"
+      >
+        <div class="w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-2xl border border-gray-700 bg-gray-900/95 p-6 shadow-2xl">
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="text-xl font-semibold text-white">{{ settingsModalTitle }}</h2>
             <button
-              class="rounded-xl bg-cyan-600 px-5 py-3 font-semibold text-white transition hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-40"
+              type="button"
+              class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-600 bg-gray-800/80 text-gray-200 transition hover:border-cyan-400 hover:text-white"
               :disabled="saving"
-              @click="saveConfig"
+              :aria-label="`Close ${settingsModalTitle} dialog`"
+              @click="closeSettingsModal()"
             >
-              {{ saving ? 'Saving…' : 'Save Settings' }}
+              <XMarkIcon class="h-5 w-5" />
             </button>
           </div>
 
-          <div class="mt-6 grid gap-6 xl:grid-cols-3">
-          <div class="space-y-4 rounded-2xl border border-gray-700 bg-gray-900/50 p-4">
-            <h3 class="text-lg font-semibold text-white">Automation</h3>
-            <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
-              <span class="text-sm text-gray-300">Auto-start with sequence</span>
-              <toggleButton
-                :status-value="Boolean(config.autoStartWithSequence)"
-                @update:statusValue="setRootConfigValue('autoStartWithSequence', $event)"
-              />
+          <div v-if="settingsModal === 'automation'" class="mt-6 flex flex-wrap gap-4">
+            <label :class="settingsFieldClass" class="rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
+              <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Auto-start with sequence
+              </span>
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-sm text-gray-300">Sequence-triggered capture</span>
+                <toggleButton
+                  :status-value="Boolean(config.autoStartWithSequence)"
+                  @update:statusValue="setRootConfigValue('autoStartWithSequence', $event)"
+                />
+              </div>
             </label>
-            <div class="rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-100">
+
+            <div :class="settingsWideFieldClass" class="rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-100">
               When enabled, AllSky starts a capture session as soon as the PINS Advanced API reports
               an active sequence, then stops capture and renders products automatically when the
               sequence ends.
             </div>
-            <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
-              <span class="text-sm text-gray-300">Advanced API enabled</span>
-              <toggleButton
-                :status-value="Boolean(config.advancedApi.enabled)"
-                @update:statusValue="setAdvancedApiSetting('enabled', $event)"
-              />
+
+            <label :class="settingsFieldClass" class="rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
+              <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Advanced API enabled
+              </span>
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-sm text-gray-300">Backend monitoring</span>
+                <toggleButton
+                  :status-value="Boolean(config.advancedApi.enabled)"
+                  @update:statusValue="setAdvancedApiSetting('enabled', $event)"
+                />
+              </div>
             </label>
-            <label class="block">
+
+            <label :class="settingsFieldClass" class="block">
               <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                 Protocol
               </span>
@@ -277,7 +344,8 @@
                 class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
               />
             </label>
-            <label class="block">
+
+            <label :class="settingsFieldClass" class="block">
               <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                 Sequence Poll Interval (s)
               </span>
@@ -290,11 +358,11 @@
                 class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
               />
               <span class="mt-2 block text-xs text-gray-500">
-                Controls how often AllSky checks whether a PINS/NINA sequence has started or stopped.
-                It does not change the camera frame cadence.
+                Polls sequence state only. It does not change the camera frame cadence.
               </span>
             </label>
-            <label class="block">
+
+            <label :class="settingsFieldClass" class="block">
               <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                 Advanced API Host
               </span>
@@ -304,33 +372,34 @@
                 class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
               />
             </label>
-            <div class="grid gap-4 sm:grid-cols-2">
-              <label class="block">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Port
-                </span>
-                <input
-                  v-model.number="config.advancedApi.port"
-                  type="number"
-                  title="TCP port used by the PINS Advanced API service."
-                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                />
-              </label>
-              <label class="block">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Timeout (s)
-                </span>
-                <input
-                  v-model.number="config.advancedApi.requestTimeoutSeconds"
-                  type="number"
-                  min="1"
-                  max="30"
-                  title="Maximum time to wait for a single Advanced API request before marking it unavailable."
-                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                />
-              </label>
-            </div>
-            <label class="block">
+
+            <label :class="settingsFieldClass" class="block">
+              <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Port
+              </span>
+              <input
+                v-model.number="config.advancedApi.port"
+                type="number"
+                title="TCP port used by the PINS Advanced API service."
+                class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+              />
+            </label>
+
+            <label :class="settingsFieldClass" class="block">
+              <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Timeout (s)
+              </span>
+              <input
+                v-model.number="config.advancedApi.requestTimeoutSeconds"
+                type="number"
+                min="1"
+                max="30"
+                title="Maximum time to wait for a single Advanced API request before marking it unavailable."
+                class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+              />
+            </label>
+
+            <label :class="settingsFieldClass" class="block">
               <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                 Advanced API Base Path
               </span>
@@ -340,7 +409,8 @@
                 class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
               />
             </label>
-            <label class="block">
+
+            <label :class="settingsFieldClass" class="block">
               <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                 Max Plugin Storage (GB)
               </span>
@@ -354,86 +424,14 @@
                 class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
               />
               <span class="mt-2 block text-xs text-gray-500">
-                Set to <code class="font-mono text-gray-400">0</code> for no limit. Otherwise the
-                backend deletes the oldest completed sessions when usage grows beyond this cap.
+                Set <code class="font-mono text-gray-400">0</code> for no limit.
               </span>
             </label>
-
-            <div class="space-y-4 rounded-xl border border-gray-700 bg-gray-800/70 p-4">
-              <div>
-                <div class="text-sm font-semibold text-white">Session Estimate</div>
-                <p class="mt-1 text-xs text-gray-400">
-                  Uses the average stored frame size from
-                  <span class="font-semibold text-gray-200">{{ estimateBaselineLabel }}</span>
-                  to estimate session storage before capture starts.
-                </p>
-              </div>
-
-              <div class="grid gap-4 sm:grid-cols-2">
-                <label class="block">
-                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Start
-                  </span>
-                  <input
-                    v-model="estimateWindow.startLocal"
-                    type="datetime-local"
-                    title="Planned capture start time used for the storage estimate. Defaults to the current local time."
-                    class="w-full rounded-xl border border-gray-600 bg-gray-900/80 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                  />
-                </label>
-                <label class="block">
-                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    End
-                  </span>
-                  <input
-                    v-model="estimateWindow.endLocal"
-                    type="datetime-local"
-                    title="Planned capture stop time used for the storage estimate. Defaults to tomorrow at 08:00 local time."
-                    class="w-full rounded-xl border border-gray-600 bg-gray-900/80 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                  />
-                </label>
-              </div>
-
-              <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-                  <div class="text-xs uppercase tracking-wide text-gray-500">Expected Duration</div>
-                  <div class="mt-2 text-sm text-white">{{ estimateDurationLabel }}</div>
-                </div>
-                <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-                  <div class="text-xs uppercase tracking-wide text-gray-500">Expected Frames</div>
-                  <div class="mt-2 text-sm text-white">{{ formatCount(estimatedFrameCount) }}</div>
-                </div>
-                <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-                  <div class="text-xs uppercase tracking-wide text-gray-500">Expected Storage</div>
-                  <div class="mt-2 text-sm font-semibold" :class="estimateExceedsAvailable ? 'text-amber-300' : 'text-white'">
-                    {{ formatSize(estimatedStorageBytes) }}
-                  </div>
-                </div>
-                <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-                  <div class="text-xs uppercase tracking-wide text-gray-500">Frame Baseline</div>
-                  <div class="mt-2 text-sm text-white">{{ formatSize(estimateBaselineAverageFrameBytes) }}</div>
-                </div>
-              </div>
-
-              <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3 text-xs text-gray-400">
-                Uses <code class="font-mono text-gray-300">{{ formatInterval(config.camera.intervalSeconds) }}</code>
-                frame cadence. Timelapse size is estimated from the configured bitrate/FPS. Keogram
-                and startrails reuse the last baseline output sizes.
-              </div>
-
-              <div
-                v-if="estimateWarning"
-                class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100"
-              >
-                {{ estimateWarning }}
-              </div>
-            </div>
           </div>
 
-          <div class="space-y-4 rounded-2xl border border-gray-700 bg-gray-900/50 p-4">
-            <h3 class="text-lg font-semibold text-white">Camera</h3>
-            <div class="grid gap-4 sm:grid-cols-2">
-              <label class="block">
+          <div v-else-if="settingsModal === 'camera'" class="mt-6 space-y-4">
+            <div class="flex flex-wrap gap-4">
+              <label :class="settingsFieldClass" class="block">
                 <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Interval (s)
                 </span>
@@ -445,7 +443,7 @@
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
-              <label class="block">
+              <label :class="settingsFieldClass" class="block">
                 <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Timeout (s)
                 </span>
@@ -457,7 +455,7 @@
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
-              <label class="block">
+              <label :class="settingsFieldClass" class="block">
                 <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Width
                 </span>
@@ -469,7 +467,7 @@
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
-              <label class="block">
+              <label :class="settingsFieldClass" class="block">
                 <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Height
                 </span>
@@ -481,7 +479,7 @@
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
-              <label class="block">
+              <label :class="settingsFieldClass" class="block">
                 <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                   JPEG Quality
                 </span>
@@ -494,7 +492,7 @@
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
-              <label class="block">
+              <label :class="settingsFieldClass" class="block">
                 <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Warmup (ms)
                 </span>
@@ -506,67 +504,7 @@
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
-            </div>
-
-            <div class="grid gap-4 sm:grid-cols-2">
-              <div class="space-y-3 rounded-xl border border-gray-700 bg-gray-800/70 p-3">
-                <label class="flex items-center justify-between gap-3">
-                  <span class="text-sm text-gray-300">Manual exposure</span>
-                  <toggleButton
-                    :status-value="Boolean(config.camera.useManualExposure)"
-                    @update:statusValue="setCameraSetting('useManualExposure', $event)"
-                  />
-                </label>
-                <label class="block">
-                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Shutter (µs)
-                  </span>
-                  <input
-                    v-model.number="config.camera.shutterMicroseconds"
-                    type="number"
-                    min="1"
-                    inputmode="numeric"
-                    :disabled="!config.camera.useManualExposure"
-                    title="Manual shutter time in microseconds. Only applied when Manual exposure is enabled."
-                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </label>
-                <p class="text-xs text-gray-500">
-                  When disabled, <code class="font-mono text-gray-400">rpicam-still</code> controls exposure automatically.
-                </p>
-              </div>
-
-              <div class="space-y-3 rounded-xl border border-gray-700 bg-gray-800/70 p-3">
-                <label class="flex items-center justify-between gap-3">
-                  <span class="text-sm text-gray-300">Manual gain</span>
-                  <toggleButton
-                    :status-value="Boolean(config.camera.useManualGain)"
-                    @update:statusValue="setCameraSetting('useManualGain', $event)"
-                  />
-                </label>
-                <label class="block">
-                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Analog Gain
-                  </span>
-                  <input
-                    v-model.number="config.camera.analogGain"
-                    type="number"
-                    min="1"
-                    step="0.1"
-                    inputmode="decimal"
-                    :disabled="!config.camera.useManualGain"
-                    title="Manual analog gain applied to the Pi camera. Only used when Manual gain is enabled."
-                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </label>
-                <p class="text-xs text-gray-500">
-                  When disabled, <code class="font-mono text-gray-400">rpicam-still</code> controls gain automatically.
-                </p>
-              </div>
-            </div>
-
-            <div class="grid gap-4 sm:grid-cols-2">
-              <label class="block">
+              <label :class="settingsFieldClass" class="block">
                 <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Metering
                 </span>
@@ -584,7 +522,7 @@
                   </option>
                 </select>
               </label>
-              <label class="block">
+              <label :class="settingsFieldClass" class="block">
                 <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                   AWB
                 </span>
@@ -602,7 +540,7 @@
                   </option>
                 </select>
               </label>
-              <label class="block">
+              <label :class="settingsFieldClass" class="block">
                 <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Denoise
                 </span>
@@ -620,7 +558,7 @@
                   </option>
                 </select>
               </label>
-              <label class="block">
+              <label :class="settingsFieldClass" class="block">
                 <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                   EV Compensation
                 </span>
@@ -633,7 +571,7 @@
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
-              <label class="block">
+              <label :class="settingsFieldClass" class="block">
                 <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Rotation
                 </span>
@@ -646,7 +584,7 @@
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
-              <label class="block">
+              <label :class="settingsFieldClass" class="block">
                 <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Brightness
                 </span>
@@ -659,7 +597,7 @@
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
-              <label class="block">
+              <label :class="settingsFieldClass" class="block">
                 <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Contrast
                 </span>
@@ -673,7 +611,7 @@
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
-              <label class="block">
+              <label :class="settingsFieldClass" class="block">
                 <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Saturation
                 </span>
@@ -687,7 +625,7 @@
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
-              <label class="block">
+              <label :class="settingsFieldClass" class="block">
                 <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Sharpness
                 </span>
@@ -703,51 +641,120 @@
               </label>
             </div>
 
-            <div class="rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-100">
-              <code class="font-mono">rpicam-still</code> rotation is limited to <code class="font-mono">0</code> or <code class="font-mono">180</code> degrees.
+            <div class="flex flex-wrap gap-4">
+              <div class="w-full lg:w-[calc(50%-0.5rem)] rounded-xl border border-gray-700 bg-gray-800/70 p-3">
+                <label class="flex items-center justify-between gap-3">
+                  <span class="text-sm text-gray-300">Manual exposure</span>
+                  <toggleButton
+                    :status-value="Boolean(config.camera.useManualExposure)"
+                    @update:statusValue="setCameraSetting('useManualExposure', $event)"
+                  />
+                </label>
+                <label class="mt-3 block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Shutter (µs)
+                  </span>
+                  <input
+                    v-model.number="config.camera.shutterMicroseconds"
+                    type="number"
+                    min="1"
+                    inputmode="numeric"
+                    :disabled="!config.camera.useManualExposure"
+                    title="Manual shutter time in microseconds. Only applied when Manual exposure is enabled."
+                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </label>
+                <p class="mt-3 text-xs text-gray-500">
+                  When disabled, <code class="font-mono text-gray-400">rpicam-still</code> controls exposure automatically.
+                </p>
+              </div>
+
+              <div class="w-full lg:w-[calc(50%-0.5rem)] rounded-xl border border-gray-700 bg-gray-800/70 p-3">
+                <label class="flex items-center justify-between gap-3">
+                  <span class="text-sm text-gray-300">Manual gain</span>
+                  <toggleButton
+                    :status-value="Boolean(config.camera.useManualGain)"
+                    @update:statusValue="setCameraSetting('useManualGain', $event)"
+                  />
+                </label>
+                <label class="mt-3 block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Analog Gain
+                  </span>
+                  <input
+                    v-model.number="config.camera.analogGain"
+                    type="number"
+                    min="1"
+                    step="0.1"
+                    inputmode="decimal"
+                    :disabled="!config.camera.useManualGain"
+                    title="Manual analog gain applied to the Pi camera. Only used when Manual gain is enabled."
+                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </label>
+                <p class="mt-3 text-xs text-gray-500">
+                  When disabled, <code class="font-mono text-gray-400">rpicam-still</code> controls gain automatically.
+                </p>
+              </div>
             </div>
 
-            <div class="grid gap-3 sm:grid-cols-2">
-              <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
-                <span class="text-sm text-gray-300">Horizontal flip</span>
-                <toggleButton
-                  :status-value="Boolean(config.camera.horizontalFlip)"
-                  @update:statusValue="setCameraSetting('horizontalFlip', $event)"
-                />
+            <div class="flex flex-wrap gap-4">
+              <div :class="settingsFullWidthClass" class="rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-100">
+                <code class="font-mono">rpicam-still</code> rotation is limited to <code class="font-mono">0</code> or <code class="font-mono">180</code> degrees.
+              </div>
+              <label :class="settingsFieldClass" class="rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
+                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  Horizontal flip
+                </span>
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-sm text-gray-300">Mirror on X axis</span>
+                  <toggleButton
+                    :status-value="Boolean(config.camera.horizontalFlip)"
+                    @update:statusValue="setCameraSetting('horizontalFlip', $event)"
+                  />
+                </div>
               </label>
-              <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
-                <span class="text-sm text-gray-300">Vertical flip</span>
-                <toggleButton
-                  :status-value="Boolean(config.camera.verticalFlip)"
-                  @update:statusValue="setCameraSetting('verticalFlip', $event)"
+              <label :class="settingsFieldClass" class="rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
+                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  Vertical flip
+                </span>
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-sm text-gray-300">Mirror on Y axis</span>
+                  <toggleButton
+                    :status-value="Boolean(config.camera.verticalFlip)"
+                    @update:statusValue="setCameraSetting('verticalFlip', $event)"
+                  />
+                </div>
+              </label>
+              <label :class="settingsFullWidthClass" class="block">
+                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  Extra rpicam-still Arguments
+                </span>
+                <textarea
+                  v-model="config.camera.extraArguments"
+                  rows="3"
+                  title="Additional raw rpicam-still arguments appended after the managed camera settings."
+                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
             </div>
-
-            <label class="block">
-              <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Extra rpicam-still Arguments
-              </span>
-              <textarea
-                v-model="config.camera.extraArguments"
-                rows="3"
-                title="Additional raw rpicam-still arguments appended after the managed camera settings."
-                class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-              />
-            </label>
           </div>
 
-          <div class="space-y-4 rounded-2xl border border-gray-700 bg-gray-900/50 p-4">
-            <h3 class="text-lg font-semibold text-white">Products</h3>
-            <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
-              <span class="text-sm text-gray-300">Keep source frames</span>
-              <toggleButton
-                :status-value="Boolean(config.products.keepFrames)"
-                @update:statusValue="setProductSetting('keepFrames', $event)"
-              />
+          <div v-else class="mt-6 space-y-4">
+            <label class="block rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
+              <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Keep source frames
+              </span>
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-sm text-gray-300">Retain original captures</span>
+                <toggleButton
+                  :status-value="Boolean(config.products.keepFrames)"
+                  @update:statusValue="setProductSetting('keepFrames', $event)"
+                />
+              </div>
             </label>
 
-            <div class="rounded-xl border border-gray-700 bg-gray-800/70 p-3">
+            <div class="rounded-xl border border-gray-700 bg-gray-800/70 p-4">
               <div class="flex items-center justify-between gap-3">
                 <span class="font-semibold text-white">Timelapse</span>
                 <toggleButton
@@ -755,8 +762,8 @@
                   @update:statusValue="setProductSetting('timelapseEnabled', $event)"
                 />
               </div>
-              <div v-if="config.products.timelapseEnabled" class="mt-3 grid gap-4 sm:grid-cols-2">
-                <label class="block">
+              <div v-if="config.products.timelapseEnabled" class="mt-4 flex flex-wrap gap-4">
+                <label :class="settingsFieldClass" class="block">
                   <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                     FPS
                   </span>
@@ -766,10 +773,10 @@
                     min="1"
                     max="60"
                     title="Playback frame rate used when assembling the timelapse video."
-                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
-                <label class="block">
+                <label :class="settingsFieldClass" class="block">
                   <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                     Bitrate (kbps)
                   </span>
@@ -778,10 +785,10 @@
                     type="number"
                     min="1000"
                     title="Target video bitrate for the generated timelapse in kilobits per second."
-                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
-                <label class="block">
+                <label :class="settingsFieldClass" class="block">
                   <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                     Width
                   </span>
@@ -790,10 +797,10 @@
                     type="number"
                     min="320"
                     title="Output width in pixels for the rendered timelapse video."
-                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
-                <label class="block">
+                <label :class="settingsFieldClass" class="block">
                   <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                     Height
                   </span>
@@ -802,54 +809,54 @@
                     type="number"
                     min="240"
                     title="Output height in pixels for the rendered timelapse video."
-                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
-                <label class="block">
+                <label :class="settingsFieldClass" class="block">
                   <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                     Codec
                   </span>
                   <input
                     v-model="config.products.timelapseCodec"
                     title="ffmpeg video codec used to encode the timelapse output."
-                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
-                <label class="block">
+                <label :class="settingsFieldClass" class="block">
                   <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                     Pixel Format
                   </span>
                   <input
                     v-model="config.products.timelapsePixelFormat"
                     title="ffmpeg pixel format used for the timelapse output."
-                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
-                <label class="block">
+                <label :class="settingsFieldClass" class="block">
                   <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                     FFmpeg Log Level
                   </span>
                   <input
                     v-model="config.products.timelapseLogLevel"
                     title="ffmpeg log verbosity used while rendering the timelapse."
-                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                  />
+                </label>
+                <label :class="settingsFullWidthClass" class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Extra ffmpeg Arguments
+                  </span>
+                  <textarea
+                    v-model="config.products.timelapseExtraParameters"
+                    rows="3"
+                    title="Extra ffmpeg arguments appended to the timelapse render command."
+                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
               </div>
-              <label v-if="config.products.timelapseEnabled" class="mt-3 block">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Extra ffmpeg Arguments
-                </span>
-                <textarea
-                  v-model="config.products.timelapseExtraParameters"
-                  rows="3"
-                  title="Extra ffmpeg arguments appended to the timelapse render command."
-                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                />
-              </label>
             </div>
 
-            <div class="rounded-xl border border-gray-700 bg-gray-800/70 p-3">
+            <div class="rounded-xl border border-gray-700 bg-gray-800/70 p-4">
               <div class="flex items-center justify-between gap-3">
                 <span class="font-semibold text-white">Keogram</span>
                 <toggleButton
@@ -857,29 +864,44 @@
                   @update:statusValue="setProductSetting('keogramEnabled', $event)"
                 />
               </div>
-              <div v-if="config.products.keogramEnabled" class="mt-3 grid gap-4 sm:grid-cols-2">
-                <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2">
-                  <span class="text-sm text-gray-300">Expand to frame width</span>
-                  <toggleButton
-                    :status-value="Boolean(config.products.keogramExpand)"
-                    @update:statusValue="setProductSetting('keogramExpand', $event)"
-                  />
+              <div v-if="config.products.keogramEnabled" class="mt-4 flex flex-wrap gap-4">
+                <label :class="settingsFieldClass" class="rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Expand to frame width
+                  </span>
+                  <div class="flex items-center justify-between gap-3">
+                    <span class="text-sm text-gray-300">Stretch output</span>
+                    <toggleButton
+                      :status-value="Boolean(config.products.keogramExpand)"
+                      @update:statusValue="setProductSetting('keogramExpand', $event)"
+                    />
+                  </div>
                 </label>
-                <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2">
-                  <span class="text-sm text-gray-300">Show labels</span>
-                  <toggleButton
-                    :status-value="Boolean(config.products.keogramShowLabels)"
-                    @update:statusValue="setProductSetting('keogramShowLabels', $event)"
-                  />
+                <label :class="settingsFieldClass" class="rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Show labels
+                  </span>
+                  <div class="flex items-center justify-between gap-3">
+                    <span class="text-sm text-gray-300">Draw captions</span>
+                    <toggleButton
+                      :status-value="Boolean(config.products.keogramShowLabels)"
+                      @update:statusValue="setProductSetting('keogramShowLabels', $event)"
+                    />
+                  </div>
                 </label>
-                <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2">
-                  <span class="text-sm text-gray-300">Show date</span>
-                  <toggleButton
-                    :status-value="Boolean(config.products.keogramShowDate)"
-                    @update:statusValue="setProductSetting('keogramShowDate', $event)"
-                  />
+                <label :class="settingsFieldClass" class="rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Show date
+                  </span>
+                  <div class="flex items-center justify-between gap-3">
+                    <span class="text-sm text-gray-300">Stamp date</span>
+                    <toggleButton
+                      :status-value="Boolean(config.products.keogramShowDate)"
+                      @update:statusValue="setProductSetting('keogramShowDate', $event)"
+                    />
+                  </div>
                 </label>
-                <label class="block">
+                <label :class="settingsFieldClass" class="block">
                   <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                     Rotate (deg)
                   </span>
@@ -888,30 +910,30 @@
                     type="number"
                     inputmode="decimal"
                     title="Rotation applied to the finished keogram image."
-                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
-                <label class="block">
+                <label :class="settingsFieldClass" class="block">
                   <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                     Font Name
                   </span>
                   <input
                     v-model="config.products.keogramFontName"
                     title="Font family name passed to the AllSky keogram tool for labels."
-                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
-                <label class="block">
+                <label :class="settingsFieldClass" class="block">
                   <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                     Font Color
                   </span>
                   <input
                     v-model="config.products.keogramFontColor"
                     title="Font color used by the keogram tool, usually as a hex color value."
-                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
-                <label class="block">
+                <label :class="settingsFieldClass" class="block">
                   <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                     Font Size
                   </span>
@@ -922,10 +944,10 @@
                     step="0.1"
                     inputmode="decimal"
                     title="Label font size used in the generated keogram."
-                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
-                <label class="block">
+                <label :class="settingsFieldClass" class="block">
                   <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                     Line Thickness
                   </span>
@@ -934,24 +956,24 @@
                     type="number"
                     min="1"
                     title="Line thickness used when the keogram tool draws labels or markers."
-                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                  />
+                </label>
+                <label :class="settingsFullWidthClass" class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Extra keogram Arguments
+                  </span>
+                  <textarea
+                    v-model="config.products.keogramExtraParameters"
+                    rows="3"
+                    title="Extra command-line arguments appended to the AllSky keogram tool."
+                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
               </div>
-              <label v-if="config.products.keogramEnabled" class="mt-3 block">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Extra keogram Arguments
-                </span>
-                <textarea
-                  v-model="config.products.keogramExtraParameters"
-                  rows="3"
-                  title="Extra command-line arguments appended to the AllSky keogram tool."
-                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                />
-              </label>
             </div>
 
-            <div class="rounded-xl border border-gray-700 bg-gray-800/70 p-3">
+            <div class="rounded-xl border border-gray-700 bg-gray-800/70 p-4">
               <div class="flex items-center justify-between gap-3">
                 <span class="font-semibold text-white">Startrails</span>
                 <toggleButton
@@ -959,8 +981,8 @@
                   @update:statusValue="setProductSetting('startrailsEnabled', $event)"
                 />
               </div>
-              <div v-if="config.products.startrailsEnabled" class="mt-3 space-y-3">
-                <label class="block">
+              <div v-if="config.products.startrailsEnabled" class="mt-4 flex flex-wrap gap-4">
+                <label :class="settingsFieldClass" class="block">
                   <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                     Brightness Threshold
                   </span>
@@ -972,14 +994,14 @@
                     step="0.01"
                     inputmode="decimal"
                     title="Minimum normalized brightness a pixel must reach before it contributes to the startrails composite."
-                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
-                <div class="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
+                <div :class="settingsWideFieldClass" class="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
                   On an equatorial mount the camera may track with the sky, so the startrail output
                   can still be generated but may not show the classic circular trail effect.
                 </div>
-                <label class="block">
+                <label :class="settingsFullWidthClass" class="block">
                   <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
                     Extra startrails Arguments
                   </span>
@@ -987,15 +1009,33 @@
                     v-model="config.products.startrailsExtraParameters"
                     rows="3"
                     title="Extra command-line arguments appended to the AllSky startrails tool."
-                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
               </div>
             </div>
           </div>
+
+          <div class="mt-6 flex justify-end gap-3">
+            <button
+              type="button"
+              class="rounded-xl border border-gray-600 bg-gray-800/80 px-4 py-2 text-sm font-semibold text-gray-200 transition hover:border-cyan-400 hover:text-white"
+              :disabled="saving"
+              @click="closeSettingsModal()"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="rounded-xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-40"
+              :disabled="saving"
+              @click="saveSettingsModal"
+            >
+              {{ saving ? 'Saving…' : 'OK' }}
+            </button>
+          </div>
         </div>
-        </div>
-      </section>
+      </div>
 
       <section class="rounded-2xl border border-gray-700 bg-gray-800/80 p-6 shadow-xl">
         <button
@@ -1261,8 +1301,11 @@ import { storeToRefs } from 'pinia';
 import {
   ArrowDownTrayIcon,
   ArrowPathIcon,
+  CameraIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  Cog6ToothIcon,
+  PhotoIcon,
   PlayIcon,
   StopIcon,
   TrashIcon,
@@ -1286,7 +1329,6 @@ const {
 } = storeToRefs(store);
 
 const sectionOpen = reactive({
-  captureSettings: false,
   recentSessions: false,
 });
 
@@ -1296,6 +1338,11 @@ const estimateWindow = reactive({
   endLocal: '',
 });
 const showStatusModal = ref(false);
+const settingsModal = ref(null);
+const settingsModalSnapshot = ref(null);
+const settingsFieldClass = 'w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)] 2xl:w-[calc(16.666%-0.834rem)]';
+const settingsWideFieldClass = 'w-full lg:w-[calc(66.666%-0.667rem)] 2xl:w-[calc(33.333%-0.667rem)]';
+const settingsFullWidthClass = 'w-full';
 
 const currentSession = computed(() => status.value?.currentSession || null);
 const recentSessions = computed(() => status.value?.recentSessions || []);
@@ -1536,8 +1583,56 @@ const denoiseOptions = [
   { value: 'cdn_hq', label: 'CDN High Quality' },
 ];
 
+const settingsModalTitle = computed(() => {
+  switch (settingsModal.value) {
+    case 'automation':
+      return 'Automation';
+    case 'camera':
+      return 'Camera';
+    case 'outputs':
+      return 'Outputs';
+    default:
+      return '';
+  }
+});
+
 const toggleSection = (sectionKey) => {
   sectionOpen[sectionKey] = !sectionOpen[sectionKey];
+};
+
+const openSettingsModal = (modalKey) => {
+  if (!config.value) {
+    return;
+  }
+
+  settingsModalSnapshot.value = JSON.stringify(config.value);
+  settingsModal.value = modalKey;
+};
+
+const restoreSettingsSnapshot = () => {
+  if (!settingsModalSnapshot.value) {
+    return;
+  }
+
+  config.value = JSON.parse(settingsModalSnapshot.value);
+};
+
+const closeSettingsModal = ({ restore = true } = {}) => {
+  if (restore) {
+    restoreSettingsSnapshot();
+  }
+
+  settingsModal.value = null;
+  settingsModalSnapshot.value = null;
+};
+
+const saveSettingsModal = async () => {
+  await saveConfig();
+
+  if (!error.value) {
+    settingsModal.value = null;
+    settingsModalSnapshot.value = null;
+  }
 };
 
 const setRootConfigValue = (key, value) => {
