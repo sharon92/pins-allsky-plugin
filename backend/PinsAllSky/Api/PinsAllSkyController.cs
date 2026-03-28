@@ -52,6 +52,23 @@ public sealed class PinsAllSkyController : WebApiController
         return ApiResponse<List<SessionInfo>>.Ok(PinsAllSkyPlugin.Host.GetRecentSessions());
     }
 
+    [Route(HttpVerbs.Post, "/session/delete")]
+    public async Task<ApiResponse<SessionCleanupResult>> DeleteSession()
+    {
+        var request = await ReadCamelCaseRequestAsync<DeleteSessionRequest>(HttpContext).ConfigureAwait(false);
+        var result = await PinsAllSkyPlugin.Host.DeleteSessionAsync(request.SessionId, HttpContext.CancellationToken).ConfigureAwait(false);
+        return result is null
+            ? ApiResponse<SessionCleanupResult>.Fail("The requested session does not exist.")
+            : ApiResponse<SessionCleanupResult>.Ok(result);
+    }
+
+    [Route(HttpVerbs.Post, "/sessions/delete-all")]
+    public async Task<ApiResponse<SessionCleanupResult>> DeleteAllSessions()
+    {
+        var result = await PinsAllSkyPlugin.Host.DeleteAllSessionsAsync(HttpContext.CancellationToken).ConfigureAwait(false);
+        return ApiResponse<SessionCleanupResult>.Ok(result);
+    }
+
     [Route(HttpVerbs.Post, "/session/start")]
     public async Task<ApiResponse<SessionInfo>> StartSession()
     {

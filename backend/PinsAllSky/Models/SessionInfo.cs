@@ -14,6 +14,7 @@ public sealed class SessionInfo
     public DateTimeOffset? LastCaptureAtUtc { get; set; }
     public string? LastFrameRelativePath { get; set; }
     public string? LastError { get; set; }
+    public long TotalSizeBytes { get; set; }
     public GeneratedProducts Products { get; set; } = new();
 }
 

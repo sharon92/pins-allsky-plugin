@@ -12,6 +12,7 @@ public sealed class PinsAllSkyStatus
     public SessionInfo? CurrentSession { get; set; }
     public List<SessionInfo> RecentSessions { get; set; } = [];
     public DependencyStatus Dependencies { get; set; } = new();
+    public StorageStatusInfo Storage { get; set; } = new();
 }
 
 public sealed class DependencyStatus

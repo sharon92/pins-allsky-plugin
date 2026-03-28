@@ -26,6 +26,8 @@ public sealed class PinsAllSkyHost : IDisposable
     private bool advancedApiReachable;
     private bool suppressAutoStartUntilSequenceStops;
     private string? lastError;
+    private StorageStatusInfo? cachedStorageStatus;
+    private DateTimeOffset storageStatusCalculatedAtUtc = DateTimeOffset.MinValue;
 
     public PinsAllSkyHost()
     {
@@ -40,6 +42,18 @@ public sealed class PinsAllSkyHost : IDisposable
         EnsureBundledToolsExecutable();
         RecoverInterruptedSessions();
         config = JsonStorage.LoadOrDefault(paths.ConfigFile, () => new PinsAllSkyConfig());
+        NormalizeConfig(config);
+        SyncCurrentImageToLatestPersistedFrame();
+
+        try
+        {
+            _ = EnforceStorageLimitAsync("startup", CancellationToken.None).GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"PINS AllSky could not enforce the storage limit during startup: {ex.Message}");
+        }
+
         server.Start(paths);
         sequenceMonitorTask = Task.Run(() => SequenceMonitorLoopAsync(shutdownCts.Token));
         Logger.Info("PINS AllSky backend started");
@@ -63,6 +77,8 @@ public sealed class PinsAllSkyHost : IDisposable
         }
 
         await JsonStorage.SaveAsync(paths.ConfigFile, updatedConfig, cancellationToken).ConfigureAwait(false);
+        InvalidateStorageStatus();
+        _ = await EnforceStorageLimitAsync("config-update", cancellationToken).ConfigureAwait(false);
         Logger.Info("PINS AllSky configuration updated");
         return GetConfig();
     }
@@ -79,6 +95,11 @@ public sealed class PinsAllSkyHost : IDisposable
         lock (sync)
         {
             sessionSnapshot = currentSession is null ? null : Clone(currentSession);
+            if (sessionSnapshot is not null)
+            {
+                sessionSnapshot.TotalSizeBytes = GetPathSize(paths.GetSessionRoot(sessionSnapshot.Id));
+            }
+
             captureRunning = captureTask is { IsCompleted: false };
             generateSnapshot = generateInProgress;
             sequenceSnapshot = sequenceRunning;
@@ -97,7 +118,8 @@ public sealed class PinsAllSkyHost : IDisposable
             CurrentImageUrl = File.Exists(paths.GetCurrentImagePath()) ? "/media/current/latest.jpg" : null,
             CurrentSession = sessionSnapshot,
             RecentSessions = GetRecentSessions(),
-            Dependencies = GetDependencyStatus()
+            Dependencies = GetDependencyStatus(),
+            Storage = GetStorageStatus()
         };
     }
 
@@ -113,6 +135,8 @@ public sealed class PinsAllSkyHost : IDisposable
         {
             return existing;
         }
+
+        _ = await EnforceStorageLimitAsync("pre-start", cancellationToken).ConfigureAwait(false);
 
         var session = new SessionInfo
         {
@@ -206,6 +230,10 @@ public sealed class PinsAllSkyHost : IDisposable
             {
                 _ = Task.Run(() => GenerateArtifactsAsync(session.Id, shutdownCts.Token), shutdownCts.Token);
             }
+            else
+            {
+                _ = await EnforceStorageLimitAsync("session-stop", cancellationToken).ConfigureAwait(false);
+            }
         }
 
         return session;
@@ -273,6 +301,7 @@ public sealed class PinsAllSkyHost : IDisposable
             }
 
             await SaveSessionAsync(session, cancellationToken).ConfigureAwait(false);
+            _ = await EnforceStorageLimitAsync("post-generate", cancellationToken).ConfigureAwait(false);
             Logger.Info($"PINS AllSky artifacts generated for session '{session.Id}'");
             return Clone(session);
         }
@@ -293,33 +322,87 @@ public sealed class PinsAllSkyHost : IDisposable
 
     public List<SessionInfo> GetRecentSessions()
     {
-        if (!Directory.Exists(paths.SessionsRoot))
-        {
-            return [];
-        }
-
-        var sessions = new List<SessionInfo>();
-        foreach (var sessionFile in Directory.EnumerateFiles(paths.SessionsRoot, "session.json", SearchOption.AllDirectories))
-        {
-            try
-            {
-                var session = JsonStorage.LoadOrDefault(sessionFile, () => new SessionInfo());
-                if (!string.IsNullOrWhiteSpace(session.Id))
-                {
-                    sessions.Add(session);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning($"Unable to read session file '{sessionFile}': {ex.Message}");
-            }
-        }
-
-        return sessions
-            .OrderByDescending(session => session.StartedAtUtc)
+        return GetPersistedSessions()
             .Take(10)
             .Select(Clone)
             .ToList();
+    }
+
+    public async Task<SessionCleanupResult?> DeleteSessionAsync(string? sessionId, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(sessionId))
+        {
+            return null;
+        }
+
+        sessionId = sessionId.Trim();
+
+        lock (sync)
+        {
+            if (string.Equals(currentSession?.Id, sessionId, StringComparison.Ordinal))
+            {
+                return new SessionCleanupResult
+                {
+                    DeletedSessionCount = 0,
+                    FreedBytes = 0,
+                    Storage = GetStorageStatus(forceRefresh: true)
+                };
+            }
+        }
+
+        var sessionRoot = paths.GetSessionRoot(sessionId);
+        if (!Directory.Exists(sessionRoot))
+        {
+            return null;
+        }
+
+        var before = GetStorageStatus(forceRefresh: true);
+        DeleteSessionDirectory(sessionId);
+        SyncCurrentImageToLatestPersistedFrame();
+        InvalidateStorageStatus();
+        await Task.CompletedTask.ConfigureAwait(false);
+
+        return new SessionCleanupResult
+        {
+            DeletedSessionCount = 1,
+            DeletedSessionIds = [sessionId],
+            FreedBytes = Math.Max(0, before.PluginUsedBytes - GetStorageStatus(forceRefresh: true).PluginUsedBytes),
+            Storage = GetStorageStatus(forceRefresh: true)
+        };
+    }
+
+    public async Task<SessionCleanupResult> DeleteAllSessionsAsync(CancellationToken cancellationToken)
+    {
+        var activeSessionId = GetActiveSessionId();
+        var before = GetStorageStatus(forceRefresh: true);
+        var deletedSessionIds = new List<string>();
+
+        foreach (var session in GetPersistedSessions().OrderBy(session => session.StartedAtUtc))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!string.IsNullOrWhiteSpace(activeSessionId) && string.Equals(session.Id, activeSessionId, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            DeleteSessionDirectory(session.Id);
+            deletedSessionIds.Add(session.Id);
+        }
+
+        SyncCurrentImageToLatestPersistedFrame();
+        InvalidateStorageStatus();
+
+        var after = GetStorageStatus(forceRefresh: true);
+
+        await Task.CompletedTask.ConfigureAwait(false);
+        return new SessionCleanupResult
+        {
+            DeletedSessionCount = deletedSessionIds.Count,
+            DeletedSessionIds = deletedSessionIds,
+            FreedBytes = Math.Max(0, before.PluginUsedBytes - after.PluginUsedBytes),
+            Storage = after
+        };
     }
 
     public void Dispose()
@@ -838,6 +921,11 @@ public sealed class PinsAllSkyHost : IDisposable
 
     private static void NormalizeConfig(PinsAllSkyConfig updatedConfig)
     {
+        updatedConfig.Camera ??= new CameraCaptureSettings();
+        updatedConfig.Products ??= new ProductGenerationSettings();
+        updatedConfig.AdvancedApi ??= new AdvancedApiSettings();
+        updatedConfig.Storage ??= new StorageManagementSettings();
+
         updatedConfig.SequencePollIntervalSeconds = Math.Clamp(updatedConfig.SequencePollIntervalSeconds, 5, 300);
         updatedConfig.Camera.IntervalSeconds = Math.Clamp(updatedConfig.Camera.IntervalSeconds, 5, 3600);
         updatedConfig.Camera.CaptureTimeoutSeconds = Math.Clamp(updatedConfig.Camera.CaptureTimeoutSeconds, 15, 300);
@@ -852,6 +940,7 @@ public sealed class PinsAllSkyHost : IDisposable
         updatedConfig.Products.StartrailsBrightnessThreshold = Math.Clamp(updatedConfig.Products.StartrailsBrightnessThreshold, 0.0, 1.0);
         updatedConfig.AdvancedApi.RequestTimeoutSeconds = Math.Clamp(updatedConfig.AdvancedApi.RequestTimeoutSeconds, 1, 30);
         updatedConfig.AdvancedApi.Port = Math.Clamp(updatedConfig.AdvancedApi.Port, 1, 65535);
+        updatedConfig.Storage.MaxUsageGb = Math.Clamp(updatedConfig.Storage.MaxUsageGb, 0.0, 100000.0);
     }
 
     private static bool TryGetProperty(JsonElement element, string camelCaseName, out JsonElement value)
@@ -882,6 +971,7 @@ public sealed class PinsAllSkyHost : IDisposable
     private async Task SaveSessionAsync(SessionInfo session, CancellationToken cancellationToken)
     {
         await JsonStorage.SaveAsync(paths.GetSessionFile(session.Id), session, cancellationToken).ConfigureAwait(false);
+        InvalidateStorageStatus();
     }
 
     private ArtifactInfo CreateArtifact(string name, string outputPath)
@@ -922,6 +1012,288 @@ public sealed class PinsAllSkyHost : IDisposable
             {
                 Logger.Warning($"Unable to delete captured frame '{framePath}': {ex.Message}");
             }
+        }
+
+        InvalidateStorageStatus();
+    }
+
+    private List<SessionInfo> GetPersistedSessions()
+    {
+        if (!Directory.Exists(paths.SessionsRoot))
+        {
+            return [];
+        }
+
+        var sessions = new List<SessionInfo>();
+        foreach (var sessionDirectory in Directory.EnumerateDirectories(paths.SessionsRoot))
+        {
+            var sessionFile = Path.Combine(sessionDirectory, "session.json");
+            if (!File.Exists(sessionFile))
+            {
+                continue;
+            }
+
+            try
+            {
+                var session = JsonStorage.LoadOrDefault(sessionFile, () => new SessionInfo());
+                if (string.IsNullOrWhiteSpace(session.Id))
+                {
+                    continue;
+                }
+
+                session.TotalSizeBytes = GetPathSize(sessionDirectory);
+                sessions.Add(session);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning($"Unable to read session file '{sessionFile}': {ex.Message}");
+            }
+        }
+
+        return sessions
+            .OrderByDescending(session => session.StartedAtUtc)
+            .ToList();
+    }
+
+    private StorageStatusInfo GetStorageStatus(bool forceRefresh = false)
+    {
+        StorageStatusInfo? cached;
+
+        lock (sync)
+        {
+            cached = cachedStorageStatus;
+            if (!forceRefresh
+                && cached is not null
+                && DateTimeOffset.UtcNow - storageStatusCalculatedAtUtc < TimeSpan.FromSeconds(15))
+            {
+                return Clone(cached);
+            }
+        }
+
+        var snapshot = BuildStorageStatus();
+
+        lock (sync)
+        {
+            cachedStorageStatus = snapshot;
+            storageStatusCalculatedAtUtc = DateTimeOffset.UtcNow;
+        }
+
+        return Clone(snapshot);
+    }
+
+    private StorageStatusInfo BuildStorageStatus()
+    {
+        var pluginUsedBytes = GetPathSize(paths.DataRoot);
+        var maxPluginUsageBytes = GetConfiguredMaxUsageBytes();
+        var driveRoot = Path.GetPathRoot(Path.GetFullPath(paths.DataRoot));
+        long diskAvailableBytes = 0;
+        long diskTotalBytes = 0;
+
+        try
+        {
+            var drive = new DriveInfo(string.IsNullOrWhiteSpace(driveRoot) ? paths.DataRoot : driveRoot);
+            diskAvailableBytes = drive.AvailableFreeSpace;
+            diskTotalBytes = drive.TotalSize;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Unable to read storage information for '{paths.DataRoot}': {ex.Message}");
+        }
+
+        return new StorageStatusInfo
+        {
+            PluginUsedBytes = pluginUsedBytes,
+            PluginAvailableBytes = maxPluginUsageBytes is > 0 ? Math.Max(0, maxPluginUsageBytes.Value - pluginUsedBytes) : null,
+            MaxPluginUsageBytes = maxPluginUsageBytes,
+            DiskAvailableBytes = diskAvailableBytes,
+            DiskTotalBytes = diskTotalBytes,
+            LimitEnabled = maxPluginUsageBytes is > 0,
+            WithinLimit = maxPluginUsageBytes is not > 0 || pluginUsedBytes <= maxPluginUsageBytes.Value
+        };
+    }
+
+    private long? GetConfiguredMaxUsageBytes()
+    {
+        double maxUsageGb;
+
+        lock (sync)
+        {
+            maxUsageGb = config.Storage.MaxUsageGb;
+        }
+
+        if (maxUsageGb <= 0)
+        {
+            return null;
+        }
+
+        return (long)Math.Round(maxUsageGb * 1024d * 1024d * 1024d, MidpointRounding.AwayFromZero);
+    }
+
+    private async Task<SessionCleanupResult?> EnforceStorageLimitAsync(string reason, CancellationToken cancellationToken)
+    {
+        var maxUsageBytes = GetConfiguredMaxUsageBytes();
+        if (maxUsageBytes is not > 0)
+        {
+            return null;
+        }
+
+        var before = GetStorageStatus(forceRefresh: true);
+        if (before.PluginUsedBytes <= maxUsageBytes.Value)
+        {
+            return null;
+        }
+
+        var activeSessionId = GetActiveSessionId();
+        var deletedSessionIds = new List<string>();
+        var estimatedUsedBytes = before.PluginUsedBytes;
+
+        foreach (var session in GetPersistedSessions().OrderBy(session => session.StartedAtUtc))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!string.IsNullOrWhiteSpace(activeSessionId) && string.Equals(session.Id, activeSessionId, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            DeleteSessionDirectory(session.Id);
+            deletedSessionIds.Add(session.Id);
+            estimatedUsedBytes = Math.Max(0, estimatedUsedBytes - session.TotalSizeBytes);
+
+            if (estimatedUsedBytes <= maxUsageBytes.Value)
+            {
+                break;
+            }
+        }
+
+        if (deletedSessionIds.Count == 0)
+        {
+            return null;
+        }
+
+        SyncCurrentImageToLatestPersistedFrame();
+        InvalidateStorageStatus();
+
+        var after = GetStorageStatus(forceRefresh: true);
+        var result = new SessionCleanupResult
+        {
+            DeletedSessionCount = deletedSessionIds.Count,
+            DeletedSessionIds = deletedSessionIds,
+            FreedBytes = Math.Max(0, before.PluginUsedBytes - after.PluginUsedBytes),
+            Storage = after
+        };
+
+        Logger.Info($"PINS AllSky removed {result.DeletedSessionCount} session(s) during '{reason}' storage cleanup and freed {result.FreedBytes} bytes.");
+        await Task.CompletedTask.ConfigureAwait(false);
+        return result;
+    }
+
+    private string? GetActiveSessionId()
+    {
+        lock (sync)
+        {
+            return captureTask is { IsCompleted: false } ? currentSession?.Id : null;
+        }
+    }
+
+    private void SyncCurrentImageToLatestPersistedFrame()
+    {
+        var activeSessionId = GetActiveSessionId();
+        if (!string.IsNullOrWhiteSpace(activeSessionId))
+        {
+            return;
+        }
+
+        var currentImagePath = paths.GetCurrentImagePath();
+        var latestSession = GetPersistedSessions().FirstOrDefault(session => !string.IsNullOrWhiteSpace(session.LastFrameRelativePath));
+        if (latestSession is null || string.IsNullOrWhiteSpace(latestSession.LastFrameRelativePath))
+        {
+            TryDeleteFile(currentImagePath);
+            return;
+        }
+
+        var relativePath = latestSession.LastFrameRelativePath.Replace('/', Path.DirectorySeparatorChar);
+        var sourcePath = Path.Combine(paths.DataRoot, relativePath);
+        if (!File.Exists(sourcePath))
+        {
+            TryDeleteFile(currentImagePath);
+            return;
+        }
+
+        Directory.CreateDirectory(paths.CurrentRoot);
+        File.Copy(sourcePath, currentImagePath, overwrite: true);
+    }
+
+    private void DeleteSessionDirectory(string sessionId)
+    {
+        var sessionRoot = paths.GetSessionRoot(sessionId);
+        if (!Directory.Exists(sessionRoot))
+        {
+            return;
+        }
+
+        Directory.Delete(sessionRoot, recursive: true);
+        Logger.Info($"PINS AllSky deleted session '{sessionId}'.");
+    }
+
+    private void InvalidateStorageStatus()
+    {
+        lock (sync)
+        {
+            cachedStorageStatus = null;
+            storageStatusCalculatedAtUtc = DateTimeOffset.MinValue;
+        }
+    }
+
+    private static StorageStatusInfo Clone(StorageStatusInfo source) => new()
+    {
+        PluginUsedBytes = source.PluginUsedBytes,
+        PluginAvailableBytes = source.PluginAvailableBytes,
+        MaxPluginUsageBytes = source.MaxPluginUsageBytes,
+        DiskAvailableBytes = source.DiskAvailableBytes,
+        DiskTotalBytes = source.DiskTotalBytes,
+        LimitEnabled = source.LimitEnabled,
+        WithinLimit = source.WithinLimit
+    };
+
+    private static long GetPathSize(string path)
+    {
+        if (File.Exists(path))
+        {
+            return new FileInfo(path).Length;
+        }
+
+        if (!Directory.Exists(path))
+        {
+            return 0;
+        }
+
+        long total = 0;
+        foreach (var filePath in Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories))
+        {
+            try
+            {
+                total += new FileInfo(filePath).Length;
+            }
+            catch
+            {
+            }
+        }
+
+        return total;
+    }
+
+    private static void TryDeleteFile(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch
+        {
         }
     }
 

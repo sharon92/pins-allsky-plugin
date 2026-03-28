@@ -13,7 +13,9 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
     error: null,
     loading: false,
     saving: false,
+    cleanupBusy: false,
     manualLabel: '',
+    cleanupResult: null,
     imageNonce: Date.now(),
     pollTimer: null,
   }),
@@ -133,6 +135,50 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
       } catch (error) {
         this.error = error?.message || 'Unable to generate artifacts.';
       }
+    },
+
+    async deleteSession(sessionId) {
+      this.cleanupBusy = true;
+      try {
+        const { data } = await axios.post(`${this.backendBaseUrl}/api/session/delete`, {
+          sessionId,
+        });
+
+        if (!data.success) {
+          throw new Error(data.error || 'Unable to delete the selected session.');
+        }
+
+        this.cleanupResult = data.data;
+        await this.fetchStatus();
+        this.error = null;
+      } catch (error) {
+        this.error = error?.message || 'Unable to delete the selected session.';
+      } finally {
+        this.cleanupBusy = false;
+      }
+    },
+
+    async deleteAllSessions() {
+      this.cleanupBusy = true;
+      try {
+        const { data } = await axios.post(`${this.backendBaseUrl}/api/sessions/delete-all`, {});
+
+        if (!data.success) {
+          throw new Error(data.error || 'Unable to delete stored sessions.');
+        }
+
+        this.cleanupResult = data.data;
+        await this.fetchStatus();
+        this.error = null;
+      } catch (error) {
+        this.error = error?.message || 'Unable to delete stored sessions.';
+      } finally {
+        this.cleanupBusy = false;
+      }
+    },
+
+    clearCleanupResult() {
+      this.cleanupResult = null;
     },
 
     artifactUrl(relativePath) {

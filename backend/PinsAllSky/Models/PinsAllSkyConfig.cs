@@ -7,6 +7,7 @@ public sealed class PinsAllSkyConfig
     public CameraCaptureSettings Camera { get; set; } = new();
     public ProductGenerationSettings Products { get; set; } = new();
     public AdvancedApiSettings AdvancedApi { get; set; } = new();
+    public StorageManagementSettings Storage { get; set; } = new();
 }
 
 public sealed class CameraCaptureSettings
@@ -73,4 +74,9 @@ public sealed class AdvancedApiSettings
     public int Port { get; set; } = 1888;
     public string BasePath { get; set; } = "/v2/api";
     public int RequestTimeoutSeconds { get; set; } = 5;
+}
+
+public sealed class StorageManagementSettings
+{
+    public double MaxUsageGb { get; set; }
 }

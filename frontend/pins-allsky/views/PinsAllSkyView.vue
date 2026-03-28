@@ -346,6 +346,24 @@
                 class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
               />
             </label>
+            <label class="block">
+              <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Max Plugin Storage (GB)
+              </span>
+              <input
+                v-model.number="config.storage.maxUsageGb"
+                type="number"
+                min="0"
+                step="0.1"
+                inputmode="decimal"
+                title="Maximum storage PINS AllSky may use under its plugin data directory. Set to 0 for no limit. When the limit is exceeded, the backend prunes the oldest completed sessions."
+                class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+              />
+              <span class="mt-2 block text-xs text-gray-500">
+                Set to <code class="font-mono text-gray-400">0</code> for no limit. Otherwise the
+                backend deletes the oldest completed sessions when usage grows beyond this cap.
+              </span>
+            </label>
           </div>
 
           <div class="space-y-4 rounded-2xl border border-gray-700 bg-gray-900/50 p-4">
@@ -937,6 +955,56 @@
           </div>
         </button>
 
+        <div v-if="sectionOpen.recentSessions" class="mt-6 space-y-4">
+          <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div class="rounded-xl border border-gray-700 bg-gray-900/50 p-3">
+              <div class="text-xs uppercase tracking-wide text-gray-500">Plugin Used</div>
+              <div class="mt-2 text-sm text-white">{{ formatSize(storage.pluginUsedBytes) }}</div>
+            </div>
+            <div class="rounded-xl border border-gray-700 bg-gray-900/50 p-3">
+              <div class="text-xs uppercase tracking-wide text-gray-500">Plugin Limit</div>
+              <div class="mt-2 text-sm text-white">
+                {{ storage.limitEnabled ? formatSize(storage.maxPluginUsageBytes) : 'Unlimited' }}
+              </div>
+            </div>
+            <div class="rounded-xl border border-gray-700 bg-gray-900/50 p-3">
+              <div class="text-xs uppercase tracking-wide text-gray-500">Plugin Available</div>
+              <div class="mt-2 text-sm text-white">
+                {{ storage.limitEnabled ? formatSize(storage.pluginAvailableBytes) : 'Unlimited' }}
+              </div>
+            </div>
+            <div class="rounded-xl border border-gray-700 bg-gray-900/50 p-3">
+              <div class="text-xs uppercase tracking-wide text-gray-500">Disk Available</div>
+              <div class="mt-2 text-sm text-white">{{ formatSize(storage.diskAvailableBytes) }}</div>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-900/50 px-4 py-3">
+            <div class="text-sm text-gray-300">
+              <span :class="storage.withinLimit ? 'text-emerald-300' : 'text-amber-200'">
+                {{ storage.withinLimit || !storage.limitEnabled ? 'Storage within limit.' : 'Storage limit exceeded.' }}
+              </span>
+              <span v-if="storage.limitEnabled" class="text-gray-500">
+                Oldest completed sessions are pruned automatically when needed.
+              </span>
+            </div>
+            <button
+              class="rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm font-medium text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+              :disabled="cleanupBusy || status?.captureRunning || status?.generateInProgress || recentSessions.length === 0"
+              @click.stop="deleteAllSessions"
+            >
+              {{ cleanupBusy ? 'Cleaning…' : 'Delete All' }}
+            </button>
+          </div>
+
+          <div
+            v-if="cleanupSummary"
+            class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100"
+          >
+            {{ cleanupSummary }}
+          </div>
+        </div>
+
         <div v-if="sectionOpen.recentSessions && recentSessions.length === 0" class="mt-6 rounded-xl border border-dashed border-gray-700 bg-gray-900/40 px-4 py-8 text-center text-sm text-gray-500">
           No completed sessions have been recorded yet.
         </div>
@@ -960,14 +1028,25 @@
                   Frames: {{ session.captureCount }} • Reason: {{ session.startReason }}
                   <span v-if="session.stopReason"> • {{ session.stopReason }}</span>
                 </div>
+                <div class="text-sm text-gray-400">
+                  Storage: {{ formatSize(session.totalSizeBytes) }}
+                </div>
               </div>
 
               <div class="flex flex-wrap gap-2">
                 <button
-                  class="rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-sm font-medium text-cyan-100 transition hover:bg-cyan-500/20"
+                  class="rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-sm font-medium text-cyan-100 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                  :disabled="cleanupBusy"
                   @click="generateArtifacts(session.id)"
                 >
                   Regenerate
+                </button>
+                <button
+                  class="rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm font-medium text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                  :disabled="cleanupBusy || status?.captureRunning || status?.generateInProgress || session.id === currentSession?.id"
+                  @click="deleteSession(session)"
+                >
+                  Delete
                 </button>
                 <a
                   v-if="session.products?.timelapse"
@@ -1033,11 +1112,27 @@ import toggleButton from '@/components/helpers/toggleButton.vue';
 import { usePinsAllSkyStore } from '../store/pinsAllskyStore';
 
 const store = usePinsAllSkyStore();
-const { status, config, error, loading, saving, currentImageUrl } = storeToRefs(store);
+const { status, config, error, loading, saving, cleanupBusy, cleanupResult, currentImageUrl } = storeToRefs(store);
 
 const currentSession = computed(() => status.value?.currentSession || null);
 const recentSessions = computed(() => status.value?.recentSessions || []);
 const backendError = computed(() => status.value?.lastError || null);
+const storage = computed(() => status.value?.storage || {});
+const cleanupSummary = computed(() => {
+  if (!cleanupResult.value) {
+    return null;
+  }
+
+  const deletedSessionCount = cleanupResult.value.deletedSessionCount || 0;
+  const freedBytes = cleanupResult.value.freedBytes || 0;
+  const remainingUsed = cleanupResult.value.storage?.pluginUsedBytes ?? 0;
+
+  if (deletedSessionCount === 0) {
+    return 'No sessions were deleted.';
+  }
+
+  return `Deleted ${deletedSessionCount} session${deletedSessionCount === 1 ? '' : 's'}, freed ${formatSize(freedBytes)}, remaining plugin usage ${formatSize(remainingUsed)}.`;
+});
 
 const dependencyRows = computed(() => [
   {
@@ -1151,6 +1246,23 @@ const generateArtifacts = async (sessionId = null) => {
   await store.generateArtifacts(sessionId);
 };
 
+const deleteSession = async (session) => {
+  const sessionName = session?.label || session?.id || 'this session';
+  if (!window.confirm(`Delete ${sessionName} and all of its captured frames/products?`)) {
+    return;
+  }
+
+  await store.deleteSession(session.id);
+};
+
+const deleteAllSessions = async () => {
+  if (!window.confirm('Delete all stored AllSky sessions, frames, and generated products?')) {
+    return;
+  }
+
+  await store.deleteAllSessions();
+};
+
 const artifactUrl = (relativePath) => store.artifactUrl(relativePath);
 
 const parseDateValue = (value) => {
@@ -1220,13 +1332,17 @@ const formatSize = (bytes) => {
     return '—';
   }
 
-  if (bytes < 1024) {
-    return `${bytes} B`;
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let value = bytes;
+  let unitIndex = 0;
+
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
   }
-  if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(1)} KB`;
-  }
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+
+  const precision = unitIndex === 0 ? 0 : value >= 100 ? 0 : 1;
+  return `${value.toFixed(precision)} ${units[unitIndex]}`;
 };
 
 const describeArtifact = (artifact) => {

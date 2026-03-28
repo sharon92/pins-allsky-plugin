@@ -15,6 +15,11 @@ public sealed class GenerateArtifactsRequest
     public string? SessionId { get; set; }
 }
 
+public sealed class DeleteSessionRequest
+{
+    public string? SessionId { get; set; }
+}
+
 public sealed class ApiResponse<T>
 {
     public bool Success { get; init; }
