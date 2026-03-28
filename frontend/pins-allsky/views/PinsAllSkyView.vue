@@ -29,12 +29,7 @@
       >
         <div class="w-full max-w-2xl rounded-2xl border border-gray-700 bg-gray-900/95 p-6 shadow-2xl">
           <div class="flex items-start justify-between gap-4">
-            <div>
-              <h2 class="text-xl font-semibold text-white">AllSky Status</h2>
-              <p class="mt-1 text-sm text-gray-400">
-                Compact runtime and dependency summary for the AllSky plugin.
-              </p>
-            </div>
+            <h2 class="text-xl font-semibold text-white">AllSky Status</h2>
             <button
               type="button"
               class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-600 bg-gray-800/80 text-gray-200 transition hover:border-cyan-400 hover:text-white"
@@ -92,81 +87,54 @@
 
       <section class="rounded-2xl border border-gray-700 bg-gray-800/80 p-5 shadow-xl">
         <h2 class="text-xl font-semibold text-white">Session Control</h2>
-        <p class="mt-1 text-sm text-gray-400">
-          Manual sessions can run alongside automatic sequence-triggered operation.
-        </p>
 
         <div class="mt-5 flex flex-col gap-6 xl:flex-row">
-          <div class="xl:w-[24rem] xl:flex-none">
-            <div class="space-y-4">
-              <label class="block">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Manual Session Label
-                </span>
-                <input
-                  v-model="store.manualLabel"
-                  title="Optional label used to identify the next manually started AllSky session."
-                  class="w-full rounded-xl border border-gray-600 bg-gray-900/80 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                  placeholder="Optional label for the next manual session"
-                />
-              </label>
+          <div class="xl:w-[22rem] xl:flex-none">
+            <div class="flex flex-wrap items-stretch gap-2">
+              <input
+                v-model="manualLabelInput"
+                :title="`Session label for the next manual capture. Defaults to ${defaultManualLabel}.`"
+                class="min-w-0 flex-1 rounded-xl border border-gray-600 bg-gray-900/80 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+                placeholder="Session label"
+              />
 
-              <div class="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+              <div class="flex items-center gap-2">
                 <button
-                  class="rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"
+                  type="button"
+                  title="Start Capture"
+                  aria-label="Start Capture"
+                  class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-600 text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"
                   :disabled="loading || status?.captureRunning"
                   @click="startSession"
                 >
-                  Start Capture
+                  <PlayIcon class="h-5 w-5" />
                 </button>
                 <button
-                  class="rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 font-semibold text-cyan-100 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                  type="button"
+                  :title="status?.generateInProgress ? 'Rendering Progress…' : 'Render Progress'"
+                  :aria-label="status?.generateInProgress ? 'Rendering Progress' : 'Render Progress'"
+                  class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
                   :disabled="loading || !status?.captureRunning || !currentSession?.captureCount || status?.generateInProgress"
                   @click="generateArtifacts(currentSession?.id || null)"
                 >
-                  {{ status?.generateInProgress ? 'Rendering Progress…' : 'Render Progress' }}
+                  <ArrowDownTrayIcon class="h-5 w-5" :class="status?.generateInProgress ? 'animate-pulse' : ''" />
                 </button>
                 <button
-                  class="rounded-xl bg-rose-600 px-4 py-3 font-semibold text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-40"
+                  type="button"
+                  title="Stop And Render"
+                  aria-label="Stop And Render"
+                  class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-rose-600 text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-40"
                   :disabled="loading || !status?.captureRunning"
                   @click="stopSession"
                 >
-                  Stop And Render
+                  <StopIcon class="h-5 w-5" />
                 </button>
               </div>
-
-              <p class="text-xs text-gray-500">
-                `Render Progress` generates timelapse, keogram, and startrails from frames captured
-                so far without stopping the active capture session.
-              </p>
-
-              <button
-                class="w-full rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 font-semibold text-cyan-100 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                :disabled="loading || status?.generateInProgress"
-                @click="generateArtifacts()"
-              >
-                Regenerate Latest Artifacts
-              </button>
             </div>
           </div>
 
           <div class="min-w-0 flex-1">
-            <div class="flex items-center justify-between gap-3">
-              <div>
-                <h3 class="text-xl font-semibold text-white">Live Preview</h3>
-                <p class="text-sm text-gray-400">
-                  Latest captured frame from the current or most recent session.
-                </p>
-              </div>
-              <button
-                class="rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-sm font-medium text-cyan-200 transition hover:bg-cyan-500/20"
-                @click="refreshAll"
-              >
-                Refresh
-              </button>
-            </div>
-
-            <div class="mt-5 overflow-hidden rounded-2xl border border-gray-700 bg-black/60">
+            <div class="overflow-hidden rounded-2xl border border-gray-700 bg-black/60">
               <div class="relative h-[28rem] w-full">
                 <img
                   v-if="currentImageUrl"
@@ -184,6 +152,22 @@
 
                 <div class="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/80 via-black/30 to-transparent" />
                 <div class="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
+
+                <div class="absolute right-4 top-4 z-10 flex items-center gap-2">
+                  <div class="pointer-events-none rounded-xl border border-white/10 bg-black/45 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-300 backdrop-blur-sm">
+                    Live Preview
+                  </div>
+                  <button
+                    type="button"
+                    :title="loading ? 'Refreshing Preview…' : 'Refresh Preview'"
+                    :aria-label="loading ? 'Refreshing Preview' : 'Refresh Preview'"
+                    class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-black/45 text-gray-200 backdrop-blur-sm transition hover:border-cyan-400 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                    :disabled="loading"
+                    @click="refreshAll"
+                  >
+                    <ArrowPathIcon class="h-5 w-5" :class="loading ? 'animate-spin' : ''" />
+                  </button>
+                </div>
 
                 <div class="pointer-events-none absolute left-4 top-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm">
                   <div class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-300">Session</div>
@@ -1276,8 +1260,11 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import {
   ArrowDownTrayIcon,
+  ArrowPathIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  PlayIcon,
+  StopIcon,
   TrashIcon,
   XMarkIcon,
 } from '@heroicons/vue/24/outline';
@@ -1594,6 +1581,7 @@ const saveConfig = async () => {
 };
 
 const startSession = async () => {
+  store.manualLabel = (store.manualLabel || '').trim() || defaultManualLabel.value;
   await store.startSession();
 };
 
@@ -1710,6 +1698,52 @@ const parseDateValue = (value) => {
 
   return null;
 };
+
+const sameLocalDay = (left, right) =>
+  left.getFullYear() === right.getFullYear()
+  && left.getMonth() === right.getMonth()
+  && left.getDate() === right.getDate();
+
+const buildDefaultManualLabel = () => {
+  const now = new Date();
+  const datePrefix = `${String(now.getFullYear()).slice(-2)}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+  const sessionsById = new Map();
+  const candidateSessions = [currentSession.value, ...recentSessions.value].filter(Boolean);
+
+  for (const session of candidateSessions) {
+    const sessionKey = session.id || `${session.label || ''}:${JSON.stringify(session.startedAtUtc || null)}`;
+    if (!sessionsById.has(sessionKey)) {
+      sessionsById.set(sessionKey, session);
+    }
+  }
+
+  let sessionsStartedToday = 0;
+  let maxLabelCounter = 0;
+
+  for (const session of sessionsById.values()) {
+    const startedAt = parseDateValue(session.startedAtUtc);
+    if (startedAt && sameLocalDay(startedAt, now)) {
+      sessionsStartedToday += 1;
+    }
+
+    const label = typeof session.label === 'string' ? session.label.trim() : '';
+    const match = label.match(new RegExp(`^${datePrefix}_(\\d+)$`));
+    if (match) {
+      maxLabelCounter = Math.max(maxLabelCounter, Number(match[1]));
+    }
+  }
+
+  const nextCounter = Math.max(sessionsStartedToday, maxLabelCounter) + 1;
+  return `${datePrefix}_${nextCounter}`;
+};
+
+const defaultManualLabel = computed(() => buildDefaultManualLabel());
+const manualLabelInput = computed({
+  get: () => store.manualLabel || defaultManualLabel.value,
+  set: (value) => {
+    store.manualLabel = typeof value === 'string' ? value : '';
+  },
+});
 
 const parseLocalInputValue = (value) => {
   if (!value) {
