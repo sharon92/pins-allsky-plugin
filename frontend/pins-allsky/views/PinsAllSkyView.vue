@@ -106,236 +106,35 @@
         }}
       </div>
 
-      <section class="rounded-2xl border border-gray-700 bg-gray-800/80 p-5 shadow-xl">
-        <h2 class="text-xl font-semibold text-white">
-          {{ t('plugins.pinsAllSky.sections.sessionControl') }}
-        </h2>
-
-        <div class="mt-5 space-y-5">
-          <div class="flex flex-wrap items-stretch gap-2">
-            <input
-              v-model="manualLabelInput"
-              :title="
-                t('plugins.pinsAllSky.estimate.sessionLabelTitle', { label: defaultManualLabel })
-              "
-              class="min-w-0 flex-1 rounded-xl border border-gray-600 bg-gray-900/80 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-              :placeholder="t('plugins.pinsAllSky.estimate.sessionLabelPlaceholder')"
-            />
-
-            <div class="flex items-center gap-2">
-              <button
-                type="button"
-                :title="t('plugins.pinsAllSky.buttons.startCapture')"
-                :aria-label="t('plugins.pinsAllSky.buttons.startCapture')"
-                class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-600 text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"
-                :disabled="loading || status?.captureRunning"
-                @click="startSession"
-              >
-                <PlayIcon class="h-5 w-5" />
-              </button>
-              <button
-                type="button"
-                :title="
-                  status?.generateInProgress
-                    ? t('plugins.pinsAllSky.buttons.renderingProgress')
-                    : t('plugins.pinsAllSky.buttons.renderProgress')
-                "
-                :aria-label="
-                  status?.generateInProgress
-                    ? t('plugins.pinsAllSky.buttons.renderingProgress')
-                    : t('plugins.pinsAllSky.buttons.renderProgress')
-                "
-                class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                :disabled="
-                  loading ||
-                  !status?.captureRunning ||
-                  !currentSession?.captureCount ||
-                  status?.generateInProgress
-                "
-                @click="generateArtifacts(currentSession?.id || null)"
-              >
-                <ArrowDownTrayIcon
-                  class="h-5 w-5"
-                  :class="status?.generateInProgress ? 'animate-pulse' : ''"
-                />
-              </button>
-              <button
-                type="button"
-                :title="t('plugins.pinsAllSky.buttons.stopAndRender')"
-                :aria-label="t('plugins.pinsAllSky.buttons.stopAndRender')"
-                class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-rose-600 text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-40"
-                :disabled="loading || !status?.captureRunning"
-                @click="stopSession"
-              >
-                <StopIcon class="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-
-          <div class="overflow-hidden rounded-2xl border border-gray-700 bg-black/60">
-            <div class="relative h-[28rem] w-full">
-              <img
-                v-if="currentImageUrl"
-                :src="currentImageUrl"
-                alt="Latest all-sky frame"
-                class="h-full w-full object-contain"
-              />
-              <div
-                v-else
-                class="flex h-full items-center justify-center px-6 text-center text-sm text-gray-500"
-              >
-                {{ t('plugins.pinsAllSky.preview.noFrameYet') }}
-              </div>
-
-              <div
-                class="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/80 via-black/30 to-transparent"
-              />
-              <div
-                class="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/85 via-black/35 to-transparent"
-              />
-
-              <div class="absolute right-4 top-4 z-10 flex items-center gap-2">
-                <div
-                  class="pointer-events-none rounded-xl border border-white/10 bg-black/45 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-300 backdrop-blur-sm"
-                >
-                  {{ t('plugins.pinsAllSky.sections.livePreview') }}
-                </div>
-                <button
-                  type="button"
-                  :title="
-                    loading
-                      ? t('plugins.pinsAllSky.buttons.refreshingPreview')
-                      : t('plugins.pinsAllSky.buttons.refreshPreview')
-                  "
-                  :aria-label="
-                    loading
-                      ? t('plugins.pinsAllSky.buttons.refreshingPreview')
-                      : t('plugins.pinsAllSky.buttons.refreshPreview')
-                  "
-                  class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-black/45 text-gray-200 backdrop-blur-sm transition hover:border-cyan-400 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-                  :disabled="loading"
-                  @click="refreshAll"
-                >
-                  <ArrowPathIcon class="h-5 w-5" :class="loading ? 'animate-spin' : ''" />
-                </button>
-              </div>
-
-              <div
-                class="pointer-events-none absolute left-4 top-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm"
-              >
-                <div class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-300">
-                  {{ t('plugins.pinsAllSky.preview.session') }}
-                </div>
-                <div class="mt-1 text-sm font-medium text-white">
-                  {{ currentSession?.id || t('plugins.pinsAllSky.preview.noActiveSession') }}
-                </div>
-              </div>
-
-              <div
-                class="pointer-events-none absolute bottom-4 left-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm"
-              >
-                <div class="space-y-1 text-sm text-white">
-                  <div>
-                    <span class="text-gray-300">{{
-                      t('plugins.pinsAllSky.preview.lastCapture')
-                    }}</span>
-                    {{ formatDate(currentSession?.lastCaptureAtUtc) }}
-                  </div>
-                  <div>
-                    <span class="text-gray-300">{{
-                      t('plugins.pinsAllSky.preview.frameCount')
-                    }}</span>
-                    {{ formatCount(currentSession?.captureCount || 0) }}
-                  </div>
-                </div>
-              </div>
-
-              <div
-                class="pointer-events-none absolute bottom-4 right-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm"
-              >
-                <div class="space-y-1 text-right text-sm text-white">
-                  <div>
-                    <span class="text-gray-300">{{
-                      t('plugins.pinsAllSky.preview.captureInterval')
-                    }}</span>
-                    {{ formatInterval(config?.camera?.intervalSeconds) }}
-                  </div>
-                  <div>
-                    <span class="text-gray-300">{{
-                      t('plugins.pinsAllSky.preview.exposure')
-                    }}</span>
-                    {{ formatExposure(config?.camera) }}
-                  </div>
-                  <div>
-                    <span class="text-gray-300">{{ t('plugins.pinsAllSky.preview.gain') }}</span>
-                    {{ formatGain(config?.camera) }}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="rounded-2xl border border-gray-700 bg-gray-900/50 p-4">
-            <div class="text-sm font-semibold text-white">
-              {{ t('plugins.pinsAllSky.sections.sessionEstimate') }}
-            </div>
-            <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-              <label class="block rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-                <span class="block text-xs uppercase tracking-wide text-gray-500">{{
-                  t('plugins.pinsAllSky.estimate.start')
-                }}</span>
-                <input
-                  v-model="estimateWindow.startLocal"
-                  type="datetime-local"
-                  :title="t('plugins.pinsAllSky.estimate.startTooltip')"
-                  class="mt-2 w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                />
-              </label>
-              <label class="block rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-                <span class="block text-xs uppercase tracking-wide text-gray-500">{{
-                  t('plugins.pinsAllSky.estimate.end')
-                }}</span>
-                <input
-                  v-model="estimateWindow.endLocal"
-                  type="datetime-local"
-                  :title="t('plugins.pinsAllSky.estimate.endTooltip')"
-                  class="mt-2 w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                />
-              </label>
-              <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-                <div class="text-xs uppercase tracking-wide text-gray-500">
-                  {{ t('plugins.pinsAllSky.estimate.expectedDuration') }}
-                </div>
-                <div class="mt-2 text-sm text-white">{{ estimateDurationLabel }}</div>
-              </div>
-              <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-                <div class="text-xs uppercase tracking-wide text-gray-500">
-                  {{ t('plugins.pinsAllSky.estimate.expectedFrames') }}
-                </div>
-                <div class="mt-2 text-sm text-white">{{ formatCount(estimatedFrameCount) }}</div>
-              </div>
-              <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-                <div class="text-xs uppercase tracking-wide text-gray-500">
-                  {{ t('plugins.pinsAllSky.estimate.expectedStorage') }}
-                </div>
-                <div
-                  class="mt-2 text-sm font-semibold"
-                  :class="estimateExceedsAvailable ? 'text-amber-300' : 'text-white'"
-                >
-                  {{ formatSize(estimatedStorageBytes) }}
-                </div>
-              </div>
-            </div>
-
-            <div
-              v-if="estimateWarning"
-              class="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100"
-            >
-              {{ estimateWarning }}
-            </div>
-          </div>
-        </div>
-      </section>
+      <PinsAllSkySessionControls
+        :manual-label="manualLabelInput"
+        :default-manual-label="defaultManualLabel"
+        :loading="loading"
+        :status="status"
+        :current-session="currentSession"
+        :current-image-url="currentImageUrl"
+        :config="config"
+        :estimate-start-local="estimateWindow.startLocal"
+        :estimate-end-local="estimateWindow.endLocal"
+        :estimate-duration-label="estimateDurationLabel"
+        :estimated-frame-count="estimatedFrameCount"
+        :estimated-storage-bytes="estimatedStorageBytes"
+        :estimate-exceeds-available="estimateExceedsAvailable"
+        :estimate-warning="estimateWarning"
+        :format-date="formatDate"
+        :format-interval="formatInterval"
+        :format-exposure="formatExposure"
+        :format-gain="formatGain"
+        :format-count="formatCount"
+        :format-size="formatSize"
+        @update:manual-label="manualLabelInput = $event"
+        @update:estimate-start-local="estimateWindow.startLocal = $event"
+        @update:estimate-end-local="estimateWindow.endLocal = $event"
+        @start-session="startSession"
+        @generate-artifacts="generateArtifacts(currentSession?.id || null)"
+        @stop-session="stopSession"
+        @refresh-all="refreshAll"
+      />
 
       <Modal
         :show="Boolean(settingsPanelComponent)"
@@ -380,362 +179,31 @@
         </template>
       </Modal>
 
-      <section class="rounded-2xl border border-gray-700 bg-gray-800/80 p-6 shadow-xl">
-        <button
-          type="button"
-          class="flex w-full items-start justify-between gap-4 text-left"
-          @click="toggleSection('recentSessions')"
-        >
-          <div>
-            <h2 class="text-xl font-semibold text-white">
-              {{ t('plugins.pinsAllSky.sections.recentSessions') }}
-            </h2>
-            <p class="mt-1 text-sm text-gray-400">
-              {{ t('plugins.pinsAllSky.sections.recentSessionsDescription') }}
-            </p>
-          </div>
-          <div class="flex items-center gap-3">
-            <span
-              class="rounded-full border border-gray-600 bg-gray-900/70 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gray-300"
-            >
-              {{
-                sectionOpen.recentSessions
-                  ? t('plugins.pinsAllSky.recentSessions.expanded')
-                  : t('plugins.pinsAllSky.recentSessions.collapsed')
-              }}
-            </span>
-            <span
-              class="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-500/40 bg-cyan-500/10 text-lg font-semibold text-cyan-200"
-            >
-              {{ sectionOpen.recentSessions ? '-' : '+' }}
-            </span>
-          </div>
-        </button>
-
-        <div v-if="sectionOpen.recentSessions" class="mt-6 space-y-4">
-          <div
-            class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-900/50 px-4 py-3"
-          >
-            <div class="text-sm text-gray-300">
-              <span :class="storage.withinLimit ? 'text-emerald-300' : 'text-amber-200'">
-                {{
-                  storage.withinLimit || !storage.limitEnabled
-                    ? t('plugins.pinsAllSky.recentSessions.storageWithinLimit')
-                    : t('plugins.pinsAllSky.recentSessions.storageLimitExceeded')
-                }}
-              </span>
-              <span class="text-gray-500">
-                {{ t('plugins.pinsAllSky.recentSessions.pluginAvailable') }}
-                {{
-                  storage.limitEnabled
-                    ? formatSize(storage.pluginAvailableBytes)
-                    : t('plugins.pinsAllSky.common.unlimited')
-                }}.
-              </span>
-              <span class="text-gray-500">
-                {{ t('plugins.pinsAllSky.recentSessions.piAvailable') }}
-                {{ formatSize(storage.diskAvailableBytes) }}.
-              </span>
-            </div>
-            <button
-              class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-rose-500/40 bg-rose-500/10 text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-              :disabled="
-                cleanupBusy ||
-                status?.captureRunning ||
-                status?.generateInProgress ||
-                recentSessions.length === 0
-              "
-              :title="t('plugins.pinsAllSky.buttons.deleteAllSessions')"
-              :aria-label="t('plugins.pinsAllSky.buttons.deleteAllSessions')"
-              @click.stop="deleteAllSessions"
-            >
-              <TrashIcon class="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-
-        <div
-          v-if="sectionOpen.recentSessions && recentSessions.length === 0"
-          class="mt-6 rounded-xl border border-dashed border-gray-700 bg-gray-900/40 px-4 py-8 text-center text-sm text-gray-500"
-        >
-          {{ t('plugins.pinsAllSky.recentSessions.noSessions') }}
-        </div>
-
-        <div v-else-if="sectionOpen.recentSessions" class="mt-6 space-y-4">
-          <article
-            v-for="session in recentSessions"
-            :key="session.id"
-            class="rounded-2xl border border-gray-700 bg-gray-900/50 p-4"
-          >
-            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div class="space-y-1">
-                <div class="text-lg font-semibold text-white">
-                  {{ session.label || session.id }}
-                </div>
-                <div class="text-sm text-gray-400">
-                  {{
-                    t('plugins.pinsAllSky.recentSessions.started', {
-                      date: formatDate(session.startedAtUtc),
-                    })
-                  }}
-                  <span v-if="session.endedAtUtc">
-                    •
-                    {{
-                      t('plugins.pinsAllSky.recentSessions.stopped', {
-                        date: formatDate(session.endedAtUtc),
-                      })
-                    }}</span
-                  >
-                </div>
-                <div class="text-sm text-gray-400">
-                  {{
-                    t('plugins.pinsAllSky.recentSessions.framesReason', {
-                      count: formatCount(session.captureCount),
-                      reason: formatSessionReason(session.startReason),
-                    })
-                  }}
-                  <span v-if="session.stopReason">
-                    • {{ formatSessionReason(session.stopReason) }}</span
-                  >
-                </div>
-                <div class="text-sm text-gray-400">
-                  {{
-                    t('plugins.pinsAllSky.recentSessions.storage', {
-                      size: formatSize(session.totalSizeBytes),
-                    })
-                  }}
-                </div>
-              </div>
-
-              <div class="flex flex-wrap gap-2">
-                <button
-                  class="rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-sm font-medium text-cyan-100 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                  :disabled="cleanupBusy"
-                  @click="generateArtifacts(session.id)"
-                >
-                  {{ t('plugins.pinsAllSky.buttons.regenerate') }}
-                </button>
-                <button
-                  class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-rose-500/40 bg-rose-500/10 text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                  :disabled="
-                    cleanupBusy ||
-                    status?.captureRunning ||
-                    status?.generateInProgress ||
-                    session.id === currentSession?.id
-                  "
-                  :title="t('plugins.pinsAllSky.buttons.deleteSession')"
-                  :aria-label="t('plugins.pinsAllSky.buttons.deleteSession')"
-                  @click="deleteSession(session)"
-                >
-                  <TrashIcon class="h-5 w-5" />
-                </button>
-                <button
-                  class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-sm text-white transition hover:border-cyan-400"
-                  :title="
-                    isSessionDetailsOpen(session.id)
-                      ? t('plugins.pinsAllSky.buttons.hideStoredFiles')
-                      : t('plugins.pinsAllSky.buttons.showStoredFiles')
-                  "
-                  :aria-label="
-                    isSessionDetailsOpen(session.id)
-                      ? t('plugins.pinsAllSky.buttons.hideStoredFiles')
-                      : t('plugins.pinsAllSky.buttons.showStoredFiles')
-                  "
-                  @click="toggleSessionDetails(session.id)"
-                >
-                  <span>{{ t('plugins.pinsAllSky.buttons.files') }}</span>
-                  <ChevronUpIcon v-if="isSessionDetailsOpen(session.id)" class="h-4 w-4" />
-                  <ChevronDownIcon v-else class="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-
-            <div class="mt-4 grid gap-3 sm:grid-cols-3">
-              <div
-                class="rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-sm text-gray-300"
-              >
-                <div class="text-xs uppercase tracking-wide text-gray-500">
-                  {{ t('plugins.pinsAllSky.recentSessions.timelapse') }}
-                </div>
-                <div class="mt-2 flex items-start justify-between gap-3">
-                  <div>{{ describeArtifact(session.products?.timelapse) }}</div>
-                  <div v-if="session.products?.timelapse" class="flex items-center gap-2">
-                    <button
-                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
-                      :title="t('plugins.pinsAllSky.buttons.downloadTimelapse')"
-                      :aria-label="t('plugins.pinsAllSky.buttons.downloadTimelapse')"
-                      @click="downloadRelativePath(session.products.timelapse.relativePath)"
-                    >
-                      <ArrowDownTrayIcon class="h-4 w-4" />
-                    </button>
-                    <button
-                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-rose-500/40 bg-rose-500/10 text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                      :disabled="
-                        cleanupBusy ||
-                        status?.generateInProgress ||
-                        session.id === currentSession?.id
-                      "
-                      :title="t('plugins.pinsAllSky.buttons.deleteTimelapse')"
-                      :aria-label="t('plugins.pinsAllSky.buttons.deleteTimelapse')"
-                      @click="deleteArtifact(session, session.products.timelapse)"
-                    >
-                      <TrashIcon class="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div
-                class="rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-sm text-gray-300"
-              >
-                <div class="text-xs uppercase tracking-wide text-gray-500">
-                  {{ t('plugins.pinsAllSky.recentSessions.keogram') }}
-                </div>
-                <div class="mt-2 flex items-start justify-between gap-3">
-                  <div>{{ describeArtifact(session.products?.keogram) }}</div>
-                  <div v-if="session.products?.keogram" class="flex items-center gap-2">
-                    <button
-                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
-                      :title="t('plugins.pinsAllSky.buttons.downloadKeogram')"
-                      :aria-label="t('plugins.pinsAllSky.buttons.downloadKeogram')"
-                      @click="downloadRelativePath(session.products.keogram.relativePath)"
-                    >
-                      <ArrowDownTrayIcon class="h-4 w-4" />
-                    </button>
-                    <button
-                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-rose-500/40 bg-rose-500/10 text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                      :disabled="
-                        cleanupBusy ||
-                        status?.generateInProgress ||
-                        session.id === currentSession?.id
-                      "
-                      :title="t('plugins.pinsAllSky.buttons.deleteKeogram')"
-                      :aria-label="t('plugins.pinsAllSky.buttons.deleteKeogram')"
-                      @click="deleteArtifact(session, session.products.keogram)"
-                    >
-                      <TrashIcon class="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div
-                class="rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-sm text-gray-300"
-              >
-                <div class="text-xs uppercase tracking-wide text-gray-500">
-                  {{ t('plugins.pinsAllSky.recentSessions.startrails') }}
-                </div>
-                <div class="mt-2 flex items-start justify-between gap-3">
-                  <div>{{ describeArtifact(session.products?.startrails) }}</div>
-                  <div v-if="session.products?.startrails" class="flex items-center gap-2">
-                    <button
-                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
-                      :title="t('plugins.pinsAllSky.buttons.downloadStartrails')"
-                      :aria-label="t('plugins.pinsAllSky.buttons.downloadStartrails')"
-                      @click="downloadRelativePath(session.products.startrails.relativePath)"
-                    >
-                      <ArrowDownTrayIcon class="h-4 w-4" />
-                    </button>
-                    <button
-                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-rose-500/40 bg-rose-500/10 text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                      :disabled="
-                        cleanupBusy ||
-                        status?.generateInProgress ||
-                        session.id === currentSession?.id
-                      "
-                      :title="t('plugins.pinsAllSky.buttons.deleteStartrails')"
-                      :aria-label="t('plugins.pinsAllSky.buttons.deleteStartrails')"
-                      @click="deleteArtifact(session, session.products.startrails)"
-                    >
-                      <TrashIcon class="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div
-              v-if="isSessionDetailsOpen(session.id)"
-              class="mt-4 rounded-2xl border border-gray-700 bg-gray-800/50 p-4"
-            >
-              <div class="mb-3 flex items-center justify-between gap-3">
-                <div>
-                  <div class="text-sm font-semibold text-white">
-                    {{ t('plugins.pinsAllSky.sections.storedFrames') }}
-                  </div>
-                  <div class="text-xs text-gray-400">
-                    {{
-                      t('plugins.pinsAllSky.recentSessions.retainedFrames', {
-                        count: formatCount(
-                          sessionDetails(session.id)?.frames?.length ??
-                            session.storedFrameCount ??
-                            0
-                        ),
-                      })
-                    }}
-                  </div>
-                </div>
-                <button
-                  class="rounded-lg border border-gray-600 bg-gray-900/70 px-3 py-2 text-xs text-gray-200 transition hover:border-cyan-400"
-                  @click="refreshSessionDetails(session.id)"
-                >
-                  {{ t('plugins.pinsAllSky.buttons.refreshFiles') }}
-                </button>
-              </div>
-
-              <div
-                v-if="sessionDetailsLoading(session.id)"
-                class="rounded-xl border border-dashed border-gray-700 bg-gray-900/40 px-4 py-6 text-center text-sm text-gray-500"
-              >
-                {{ t('plugins.pinsAllSky.recentSessions.loadingStoredFiles') }}
-              </div>
-              <div
-                v-else-if="!sessionDetails(session.id)?.frames?.length"
-                class="rounded-xl border border-dashed border-gray-700 bg-gray-900/40 px-4 py-6 text-center text-sm text-gray-500"
-              >
-                {{ t('plugins.pinsAllSky.recentSessions.noStoredFrames') }}
-              </div>
-              <div v-else class="max-h-80 space-y-2 overflow-y-auto pr-1">
-                <div
-                  v-for="frame in sessionDetails(session.id).frames"
-                  :key="frame.relativePath"
-                  class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2"
-                >
-                  <div class="min-w-0">
-                    <div class="truncate text-sm text-white">{{ frame.name }}</div>
-                    <div class="text-xs text-gray-400">
-                      {{ formatDate(frame.capturedAtUtc) }} • {{ formatSize(frame.sizeBytes) }}
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <button
-                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
-                      :title="t('plugins.pinsAllSky.buttons.downloadItem', { name: frame.name })"
-                      :aria-label="
-                        t('plugins.pinsAllSky.buttons.downloadItem', { name: frame.name })
-                      "
-                      @click="downloadRelativePath(frame.relativePath, frame.name)"
-                    >
-                      <ArrowDownTrayIcon class="h-4 w-4" />
-                    </button>
-                    <button
-                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-rose-500/40 bg-rose-500/10 text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                      :disabled="
-                        cleanupBusy ||
-                        status?.generateInProgress ||
-                        session.id === currentSession?.id
-                      "
-                      :title="t('plugins.pinsAllSky.buttons.deleteItem', { name: frame.name })"
-                      :aria-label="t('plugins.pinsAllSky.buttons.deleteItem', { name: frame.name })"
-                      @click="deleteFrame(session, frame)"
-                    >
-                      <TrashIcon class="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </article>
-        </div>
-      </section>
+      <PinsAllSkyRecentSessions
+        :is-open="sectionOpen.recentSessions"
+        :storage="storage"
+        :recent-sessions="recentSessions"
+        :cleanup-busy="cleanupBusy"
+        :status="status"
+        :current-session-id="currentSession?.id || null"
+        :session-details-by-id="sessionDetailsById"
+        :details-loading-by-id="detailsLoadingById"
+        :session-detail-open="sessionDetailOpen"
+        :format-date="formatDate"
+        :format-count="formatCount"
+        :format-size="formatSize"
+        :describe-artifact="describeArtifact"
+        :format-session-reason="formatSessionReason"
+        @toggle="toggleSection('recentSessions')"
+        @delete-all="deleteAllSessions"
+        @generate-artifacts="generateArtifacts($event)"
+        @delete-session="deleteSession($event)"
+        @toggle-session-details="toggleSessionDetails($event)"
+        @refresh-session-details="refreshSessionDetails($event)"
+        @download-file="downloadRelativePath($event.relativePath, $event.fallbackName || null)"
+        @delete-artifact="deleteArtifact($event.session, $event.artifact)"
+        @delete-frame="deleteFrame($event.session, $event.frame)"
+      />
     </div>
   </div>
 </template>
@@ -745,22 +213,17 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import {
-  ArrowDownTrayIcon,
-  ArrowPathIcon,
   CameraIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
   Cog6ToothIcon,
   InformationCircleIcon,
   PhotoIcon,
-  PlayIcon,
-  StopIcon,
-  TrashIcon,
 } from '@heroicons/vue/24/outline';
 import Modal from '@/components/helpers/Modal.vue';
 import PinsAllSkyAutomationSettings from '../components/PinsAllSkyAutomationSettings.vue';
 import PinsAllSkyCameraSettings from '../components/PinsAllSkyCameraSettings.vue';
 import PinsAllSkyOutputsSettings from '../components/PinsAllSkyOutputsSettings.vue';
+import PinsAllSkyRecentSessions from '../components/PinsAllSkyRecentSessions.vue';
+import PinsAllSkySessionControls from '../components/PinsAllSkySessionControls.vue';
 import PinsAllSkyStatusModal from '../components/PinsAllSkyStatusModal.vue';
 import { usePinsAllSkyStore } from '../store/pinsAllskyStore';
 
@@ -1265,9 +728,6 @@ const downloadRelativePath = async (relativePath, fallbackName = null) => {
   await store.downloadFile(relativePath, derivedName);
 };
 
-const sessionDetails = (sessionId) => sessionDetailsById.value?.[sessionId] || null;
-const sessionDetailsLoading = (sessionId) => Boolean(detailsLoadingById.value?.[sessionId]);
-const isSessionDetailsOpen = (sessionId) => Boolean(sessionDetailOpen[sessionId]);
 const refreshSessionDetails = async (sessionId) => {
   await store.fetchSessionDetails(sessionId);
 };
