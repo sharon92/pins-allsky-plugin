@@ -1,12 +1,18 @@
 <template>
   <div class="container py-8 sm:py-12 px-4">
     <div class="mx-auto max-w-7xl space-y-6">
-      <section class="rounded-2xl border border-cyan-900/40 bg-gray-800/80 p-6 shadow-2xl">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <section
+        class="rounded-2xl border border-cyan-900/40 bg-gray-800/80 p-6 shadow-2xl"
+      >
+        <div
+          class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"
+        >
           <div>
-            <h1 class="text-3xl font-bold text-white">{{ tr('title') }}</h1>
+            <h1 class="text-3xl font-bold text-white">{{ tr("title") }}</h1>
           </div>
-          <div class="flex flex-wrap items-center justify-end gap-2 self-start lg:ml-auto">
+          <div
+            class="flex flex-wrap items-center justify-end gap-2 self-start lg:ml-auto"
+          >
             <button
               type="button"
               :title="tr('buttons.automation')"
@@ -56,7 +62,9 @@
           class="w-full max-w-2xl rounded-2xl border border-gray-700 bg-gray-900/95 p-6 shadow-2xl"
         >
           <div class="flex items-start justify-between gap-4">
-            <h2 class="text-xl font-semibold text-white">{{ tr('statusModal.title') }}</h2>
+            <h2 class="text-xl font-semibold text-white">
+              {{ tr("statusModal.title") }}
+            </h2>
             <button
               type="button"
               class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-600 bg-gray-800/80 text-gray-200 transition hover:border-cyan-400 hover:text-white"
@@ -71,7 +79,9 @@
             class="mt-6 grid grid-cols-[auto_minmax(0,1fr)] gap-x-8 gap-y-3 lg:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)]"
           >
             <template v-for="item in statusRows" :key="item.label">
-              <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <div
+                class="text-xs font-semibold uppercase tracking-wide text-gray-500"
+              >
                 {{ item.label }}
               </div>
               <div class="text-sm" :class="item.className">
@@ -84,25 +94,53 @@
             <button
               type="button"
               class="rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-              :disabled="backendUpdateBusy || status?.captureRunning || status?.generateInProgress"
+              :disabled="
+                backendUpdateBusy ||
+                status?.captureRunning ||
+                status?.generateInProgress
+              "
               :title="tr('statusModal.updateBackendTooltip')"
               @click="updateBackend"
             >
-              {{ backendUpdateBusy ? tr('buttons.startingUpdate') : tr('buttons.updateBackend') }}
+              {{
+                backendUpdateBusy
+                  ? tr("buttons.startingUpdate")
+                  : tr("buttons.updateBackend")
+              }}
             </button>
             <button
               type="button"
               class="rounded-xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-500"
               @click="showStatusModal = false"
             >
-              {{ tr('common.ok') }}
+              {{ tr("common.ok") }}
             </button>
           </div>
         </div>
       </div>
 
       <div
-        v-if="error"
+        v-if="showBackendSetupBanner"
+        class="rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-4 text-sm text-cyan-100"
+      >
+        <div class="font-semibold text-white">
+          {{ tr("banners.backendUnavailableTitle") }}
+        </div>
+        <p class="mt-1">
+          {{ tr("banners.backendUnavailableBody") }}
+        </p>
+        <div
+          class="mt-3 text-xs font-semibold uppercase tracking-wide text-cyan-200/80"
+        >
+          {{ tr("banners.backendUnavailableInstallLabel") }}
+        </div>
+        <pre
+          class="mt-2 overflow-x-auto rounded-xl border border-cyan-500/20 bg-gray-950/70 px-4 py-3 text-xs text-cyan-50"
+        ><code>{{ backendInstallCommands }}</code></pre>
+      </div>
+
+      <div
+        v-else-if="error"
         class="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-100"
       >
         {{ error }}
@@ -127,18 +165,26 @@
         class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100"
       >
         {{
-          tr('banners.missingRuntimeDependencies', { dependencies: missingDependencies.join(', ') })
+          tr("banners.missingRuntimeDependencies", {
+            dependencies: missingDependencies.join(", "),
+          })
         }}
       </div>
 
-      <section class="rounded-2xl border border-gray-700 bg-gray-800/80 p-5 shadow-xl">
-        <h2 class="text-xl font-semibold text-white">{{ tr('sections.sessionControl') }}</h2>
+      <section
+        class="rounded-2xl border border-gray-700 bg-gray-800/80 p-5 shadow-xl"
+      >
+        <h2 class="text-xl font-semibold text-white">
+          {{ tr("sections.sessionControl") }}
+        </h2>
 
         <div class="mt-5 space-y-5">
           <div class="flex flex-wrap items-stretch gap-2">
             <input
               v-model="manualLabelInput"
-              :title="tr('estimate.sessionLabelTitle', { label: defaultManualLabel })"
+              :title="
+                tr('estimate.sessionLabelTitle', { label: defaultManualLabel })
+              "
               class="min-w-0 flex-1 rounded-xl border border-gray-600 bg-gray-900/80 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
               :placeholder="tr('estimate.sessionLabelPlaceholder')"
             />
@@ -193,7 +239,9 @@
             </div>
           </div>
 
-          <div class="overflow-hidden rounded-2xl border border-gray-700 bg-black/60">
+          <div
+            class="overflow-hidden rounded-2xl border border-gray-700 bg-black/60"
+          >
             <div class="relative h-[28rem] w-full">
               <img
                 v-if="currentImageUrl"
@@ -205,7 +253,7 @@
                 v-else
                 class="flex h-full items-center justify-center px-6 text-center text-sm text-gray-500"
               >
-                {{ tr('preview.noFrameYet') }}
+                {{ tr("preview.noFrameYet") }}
               </div>
 
               <div
@@ -219,30 +267,41 @@
                 <div
                   class="pointer-events-none rounded-xl border border-white/10 bg-black/45 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-300 backdrop-blur-sm"
                 >
-                  {{ tr('sections.livePreview') }}
+                  {{ tr("sections.livePreview") }}
                 </div>
                 <button
                   type="button"
-                  :title="loading ? tr('buttons.refreshingPreview') : tr('buttons.refreshPreview')"
+                  :title="
+                    loading
+                      ? tr('buttons.refreshingPreview')
+                      : tr('buttons.refreshPreview')
+                  "
                   :aria-label="
-                    loading ? tr('buttons.refreshingPreview') : tr('buttons.refreshPreview')
+                    loading
+                      ? tr('buttons.refreshingPreview')
+                      : tr('buttons.refreshPreview')
                   "
                   class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-black/45 text-gray-200 backdrop-blur-sm transition hover:border-cyan-400 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
                   :disabled="loading"
                   @click="refreshAll"
                 >
-                  <ArrowPathIcon class="h-5 w-5" :class="loading ? 'animate-spin' : ''" />
+                  <ArrowPathIcon
+                    class="h-5 w-5"
+                    :class="loading ? 'animate-spin' : ''"
+                  />
                 </button>
               </div>
 
               <div
                 class="pointer-events-none absolute left-4 top-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm"
               >
-                <div class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-300">
-                  {{ tr('preview.session') }}
+                <div
+                  class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-300"
+                >
+                  {{ tr("preview.session") }}
                 </div>
                 <div class="mt-1 text-sm font-medium text-white">
-                  {{ currentSession?.id || tr('preview.noActiveSession') }}
+                  {{ currentSession?.id || tr("preview.noActiveSession") }}
                 </div>
               </div>
 
@@ -251,11 +310,15 @@
               >
                 <div class="space-y-1 text-sm text-white">
                   <div>
-                    <span class="text-gray-300">{{ tr('preview.lastCapture') }}</span>
+                    <span class="text-gray-300">{{
+                      tr("preview.lastCapture")
+                    }}</span>
                     {{ formatDate(currentSession?.lastCaptureAtUtc) }}
                   </div>
                   <div>
-                    <span class="text-gray-300">{{ tr('preview.frameCount') }}</span>
+                    <span class="text-gray-300">{{
+                      tr("preview.frameCount")
+                    }}</span>
                     {{ formatCount(currentSession?.captureCount || 0) }}
                   </div>
                 </div>
@@ -266,15 +329,19 @@
               >
                 <div class="space-y-1 text-right text-sm text-white">
                   <div>
-                    <span class="text-gray-300">{{ tr('preview.captureInterval') }}</span>
+                    <span class="text-gray-300">{{
+                      tr("preview.captureInterval")
+                    }}</span>
                     {{ formatInterval(config?.camera?.intervalSeconds) }}
                   </div>
                   <div>
-                    <span class="text-gray-300">{{ tr('preview.exposure') }}</span>
+                    <span class="text-gray-300">{{
+                      tr("preview.exposure")
+                    }}</span>
                     {{ formatExposure(config?.camera) }}
                   </div>
                   <div>
-                    <span class="text-gray-300">{{ tr('preview.gain') }}</span>
+                    <span class="text-gray-300">{{ tr("preview.gain") }}</span>
                     {{ formatGain(config?.camera) }}
                   </div>
                 </div>
@@ -283,12 +350,17 @@
           </div>
 
           <div class="rounded-2xl border border-gray-700 bg-gray-900/50 p-4">
-            <div class="text-sm font-semibold text-white">{{ tr('sections.sessionEstimate') }}</div>
+            <div class="text-sm font-semibold text-white">
+              {{ tr("sections.sessionEstimate") }}
+            </div>
             <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-              <label class="block rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-                <span class="block text-xs uppercase tracking-wide text-gray-500">{{
-                  tr('estimate.start')
-                }}</span>
+              <label
+                class="block rounded-xl border border-gray-700 bg-gray-900/60 p-3"
+              >
+                <span
+                  class="block text-xs uppercase tracking-wide text-gray-500"
+                  >{{ tr("estimate.start") }}</span
+                >
                 <input
                   v-model="estimateWindow.startLocal"
                   type="datetime-local"
@@ -296,10 +368,13 @@
                   class="mt-2 w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
-              <label class="block rounded-xl border border-gray-700 bg-gray-900/60 p-3">
-                <span class="block text-xs uppercase tracking-wide text-gray-500">{{
-                  tr('estimate.end')
-                }}</span>
+              <label
+                class="block rounded-xl border border-gray-700 bg-gray-900/60 p-3"
+              >
+                <span
+                  class="block text-xs uppercase tracking-wide text-gray-500"
+                  >{{ tr("estimate.end") }}</span
+                >
                 <input
                   v-model="estimateWindow.endLocal"
                   type="datetime-local"
@@ -309,23 +384,29 @@
               </label>
               <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
                 <div class="text-xs uppercase tracking-wide text-gray-500">
-                  {{ tr('estimate.expectedDuration') }}
+                  {{ tr("estimate.expectedDuration") }}
                 </div>
-                <div class="mt-2 text-sm text-white">{{ estimateDurationLabel }}</div>
+                <div class="mt-2 text-sm text-white">
+                  {{ estimateDurationLabel }}
+                </div>
               </div>
               <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
                 <div class="text-xs uppercase tracking-wide text-gray-500">
-                  {{ tr('estimate.expectedFrames') }}
+                  {{ tr("estimate.expectedFrames") }}
                 </div>
-                <div class="mt-2 text-sm text-white">{{ formatCount(estimatedFrameCount) }}</div>
+                <div class="mt-2 text-sm text-white">
+                  {{ formatCount(estimatedFrameCount) }}
+                </div>
               </div>
               <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
                 <div class="text-xs uppercase tracking-wide text-gray-500">
-                  {{ tr('estimate.expectedStorage') }}
+                  {{ tr("estimate.expectedStorage") }}
                 </div>
                 <div
                   class="mt-2 text-sm font-semibold"
-                  :class="estimateExceedsAvailable ? 'text-amber-300' : 'text-white'"
+                  :class="
+                    estimateExceedsAvailable ? 'text-amber-300' : 'text-white'
+                  "
                 >
                   {{ formatSize(estimatedStorageBytes) }}
                 </div>
@@ -351,33 +432,44 @@
           class="w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-2xl border border-gray-700 bg-gray-900/95 p-6 shadow-2xl"
         >
           <div class="flex items-start justify-between gap-4">
-            <h2 class="text-xl font-semibold text-white">{{ settingsModalTitle }}</h2>
+            <h2 class="text-xl font-semibold text-white">
+              {{ settingsModalTitle }}
+            </h2>
             <button
               type="button"
               class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-600 bg-gray-800/80 text-gray-200 transition hover:border-cyan-400 hover:text-white"
               :disabled="saving"
-              :aria-label="tr('modals.closeDialog', { title: settingsModalTitle })"
+              :aria-label="
+                tr('modals.closeDialog', { title: settingsModalTitle })
+              "
               @click="closeSettingsModal()"
             >
               <XMarkIcon class="h-5 w-5" />
             </button>
           </div>
 
-          <div v-if="settingsModal === 'automation'" class="mt-6 flex flex-wrap gap-4">
+          <div
+            v-if="settingsModal === 'automation'"
+            class="mt-6 flex flex-wrap gap-4"
+          >
             <label
               :class="settingsFieldClass"
               class="rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2"
             >
-              <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                {{ tr('modals.automation.autoStartWithSequence') }}
+              <span
+                class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+              >
+                {{ tr("modals.automation.autoStartWithSequence") }}
               </span>
               <div class="flex items-center justify-between gap-3">
                 <span class="text-sm text-gray-300">{{
-                  tr('modals.automation.sequenceTriggeredCapture')
+                  tr("modals.automation.sequenceTriggeredCapture")
                 }}</span>
                 <toggleButton
                   :status-value="Boolean(config.autoStartWithSequence)"
-                  @update:statusValue="setRootConfigValue('autoStartWithSequence', $event)"
+                  @update:statusValue="
+                    setRootConfigValue('autoStartWithSequence', $event)
+                  "
                 />
               </div>
             </label>
@@ -386,19 +478,21 @@
               :class="settingsWideFieldClass"
               class="rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-100"
             >
-              {{ tr('modals.automationInfo') }}
+              {{ tr("modals.automationInfo") }}
             </div>
 
             <label
               :class="settingsFieldClass"
               class="rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2"
             >
-              <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                {{ tr('modals.automation.advancedApiEnabled') }}
+              <span
+                class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+              >
+                {{ tr("modals.automation.advancedApiEnabled") }}
               </span>
               <div class="flex items-center justify-between gap-3">
                 <span class="text-sm text-gray-300">{{
-                  tr('modals.automation.backendMonitoring')
+                  tr("modals.automation.backendMonitoring")
                 }}</span>
                 <toggleButton
                   :status-value="Boolean(config.advancedApi.enabled)"
@@ -408,8 +502,10 @@
             </label>
 
             <label :class="settingsFieldClass" class="block">
-              <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                {{ tr('modals.automation.protocol') }}
+              <span
+                class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+              >
+                {{ tr("modals.automation.protocol") }}
               </span>
               <input
                 v-model="config.advancedApi.protocol"
@@ -419,8 +515,10 @@
             </label>
 
             <label :class="settingsFieldClass" class="block">
-              <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                {{ tr('modals.automation.sequencePollIntervalSeconds') }}
+              <span
+                class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+              >
+                {{ tr("modals.automation.sequencePollIntervalSeconds") }}
               </span>
               <input
                 v-model.number="config.sequencePollIntervalSeconds"
@@ -431,13 +529,15 @@
                 class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
               />
               <span class="mt-2 block text-xs text-gray-500">
-                {{ tr('modals.automation.sequencePollIntervalHelp') }}
+                {{ tr("modals.automation.sequencePollIntervalHelp") }}
               </span>
             </label>
 
             <label :class="settingsFieldClass" class="block">
-              <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                {{ tr('modals.automation.advancedApiHost') }}
+              <span
+                class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+              >
+                {{ tr("modals.automation.advancedApiHost") }}
               </span>
               <input
                 v-model="config.advancedApi.host"
@@ -447,8 +547,10 @@
             </label>
 
             <label :class="settingsFieldClass" class="block">
-              <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                {{ tr('modals.automation.port') }}
+              <span
+                class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+              >
+                {{ tr("modals.automation.port") }}
               </span>
               <input
                 v-model.number="config.advancedApi.port"
@@ -459,8 +561,10 @@
             </label>
 
             <label :class="settingsFieldClass" class="block">
-              <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                {{ tr('modals.automation.timeoutSeconds') }}
+              <span
+                class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+              >
+                {{ tr("modals.automation.timeoutSeconds") }}
               </span>
               <input
                 v-model.number="config.advancedApi.requestTimeoutSeconds"
@@ -473,8 +577,10 @@
             </label>
 
             <label :class="settingsFieldClass" class="block">
-              <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                {{ tr('modals.automation.advancedApiBasePath') }}
+              <span
+                class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+              >
+                {{ tr("modals.automation.advancedApiBasePath") }}
               </span>
               <input
                 v-model="config.advancedApi.basePath"
@@ -484,8 +590,10 @@
             </label>
 
             <label :class="settingsFieldClass" class="block">
-              <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                {{ tr('modals.automation.maxPluginStorageGb') }}
+              <span
+                class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+              >
+                {{ tr("modals.automation.maxPluginStorageGb") }}
               </span>
               <input
                 v-model.number="config.storage.maxUsageGb"
@@ -497,7 +605,7 @@
                 class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
               />
               <span class="mt-2 block text-xs text-gray-500">
-                {{ tr('modals.automation.maxPluginStorageHelp') }}
+                {{ tr("modals.automation.maxPluginStorageHelp") }}
               </span>
             </label>
           </div>
@@ -508,7 +616,7 @@
                 <span
                   class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                 >
-                  {{ tr('modals.camera.intervalSeconds') }}
+                  {{ tr("modals.camera.intervalSeconds") }}
                 </span>
                 <input
                   v-model.number="config.camera.intervalSeconds"
@@ -522,7 +630,7 @@
                 <span
                   class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                 >
-                  {{ tr('modals.camera.timeoutSeconds') }}
+                  {{ tr("modals.camera.timeoutSeconds") }}
                 </span>
                 <input
                   v-model.number="config.camera.captureTimeoutSeconds"
@@ -536,7 +644,7 @@
                 <span
                   class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                 >
-                  {{ tr('modals.camera.width') }}
+                  {{ tr("modals.camera.width") }}
                 </span>
                 <input
                   v-model.number="config.camera.width"
@@ -550,7 +658,7 @@
                 <span
                   class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                 >
-                  {{ tr('modals.camera.height') }}
+                  {{ tr("modals.camera.height") }}
                 </span>
                 <input
                   v-model.number="config.camera.height"
@@ -564,7 +672,7 @@
                 <span
                   class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                 >
-                  {{ tr('modals.camera.jpegQuality') }}
+                  {{ tr("modals.camera.jpegQuality") }}
                 </span>
                 <input
                   v-model.number="config.camera.quality"
@@ -579,7 +687,7 @@
                 <span
                   class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                 >
-                  {{ tr('modals.camera.warmupMilliseconds') }}
+                  {{ tr("modals.camera.warmupMilliseconds") }}
                 </span>
                 <input
                   v-model.number="config.camera.warmupMilliseconds"
@@ -593,7 +701,7 @@
                 <span
                   class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                 >
-                  {{ tr('modals.camera.metering') }}
+                  {{ tr("modals.camera.metering") }}
                 </span>
                 <select
                   v-model="config.camera.meteringMode"
@@ -613,14 +721,18 @@
                 <span
                   class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                 >
-                  {{ tr('modals.camera.awb') }}
+                  {{ tr("modals.camera.awb") }}
                 </span>
                 <select
                   v-model="config.camera.awbMode"
                   :title="tr('modals.camera.awbTooltip')"
                   class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 >
-                  <option v-for="option in awbOptions" :key="option.value" :value="option.value">
+                  <option
+                    v-for="option in awbOptions"
+                    :key="option.value"
+                    :value="option.value"
+                  >
                     {{ option.label }}
                   </option>
                 </select>
@@ -629,7 +741,7 @@
                 <span
                   class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                 >
-                  {{ tr('modals.camera.denoise') }}
+                  {{ tr("modals.camera.denoise") }}
                 </span>
                 <select
                   v-model="config.camera.denoiseMode"
@@ -649,7 +761,7 @@
                 <span
                   class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                 >
-                  {{ tr('modals.camera.evCompensation') }}
+                  {{ tr("modals.camera.evCompensation") }}
                 </span>
                 <input
                   v-model.number="config.camera.evCompensation"
@@ -664,7 +776,7 @@
                 <span
                   class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                 >
-                  {{ tr('modals.camera.rotation') }}
+                  {{ tr("modals.camera.rotation") }}
                 </span>
                 <input
                   v-model.number="config.camera.rotation"
@@ -679,7 +791,7 @@
                 <span
                   class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                 >
-                  {{ tr('modals.camera.brightness') }}
+                  {{ tr("modals.camera.brightness") }}
                 </span>
                 <input
                   v-model.number="config.camera.brightness"
@@ -694,7 +806,7 @@
                 <span
                   class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                 >
-                  {{ tr('modals.camera.contrast') }}
+                  {{ tr("modals.camera.contrast") }}
                 </span>
                 <input
                   v-model.number="config.camera.contrast"
@@ -710,7 +822,7 @@
                 <span
                   class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                 >
-                  {{ tr('modals.camera.saturation') }}
+                  {{ tr("modals.camera.saturation") }}
                 </span>
                 <input
                   v-model.number="config.camera.saturation"
@@ -726,7 +838,7 @@
                 <span
                   class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                 >
-                  {{ tr('modals.camera.sharpness') }}
+                  {{ tr("modals.camera.sharpness") }}
                 </span>
                 <input
                   v-model.number="config.camera.sharpness"
@@ -746,18 +858,20 @@
               >
                 <label class="flex items-center justify-between gap-3">
                   <span class="text-sm text-gray-300">{{
-                    tr('modals.camera.manualExposure')
+                    tr("modals.camera.manualExposure")
                   }}</span>
                   <toggleButton
                     :status-value="Boolean(config.camera.useManualExposure)"
-                    @update:statusValue="setCameraSetting('useManualExposure', $event)"
+                    @update:statusValue="
+                      setCameraSetting('useManualExposure', $event)
+                    "
                   />
                 </label>
                 <label class="mt-3 block">
                   <span
                     class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                   >
-                    {{ tr('modals.camera.shutterMicroseconds') }}
+                    {{ tr("modals.camera.shutterMicroseconds") }}
                   </span>
                   <input
                     v-model.number="config.camera.shutterMicroseconds"
@@ -770,7 +884,7 @@
                   />
                 </label>
                 <p class="mt-3 text-xs text-gray-500">
-                  {{ tr('modals.camera.manualExposureHelp') }}
+                  {{ tr("modals.camera.manualExposureHelp") }}
                 </p>
               </div>
 
@@ -778,17 +892,21 @@
                 class="w-full lg:w-[calc(50%-0.5rem)] rounded-xl border border-gray-700 bg-gray-800/70 p-3"
               >
                 <label class="flex items-center justify-between gap-3">
-                  <span class="text-sm text-gray-300">{{ tr('modals.camera.manualGain') }}</span>
+                  <span class="text-sm text-gray-300">{{
+                    tr("modals.camera.manualGain")
+                  }}</span>
                   <toggleButton
                     :status-value="Boolean(config.camera.useManualGain)"
-                    @update:statusValue="setCameraSetting('useManualGain', $event)"
+                    @update:statusValue="
+                      setCameraSetting('useManualGain', $event)
+                    "
                   />
                 </label>
                 <label class="mt-3 block">
                   <span
                     class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                   >
-                    {{ tr('modals.camera.analogGain') }}
+                    {{ tr("modals.camera.analogGain") }}
                   </span>
                   <input
                     v-model.number="config.camera.analogGain"
@@ -802,7 +920,7 @@
                   />
                 </label>
                 <p class="mt-3 text-xs text-gray-500">
-                  {{ tr('modals.camera.manualGainHelp') }}
+                  {{ tr("modals.camera.manualGainHelp") }}
                 </p>
               </div>
             </div>
@@ -812,7 +930,7 @@
                 :class="settingsFullWidthClass"
                 class="rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-100"
               >
-                {{ tr('modals.cameraRotationInfo') }}
+                {{ tr("modals.cameraRotationInfo") }}
               </div>
               <label
                 :class="settingsFieldClass"
@@ -821,13 +939,17 @@
                 <span
                   class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                 >
-                  {{ tr('modals.camera.horizontalFlip') }}
+                  {{ tr("modals.camera.horizontalFlip") }}
                 </span>
                 <div class="flex items-center justify-between gap-3">
-                  <span class="text-sm text-gray-300">{{ tr('modals.camera.mirrorOnXAxis') }}</span>
+                  <span class="text-sm text-gray-300">{{
+                    tr("modals.camera.mirrorOnXAxis")
+                  }}</span>
                   <toggleButton
                     :status-value="Boolean(config.camera.horizontalFlip)"
-                    @update:statusValue="setCameraSetting('horizontalFlip', $event)"
+                    @update:statusValue="
+                      setCameraSetting('horizontalFlip', $event)
+                    "
                   />
                 </div>
               </label>
@@ -838,13 +960,17 @@
                 <span
                   class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                 >
-                  {{ tr('modals.camera.verticalFlip') }}
+                  {{ tr("modals.camera.verticalFlip") }}
                 </span>
                 <div class="flex items-center justify-between gap-3">
-                  <span class="text-sm text-gray-300">{{ tr('modals.camera.mirrorOnYAxis') }}</span>
+                  <span class="text-sm text-gray-300">{{
+                    tr("modals.camera.mirrorOnYAxis")
+                  }}</span>
                   <toggleButton
                     :status-value="Boolean(config.camera.verticalFlip)"
-                    @update:statusValue="setCameraSetting('verticalFlip', $event)"
+                    @update:statusValue="
+                      setCameraSetting('verticalFlip', $event)
+                    "
                   />
                 </div>
               </label>
@@ -852,7 +978,7 @@
                 <span
                   class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                 >
-                  {{ tr('modals.camera.extraArguments') }}
+                  {{ tr("modals.camera.extraArguments") }}
                 </span>
                 <textarea
                   v-model="config.camera.extraArguments"
@@ -865,13 +991,17 @@
           </div>
 
           <div v-else class="mt-6 space-y-4">
-            <label class="block rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2">
-              <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
-                {{ tr('modals.outputs.keepSourceFrames') }}
+            <label
+              class="block rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2"
+            >
+              <span
+                class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+              >
+                {{ tr("modals.outputs.keepSourceFrames") }}
               </span>
               <div class="flex items-center justify-between gap-3">
                 <span class="text-sm text-gray-300">{{
-                  tr('modals.outputs.retainOriginalCaptures')
+                  tr("modals.outputs.retainOriginalCaptures")
                 }}</span>
                 <toggleButton
                   :status-value="Boolean(config.products.keepFrames)"
@@ -882,18 +1012,25 @@
 
             <div class="rounded-xl border border-gray-700 bg-gray-800/70 p-4">
               <div class="flex items-center justify-between gap-3">
-                <span class="font-semibold text-white">{{ tr('modals.outputs.timelapse') }}</span>
+                <span class="font-semibold text-white">{{
+                  tr("modals.outputs.timelapse")
+                }}</span>
                 <toggleButton
                   :status-value="Boolean(config.products.timelapseEnabled)"
-                  @update:statusValue="setProductSetting('timelapseEnabled', $event)"
+                  @update:statusValue="
+                    setProductSetting('timelapseEnabled', $event)
+                  "
                 />
               </div>
-              <div v-if="config.products.timelapseEnabled" class="mt-4 flex flex-wrap gap-4">
+              <div
+                v-if="config.products.timelapseEnabled"
+                class="mt-4 flex flex-wrap gap-4"
+              >
                 <label :class="settingsFieldClass" class="block">
                   <span
                     class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                   >
-                    {{ tr('modals.outputs.fps') }}
+                    {{ tr("modals.outputs.fps") }}
                   </span>
                   <input
                     v-model.number="config.products.timelapseFps"
@@ -908,7 +1045,7 @@
                   <span
                     class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                   >
-                    {{ tr('modals.outputs.bitrateKbps') }}
+                    {{ tr("modals.outputs.bitrateKbps") }}
                   </span>
                   <input
                     v-model.number="config.products.timelapseBitrateKbps"
@@ -922,7 +1059,7 @@
                   <span
                     class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                   >
-                    {{ tr('modals.outputs.width') }}
+                    {{ tr("modals.outputs.width") }}
                   </span>
                   <input
                     v-model.number="config.products.timelapseWidth"
@@ -936,7 +1073,7 @@
                   <span
                     class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                   >
-                    {{ tr('modals.outputs.height') }}
+                    {{ tr("modals.outputs.height") }}
                   </span>
                   <input
                     v-model.number="config.products.timelapseHeight"
@@ -950,7 +1087,7 @@
                   <span
                     class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                   >
-                    {{ tr('modals.outputs.codec') }}
+                    {{ tr("modals.outputs.codec") }}
                   </span>
                   <input
                     v-model="config.products.timelapseCodec"
@@ -962,7 +1099,7 @@
                   <span
                     class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                   >
-                    {{ tr('modals.outputs.pixelFormat') }}
+                    {{ tr("modals.outputs.pixelFormat") }}
                   </span>
                   <input
                     v-model="config.products.timelapsePixelFormat"
@@ -974,7 +1111,7 @@
                   <span
                     class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                   >
-                    {{ tr('modals.outputs.ffmpegLogLevel') }}
+                    {{ tr("modals.outputs.ffmpegLogLevel") }}
                   </span>
                   <input
                     v-model="config.products.timelapseLogLevel"
@@ -986,7 +1123,7 @@
                   <span
                     class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                   >
-                    {{ tr('modals.outputs.extraFfmpegArguments') }}
+                    {{ tr("modals.outputs.extraFfmpegArguments") }}
                   </span>
                   <textarea
                     v-model="config.products.timelapseExtraParameters"
@@ -1000,13 +1137,20 @@
 
             <div class="rounded-xl border border-gray-700 bg-gray-800/70 p-4">
               <div class="flex items-center justify-between gap-3">
-                <span class="font-semibold text-white">{{ tr('modals.outputs.keogram') }}</span>
+                <span class="font-semibold text-white">{{
+                  tr("modals.outputs.keogram")
+                }}</span>
                 <toggleButton
                   :status-value="Boolean(config.products.keogramEnabled)"
-                  @update:statusValue="setProductSetting('keogramEnabled', $event)"
+                  @update:statusValue="
+                    setProductSetting('keogramEnabled', $event)
+                  "
                 />
               </div>
-              <div v-if="config.products.keogramEnabled" class="mt-4 flex flex-wrap gap-4">
+              <div
+                v-if="config.products.keogramEnabled"
+                class="mt-4 flex flex-wrap gap-4"
+              >
                 <label
                   :class="settingsFieldClass"
                   class="rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2"
@@ -1014,15 +1158,17 @@
                   <span
                     class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                   >
-                    {{ tr('modals.outputs.expandToFrameWidth') }}
+                    {{ tr("modals.outputs.expandToFrameWidth") }}
                   </span>
                   <div class="flex items-center justify-between gap-3">
                     <span class="text-sm text-gray-300">{{
-                      tr('modals.outputs.stretchOutput')
+                      tr("modals.outputs.stretchOutput")
                     }}</span>
                     <toggleButton
                       :status-value="Boolean(config.products.keogramExpand)"
-                      @update:statusValue="setProductSetting('keogramExpand', $event)"
+                      @update:statusValue="
+                        setProductSetting('keogramExpand', $event)
+                      "
                     />
                   </div>
                 </label>
@@ -1033,15 +1179,17 @@
                   <span
                     class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                   >
-                    {{ tr('modals.outputs.showLabels') }}
+                    {{ tr("modals.outputs.showLabels") }}
                   </span>
                   <div class="flex items-center justify-between gap-3">
                     <span class="text-sm text-gray-300">{{
-                      tr('modals.outputs.drawCaptions')
+                      tr("modals.outputs.drawCaptions")
                     }}</span>
                     <toggleButton
                       :status-value="Boolean(config.products.keogramShowLabels)"
-                      @update:statusValue="setProductSetting('keogramShowLabels', $event)"
+                      @update:statusValue="
+                        setProductSetting('keogramShowLabels', $event)
+                      "
                     />
                   </div>
                 </label>
@@ -1052,13 +1200,17 @@
                   <span
                     class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                   >
-                    {{ tr('modals.outputs.showDate') }}
+                    {{ tr("modals.outputs.showDate") }}
                   </span>
                   <div class="flex items-center justify-between gap-3">
-                    <span class="text-sm text-gray-300">{{ tr('modals.outputs.stampDate') }}</span>
+                    <span class="text-sm text-gray-300">{{
+                      tr("modals.outputs.stampDate")
+                    }}</span>
                     <toggleButton
                       :status-value="Boolean(config.products.keogramShowDate)"
-                      @update:statusValue="setProductSetting('keogramShowDate', $event)"
+                      @update:statusValue="
+                        setProductSetting('keogramShowDate', $event)
+                      "
                     />
                   </div>
                 </label>
@@ -1066,7 +1218,7 @@
                   <span
                     class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                   >
-                    {{ tr('modals.outputs.rotateDegrees') }}
+                    {{ tr("modals.outputs.rotateDegrees") }}
                   </span>
                   <input
                     v-model.number="config.products.keogramRotateDegrees"
@@ -1080,7 +1232,7 @@
                   <span
                     class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                   >
-                    {{ tr('modals.outputs.fontName') }}
+                    {{ tr("modals.outputs.fontName") }}
                   </span>
                   <input
                     v-model="config.products.keogramFontName"
@@ -1092,7 +1244,7 @@
                   <span
                     class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                   >
-                    {{ tr('modals.outputs.fontColor') }}
+                    {{ tr("modals.outputs.fontColor") }}
                   </span>
                   <input
                     v-model="config.products.keogramFontColor"
@@ -1104,7 +1256,7 @@
                   <span
                     class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                   >
-                    {{ tr('modals.outputs.fontSize') }}
+                    {{ tr("modals.outputs.fontSize") }}
                   </span>
                   <input
                     v-model.number="config.products.keogramFontSize"
@@ -1120,7 +1272,7 @@
                   <span
                     class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                   >
-                    {{ tr('modals.outputs.lineThickness') }}
+                    {{ tr("modals.outputs.lineThickness") }}
                   </span>
                   <input
                     v-model.number="config.products.keogramLineThickness"
@@ -1134,7 +1286,7 @@
                   <span
                     class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                   >
-                    {{ tr('modals.outputs.extraKeogramArguments') }}
+                    {{ tr("modals.outputs.extraKeogramArguments") }}
                   </span>
                   <textarea
                     v-model="config.products.keogramExtraParameters"
@@ -1148,21 +1300,30 @@
 
             <div class="rounded-xl border border-gray-700 bg-gray-800/70 p-4">
               <div class="flex items-center justify-between gap-3">
-                <span class="font-semibold text-white">{{ tr('modals.outputs.startrails') }}</span>
+                <span class="font-semibold text-white">{{
+                  tr("modals.outputs.startrails")
+                }}</span>
                 <toggleButton
                   :status-value="Boolean(config.products.startrailsEnabled)"
-                  @update:statusValue="setProductSetting('startrailsEnabled', $event)"
+                  @update:statusValue="
+                    setProductSetting('startrailsEnabled', $event)
+                  "
                 />
               </div>
-              <div v-if="config.products.startrailsEnabled" class="mt-4 flex flex-wrap gap-4">
+              <div
+                v-if="config.products.startrailsEnabled"
+                class="mt-4 flex flex-wrap gap-4"
+              >
                 <label :class="settingsFieldClass" class="block">
                   <span
                     class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                   >
-                    {{ tr('modals.outputs.brightnessThreshold') }}
+                    {{ tr("modals.outputs.brightnessThreshold") }}
                   </span>
                   <input
-                    v-model.number="config.products.startrailsBrightnessThreshold"
+                    v-model.number="
+                      config.products.startrailsBrightnessThreshold
+                    "
                     type="number"
                     min="0"
                     max="1"
@@ -1176,18 +1337,20 @@
                   :class="settingsWideFieldClass"
                   class="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-100"
                 >
-                  {{ tr('modals.startrailMountInfo') }}
+                  {{ tr("modals.startrailMountInfo") }}
                 </div>
                 <label :class="settingsFullWidthClass" class="block">
                   <span
                     class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
                   >
-                    {{ tr('modals.outputs.extraStartrailsArguments') }}
+                    {{ tr("modals.outputs.extraStartrailsArguments") }}
                   </span>
                   <textarea
                     v-model="config.products.startrailsExtraParameters"
                     rows="3"
-                    :title="tr('modals.outputs.extraStartrailsArgumentsTooltip')"
+                    :title="
+                      tr('modals.outputs.extraStartrailsArgumentsTooltip')
+                    "
                     class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                   />
                 </label>
@@ -1202,7 +1365,7 @@
               :disabled="saving"
               @click="closeSettingsModal()"
             >
-              {{ tr('common.cancel') }}
+              {{ tr("common.cancel") }}
             </button>
             <button
               type="button"
@@ -1210,22 +1373,26 @@
               :disabled="saving"
               @click="saveSettingsModal"
             >
-              {{ saving ? tr('common.saving') : tr('common.ok') }}
+              {{ saving ? tr("common.saving") : tr("common.ok") }}
             </button>
           </div>
         </div>
       </div>
 
-      <section class="rounded-2xl border border-gray-700 bg-gray-800/80 p-6 shadow-xl">
+      <section
+        class="rounded-2xl border border-gray-700 bg-gray-800/80 p-6 shadow-xl"
+      >
         <button
           type="button"
           class="flex w-full items-start justify-between gap-4 text-left"
           @click="toggleSection('recentSessions')"
         >
           <div>
-            <h2 class="text-xl font-semibold text-white">{{ tr('sections.recentSessions') }}</h2>
+            <h2 class="text-xl font-semibold text-white">
+              {{ tr("sections.recentSessions") }}
+            </h2>
             <p class="mt-1 text-sm text-gray-400">
-              {{ tr('sections.recentSessionsDescription') }}
+              {{ tr("sections.recentSessionsDescription") }}
             </p>
           </div>
           <div class="flex items-center gap-3">
@@ -1234,14 +1401,14 @@
             >
               {{
                 sectionOpen.recentSessions
-                  ? tr('recentSessions.expanded')
-                  : tr('recentSessions.collapsed')
+                  ? tr("recentSessions.expanded")
+                  : tr("recentSessions.collapsed")
               }}
             </span>
             <span
               class="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-500/40 bg-cyan-500/10 text-lg font-semibold text-cyan-200"
             >
-              {{ sectionOpen.recentSessions ? '-' : '+' }}
+              {{ sectionOpen.recentSessions ? "-" : "+" }}
             </span>
           </div>
         </button>
@@ -1251,23 +1418,28 @@
             class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-900/50 px-4 py-3"
           >
             <div class="text-sm text-gray-300">
-              <span :class="storage.withinLimit ? 'text-emerald-300' : 'text-amber-200'">
+              <span
+                :class="
+                  storage.withinLimit ? 'text-emerald-300' : 'text-amber-200'
+                "
+              >
                 {{
                   storage.withinLimit || !storage.limitEnabled
-                    ? tr('recentSessions.storageWithinLimit')
-                    : tr('recentSessions.storageLimitExceeded')
+                    ? tr("recentSessions.storageWithinLimit")
+                    : tr("recentSessions.storageLimitExceeded")
                 }}
               </span>
               <span class="text-gray-500">
-                {{ tr('recentSessions.pluginAvailable') }}
+                {{ tr("recentSessions.pluginAvailable") }}
                 {{
                   storage.limitEnabled
                     ? formatSize(storage.pluginAvailableBytes)
-                    : tr('common.unlimited')
+                    : tr("common.unlimited")
                 }}.
               </span>
               <span class="text-gray-500">
-                {{ tr('recentSessions.piAvailable') }} {{ formatSize(storage.diskAvailableBytes) }}.
+                {{ tr("recentSessions.piAvailable") }}
+                {{ formatSize(storage.diskAvailableBytes) }}.
               </span>
             </div>
             <button
@@ -1291,7 +1463,7 @@
           v-if="sectionOpen.recentSessions && recentSessions.length === 0"
           class="mt-6 rounded-xl border border-dashed border-gray-700 bg-gray-900/40 px-4 py-8 text-center text-sm text-gray-500"
         >
-          {{ tr('recentSessions.noSessions') }}
+          {{ tr("recentSessions.noSessions") }}
         </div>
 
         <div v-else-if="sectionOpen.recentSessions" class="mt-6 space-y-4">
@@ -1300,23 +1472,31 @@
             :key="session.id"
             class="rounded-2xl border border-gray-700 bg-gray-900/50 p-4"
           >
-            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div
+              class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"
+            >
               <div class="space-y-1">
                 <div class="text-lg font-semibold text-white">
                   {{ session.label || session.id }}
                 </div>
                 <div class="text-sm text-gray-400">
-                  {{ tr('recentSessions.started', { date: formatDate(session.startedAtUtc) }) }}
+                  {{
+                    tr("recentSessions.started", {
+                      date: formatDate(session.startedAtUtc),
+                    })
+                  }}
                   <span v-if="session.endedAtUtc">
                     •
                     {{
-                      tr('recentSessions.stopped', { date: formatDate(session.endedAtUtc) })
+                      tr("recentSessions.stopped", {
+                        date: formatDate(session.endedAtUtc),
+                      })
                     }}</span
                   >
                 </div>
                 <div class="text-sm text-gray-400">
                   {{
-                    tr('recentSessions.framesReason', {
+                    tr("recentSessions.framesReason", {
                       count: formatCount(session.captureCount),
                       reason: formatSessionReason(session.startReason),
                     })
@@ -1326,7 +1506,11 @@
                   >
                 </div>
                 <div class="text-sm text-gray-400">
-                  {{ tr('recentSessions.storage', { size: formatSize(session.totalSizeBytes) }) }}
+                  {{
+                    tr("recentSessions.storage", {
+                      size: formatSize(session.totalSizeBytes),
+                    })
+                  }}
                 </div>
               </div>
 
@@ -1336,7 +1520,7 @@
                   :disabled="cleanupBusy"
                   @click="generateArtifacts(session.id)"
                 >
-                  {{ tr('buttons.regenerate') }}
+                  {{ tr("buttons.regenerate") }}
                 </button>
                 <button
                   class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-rose-500/40 bg-rose-500/10 text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
@@ -1366,8 +1550,11 @@
                   "
                   @click="toggleSessionDetails(session.id)"
                 >
-                  <span>{{ tr('buttons.files') }}</span>
-                  <ChevronUpIcon v-if="isSessionDetailsOpen(session.id)" class="h-4 w-4" />
+                  <span>{{ tr("buttons.files") }}</span>
+                  <ChevronUpIcon
+                    v-if="isSessionDetailsOpen(session.id)"
+                    class="h-4 w-4"
+                  />
                   <ChevronDownIcon v-else class="h-4 w-4" />
                 </button>
               </div>
@@ -1378,16 +1565,23 @@
                 class="rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-sm text-gray-300"
               >
                 <div class="text-xs uppercase tracking-wide text-gray-500">
-                  {{ tr('recentSessions.timelapse') }}
+                  {{ tr("recentSessions.timelapse") }}
                 </div>
                 <div class="mt-2 flex items-start justify-between gap-3">
                   <div>{{ describeArtifact(session.products?.timelapse) }}</div>
-                  <div v-if="session.products?.timelapse" class="flex items-center gap-2">
+                  <div
+                    v-if="session.products?.timelapse"
+                    class="flex items-center gap-2"
+                  >
                     <button
                       class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
                       :title="tr('buttons.downloadTimelapse')"
                       :aria-label="tr('buttons.downloadTimelapse')"
-                      @click="downloadRelativePath(session.products.timelapse.relativePath)"
+                      @click="
+                        downloadRelativePath(
+                          session.products.timelapse.relativePath,
+                        )
+                      "
                     >
                       <ArrowDownTrayIcon class="h-4 w-4" />
                     </button>
@@ -1400,7 +1594,9 @@
                       "
                       :title="tr('buttons.deleteTimelapse')"
                       :aria-label="tr('buttons.deleteTimelapse')"
-                      @click="deleteArtifact(session, session.products.timelapse)"
+                      @click="
+                        deleteArtifact(session, session.products.timelapse)
+                      "
                     >
                       <TrashIcon class="h-4 w-4" />
                     </button>
@@ -1411,16 +1607,23 @@
                 class="rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-sm text-gray-300"
               >
                 <div class="text-xs uppercase tracking-wide text-gray-500">
-                  {{ tr('recentSessions.keogram') }}
+                  {{ tr("recentSessions.keogram") }}
                 </div>
                 <div class="mt-2 flex items-start justify-between gap-3">
                   <div>{{ describeArtifact(session.products?.keogram) }}</div>
-                  <div v-if="session.products?.keogram" class="flex items-center gap-2">
+                  <div
+                    v-if="session.products?.keogram"
+                    class="flex items-center gap-2"
+                  >
                     <button
                       class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
                       :title="tr('buttons.downloadKeogram')"
                       :aria-label="tr('buttons.downloadKeogram')"
-                      @click="downloadRelativePath(session.products.keogram.relativePath)"
+                      @click="
+                        downloadRelativePath(
+                          session.products.keogram.relativePath,
+                        )
+                      "
                     >
                       <ArrowDownTrayIcon class="h-4 w-4" />
                     </button>
@@ -1444,16 +1647,25 @@
                 class="rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-sm text-gray-300"
               >
                 <div class="text-xs uppercase tracking-wide text-gray-500">
-                  {{ tr('recentSessions.startrails') }}
+                  {{ tr("recentSessions.startrails") }}
                 </div>
                 <div class="mt-2 flex items-start justify-between gap-3">
-                  <div>{{ describeArtifact(session.products?.startrails) }}</div>
-                  <div v-if="session.products?.startrails" class="flex items-center gap-2">
+                  <div>
+                    {{ describeArtifact(session.products?.startrails) }}
+                  </div>
+                  <div
+                    v-if="session.products?.startrails"
+                    class="flex items-center gap-2"
+                  >
                     <button
                       class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
                       :title="tr('buttons.downloadStartrails')"
                       :aria-label="tr('buttons.downloadStartrails')"
-                      @click="downloadRelativePath(session.products.startrails.relativePath)"
+                      @click="
+                        downloadRelativePath(
+                          session.products.startrails.relativePath,
+                        )
+                      "
                     >
                       <ArrowDownTrayIcon class="h-4 w-4" />
                     </button>
@@ -1466,7 +1678,9 @@
                       "
                       :title="tr('buttons.deleteStartrails')"
                       :aria-label="tr('buttons.deleteStartrails')"
-                      @click="deleteArtifact(session, session.products.startrails)"
+                      @click="
+                        deleteArtifact(session, session.products.startrails)
+                      "
                     >
                       <TrashIcon class="h-4 w-4" />
                     </button>
@@ -1482,15 +1696,15 @@
               <div class="mb-3 flex items-center justify-between gap-3">
                 <div>
                   <div class="text-sm font-semibold text-white">
-                    {{ tr('sections.storedFrames') }}
+                    {{ tr("sections.storedFrames") }}
                   </div>
                   <div class="text-xs text-gray-400">
                     {{
-                      tr('recentSessions.retainedFrames', {
+                      tr("recentSessions.retainedFrames", {
                         count: formatCount(
                           sessionDetails(session.id)?.frames?.length ??
                             session.storedFrameCount ??
-                            0
+                            0,
                         ),
                       })
                     }}
@@ -1500,7 +1714,7 @@
                   class="rounded-lg border border-gray-600 bg-gray-900/70 px-3 py-2 text-xs text-gray-200 transition hover:border-cyan-400"
                   @click="refreshSessionDetails(session.id)"
                 >
-                  {{ tr('buttons.refreshFiles') }}
+                  {{ tr("buttons.refreshFiles") }}
                 </button>
               </div>
 
@@ -1508,13 +1722,13 @@
                 v-if="sessionDetailsLoading(session.id)"
                 class="rounded-xl border border-dashed border-gray-700 bg-gray-900/40 px-4 py-6 text-center text-sm text-gray-500"
               >
-                {{ tr('recentSessions.loadingStoredFiles') }}
+                {{ tr("recentSessions.loadingStoredFiles") }}
               </div>
               <div
                 v-else-if="!sessionDetails(session.id)?.frames?.length"
                 class="rounded-xl border border-dashed border-gray-700 bg-gray-900/40 px-4 py-6 text-center text-sm text-gray-500"
               >
-                {{ tr('recentSessions.noStoredFrames') }}
+                {{ tr("recentSessions.noStoredFrames") }}
               </div>
               <div v-else class="max-h-80 space-y-2 overflow-y-auto pr-1">
                 <div
@@ -1523,17 +1737,24 @@
                   class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2"
                 >
                   <div class="min-w-0">
-                    <div class="truncate text-sm text-white">{{ frame.name }}</div>
+                    <div class="truncate text-sm text-white">
+                      {{ frame.name }}
+                    </div>
                     <div class="text-xs text-gray-400">
-                      {{ formatDate(frame.capturedAtUtc) }} • {{ formatSize(frame.sizeBytes) }}
+                      {{ formatDate(frame.capturedAtUtc) }} •
+                      {{ formatSize(frame.sizeBytes) }}
                     </div>
                   </div>
                   <div class="flex items-center gap-2">
                     <button
                       class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
                       :title="tr('buttons.downloadItem', { name: frame.name })"
-                      :aria-label="tr('buttons.downloadItem', { name: frame.name })"
-                      @click="downloadRelativePath(frame.relativePath, frame.name)"
+                      :aria-label="
+                        tr('buttons.downloadItem', { name: frame.name })
+                      "
+                      @click="
+                        downloadRelativePath(frame.relativePath, frame.name)
+                      "
                     >
                       <ArrowDownTrayIcon class="h-4 w-4" />
                     </button>
@@ -1545,7 +1766,9 @@
                         session.id === currentSession?.id
                       "
                       :title="tr('buttons.deleteItem', { name: frame.name })"
-                      :aria-label="tr('buttons.deleteItem', { name: frame.name })"
+                      :aria-label="
+                        tr('buttons.deleteItem', { name: frame.name })
+                      "
                       @click="deleteFrame(session, frame)"
                     >
                       <TrashIcon class="h-4 w-4" />
@@ -1562,9 +1785,9 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useI18n } from 'vue-i18n';
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
+import { storeToRefs } from "pinia";
+import { useI18n } from "vue-i18n";
 import {
   ArrowDownTrayIcon,
   ArrowPathIcon,
@@ -1578,11 +1801,11 @@ import {
   StopIcon,
   TrashIcon,
   XMarkIcon,
-} from '@heroicons/vue/24/outline';
-import toggleButton from '@/components/helpers/toggleButton.vue';
-import { usePinsAllSkyStore } from '../store/pinsAllskyStore';
+} from "@heroicons/vue/24/outline";
+import toggleButton from "@/components/helpers/toggleButton.vue";
+import { usePinsAllSkyStore } from "../store/pinsAllskyStore";
 
-const { t } = useI18n({ useScope: 'global' });
+const { t } = useI18n({ useScope: "global" });
 const tr = (key, params) => t(`plugins.pinsAllSky.${key}`, params);
 const store = usePinsAllSkyStore();
 const {
@@ -1605,17 +1828,17 @@ const sectionOpen = reactive({
 
 const sessionDetailOpen = reactive({});
 const estimateWindow = reactive({
-  startLocal: '',
-  endLocal: '',
+  startLocal: "",
+  endLocal: "",
 });
 const showStatusModal = ref(false);
 const settingsModal = ref(null);
 const settingsModalSnapshot = ref(null);
 const settingsFieldClass =
-  'w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)] 2xl:w-[calc(16.666%-0.834rem)]';
+  "w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)] 2xl:w-[calc(16.666%-0.834rem)]";
 const settingsWideFieldClass =
-  'w-full lg:w-[calc(66.666%-0.667rem)] 2xl:w-[calc(33.333%-0.667rem)]';
-const settingsFullWidthClass = 'w-full';
+  "w-full lg:w-[calc(66.666%-0.667rem)] 2xl:w-[calc(33.333%-0.667rem)]";
+const settingsFullWidthClass = "w-full";
 
 const currentSession = computed(() => status.value?.currentSession || null);
 const recentSessions = computed(() => status.value?.recentSessions || []);
@@ -1627,109 +1850,142 @@ const storage = computed(() => {
 
   return {
     ...raw,
-    diskUsedBytes: Number(raw.diskUsedBytes ?? Math.max(0, diskTotalBytes - diskAvailableBytes)),
+    diskUsedBytes: Number(
+      raw.diskUsedBytes ?? Math.max(0, diskTotalBytes - diskAvailableBytes),
+    ),
   };
 });
 const estimateBaseline = computed(() => status.value?.estimateBaseline || null);
 const estimateBaselineAverageFrameBytes = computed(
-  () => estimateBaseline.value?.averageFrameBytes || 0
+  () => estimateBaseline.value?.averageFrameBytes || 0,
 );
+const showBackendSetupBanner = computed(
+  () => !loading.value && !status.value && Boolean(error.value),
+);
+const backendInstallCommands = `cd /home/pi
+git clone https://github.com/sharon92/pins-allsky-plugin.git
+cd pins-allsky-plugin
+./scripts/install-backend-plugin.sh --restart-pins`;
 
 const dependencyRows = computed(() => [
   {
-    label: tr('dependencies.rpiCamStill'),
+    label: tr("dependencies.rpiCamStill"),
     ready: Boolean(status.value?.dependencies?.rpiCamStillAvailable),
   },
   {
-    label: tr('dependencies.ffmpeg'),
+    label: tr("dependencies.ffmpeg"),
     ready: Boolean(status.value?.dependencies?.ffmpegAvailable),
   },
   {
-    label: tr('dependencies.keogram'),
+    label: tr("dependencies.keogram"),
     ready: Boolean(status.value?.dependencies?.keogramAvailable),
   },
   {
-    label: tr('dependencies.startrails'),
+    label: tr("dependencies.startrails"),
     ready: Boolean(status.value?.dependencies?.startrailsAvailable),
   },
 ]);
 
 const missingDependencies = computed(() =>
-  dependencyRows.value.filter((item) => !item.ready).map((item) => item.label)
+  dependencyRows.value.filter((item) => !item.ready).map((item) => item.label),
 );
 const statusRows = computed(() => {
   const pluginLimitValue = storage.value.limitEnabled
     ? formatSize(storage.value.maxPluginUsageBytes)
-    : tr('common.unlimited');
+    : tr("common.unlimited");
   const pluginAvailableValue = storage.value.limitEnabled
     ? formatSize(storage.value.pluginAvailableBytes)
-    : tr('common.unlimited');
+    : tr("common.unlimited");
 
   return [
     {
-      label: tr('statusRows.backend'),
+      label: tr("statusRows.backend"),
       value: status.value?.advancedApiReachable
-        ? tr('statusRows.online')
-        : tr('statusRows.offline'),
-      className: status.value?.advancedApiReachable ? 'text-emerald-300' : 'text-amber-300',
+        ? tr("statusRows.online")
+        : tr("statusRows.offline"),
+      className: status.value?.advancedApiReachable
+        ? "text-emerald-300"
+        : "text-amber-300",
     },
     {
-      label: tr('statusRows.session'),
+      label: tr("statusRows.session"),
       value:
-        currentSession.value?.label || currentSession.value?.id || tr('preview.noActiveSession'),
-      className: 'text-white',
+        currentSession.value?.label ||
+        currentSession.value?.id ||
+        tr("preview.noActiveSession"),
+      className: "text-white",
     },
     {
-      label: tr('statusRows.sequence'),
-      value: status.value?.sequenceRunning ? tr('statusRows.running') : tr('statusRows.idle'),
-      className: status.value?.sequenceRunning ? 'text-emerald-300' : 'text-gray-300',
+      label: tr("statusRows.sequence"),
+      value: status.value?.sequenceRunning
+        ? tr("statusRows.running")
+        : tr("statusRows.idle"),
+      className: status.value?.sequenceRunning
+        ? "text-emerald-300"
+        : "text-gray-300",
     },
     {
-      label: tr('statusRows.capture'),
-      value: status.value?.captureRunning ? tr('statusRows.active') : tr('statusRows.stopped'),
-      className: status.value?.captureRunning ? 'text-emerald-300' : 'text-gray-300',
+      label: tr("statusRows.capture"),
+      value: status.value?.captureRunning
+        ? tr("statusRows.active")
+        : tr("statusRows.stopped"),
+      className: status.value?.captureRunning
+        ? "text-emerald-300"
+        : "text-gray-300",
     },
     {
-      label: tr('statusRows.rendering'),
-      value: status.value?.generateInProgress ? tr('statusRows.inProgress') : tr('statusRows.idle'),
-      className: status.value?.generateInProgress ? 'text-cyan-300' : 'text-gray-300',
+      label: tr("statusRows.rendering"),
+      value: status.value?.generateInProgress
+        ? tr("statusRows.inProgress")
+        : tr("statusRows.idle"),
+      className: status.value?.generateInProgress
+        ? "text-cyan-300"
+        : "text-gray-300",
     },
     {
-      label: tr('statusRows.piUsed'),
+      label: tr("statusRows.piUsed"),
       value: formatSize(storage.value.diskUsedBytes),
-      className: 'text-white',
+      className: "text-white",
     },
     {
-      label: tr('statusRows.piAvailable'),
+      label: tr("statusRows.piAvailable"),
       value: formatSize(storage.value.diskAvailableBytes),
-      className: estimateExceedsAvailable.value ? 'text-amber-300' : 'text-white',
+      className: estimateExceedsAvailable.value
+        ? "text-amber-300"
+        : "text-white",
     },
     {
-      label: tr('statusRows.pluginUsed'),
+      label: tr("statusRows.pluginUsed"),
       value: formatSize(storage.value.pluginUsedBytes),
-      className: 'text-white',
+      className: "text-white",
     },
     {
-      label: tr('statusRows.pluginLimit'),
+      label: tr("statusRows.pluginLimit"),
       value: pluginLimitValue,
-      className: 'text-white',
+      className: "text-white",
     },
     {
-      label: tr('statusRows.pluginAvailable'),
+      label: tr("statusRows.pluginAvailable"),
       value: pluginAvailableValue,
       className:
-        storage.value.withinLimit || !storage.value.limitEnabled ? 'text-white' : 'text-amber-300',
+        storage.value.withinLimit || !storage.value.limitEnabled
+          ? "text-white"
+          : "text-amber-300",
     },
     ...dependencyRows.value.map((item) => ({
       label: item.label,
-      value: item.ready ? tr('statusRows.available') : tr('statusRows.missing'),
-      className: item.ready ? 'text-emerald-300' : 'text-amber-300',
+      value: item.ready ? tr("statusRows.available") : tr("statusRows.missing"),
+      className: item.ready ? "text-emerald-300" : "text-amber-300",
     })),
   ];
 });
 
-const parsedEstimateStart = computed(() => parseLocalInputValue(estimateWindow.startLocal));
-const parsedEstimateEnd = computed(() => parseLocalInputValue(estimateWindow.endLocal));
+const parsedEstimateStart = computed(() =>
+  parseLocalInputValue(estimateWindow.startLocal),
+);
+const parsedEstimateEnd = computed(() =>
+  parseLocalInputValue(estimateWindow.endLocal),
+);
 const estimateDurationSeconds = computed(() => {
   if (!parsedEstimateStart.value || !parsedEstimateEnd.value) {
     return 0;
@@ -1737,7 +1993,11 @@ const estimateDurationSeconds = computed(() => {
 
   return Math.max(
     0,
-    Math.round((parsedEstimateEnd.value.getTime() - parsedEstimateStart.value.getTime()) / 1000)
+    Math.round(
+      (parsedEstimateEnd.value.getTime() -
+        parsedEstimateStart.value.getTime()) /
+        1000,
+    ),
   );
 });
 const estimatedFrameCount = computed(() => {
@@ -1756,43 +2016,58 @@ const estimatedFrameStorageBytes = computed(() => {
   return estimateBaselineAverageFrameBytes.value * estimatedFrameCount.value;
 });
 const estimatedTimelapseBytes = computed(() => {
-  if (!config.value?.products?.timelapseEnabled || estimatedFrameCount.value <= 0) {
+  if (
+    !config.value?.products?.timelapseEnabled ||
+    estimatedFrameCount.value <= 0
+  ) {
     return 0;
   }
 
   const fps = Math.max(1, Number(config.value?.products?.timelapseFps || 1));
-  const bitrateKbps = Math.max(1000, Number(config.value?.products?.timelapseBitrateKbps || 1000));
+  const bitrateKbps = Math.max(
+    1000,
+    Number(config.value?.products?.timelapseBitrateKbps || 1000),
+  );
   const videoSeconds = estimatedFrameCount.value / fps;
   return Math.round((videoSeconds * bitrateKbps * 1000) / 8);
 });
 const estimatedKeogramBytes = computed(() =>
-  config.value?.products?.keogramEnabled ? Number(estimateBaseline.value?.keogramBytes || 0) : 0
+  config.value?.products?.keogramEnabled
+    ? Number(estimateBaseline.value?.keogramBytes || 0)
+    : 0,
 );
 const estimatedStartrailsBytes = computed(() =>
   config.value?.products?.startrailsEnabled
     ? Number(estimateBaseline.value?.startrailsBytes || 0)
-    : 0
+    : 0,
 );
 const estimatedStorageBytes = computed(
   () =>
     estimatedFrameStorageBytes.value +
     estimatedTimelapseBytes.value +
     estimatedKeogramBytes.value +
-    estimatedStartrailsBytes.value
+    estimatedStartrailsBytes.value,
 );
-const estimateDurationLabel = computed(() => formatDuration(estimateDurationSeconds.value));
+const estimateDurationLabel = computed(() =>
+  formatDuration(estimateDurationSeconds.value),
+);
 const estimateExceedsAvailable = computed(() => {
   if (estimatedStorageBytes.value <= 0) {
     return false;
   }
 
   const diskAvailableBytes = Number(storage.value.diskAvailableBytes || 0);
-  if (diskAvailableBytes > 0 && estimatedStorageBytes.value > diskAvailableBytes) {
+  if (
+    diskAvailableBytes > 0 &&
+    estimatedStorageBytes.value > diskAvailableBytes
+  ) {
     return true;
   }
 
   if (storage.value.limitEnabled) {
-    const pluginAvailableBytes = Number(storage.value.pluginAvailableBytes || 0);
+    const pluginAvailableBytes = Number(
+      storage.value.pluginAvailableBytes || 0,
+    );
     return estimatedStorageBytes.value > pluginAvailableBytes;
   }
 
@@ -1800,15 +2075,15 @@ const estimateExceedsAvailable = computed(() => {
 });
 const estimateWarning = computed(() => {
   if (!parsedEstimateStart.value || !parsedEstimateEnd.value) {
-    return tr('estimate.invalidWindow');
+    return tr("estimate.invalidWindow");
   }
 
   if (estimateDurationSeconds.value <= 0) {
-    return tr('estimate.endBeforeStart');
+    return tr("estimate.endBeforeStart");
   }
 
   if (!estimateBaseline.value) {
-    return tr('estimate.noBaseline');
+    return tr("estimate.noBaseline");
   }
 
   if (estimatedStorageBytes.value <= 0) {
@@ -1817,15 +2092,24 @@ const estimateWarning = computed(() => {
 
   const warnings = [];
   const diskAvailableBytes = Number(storage.value.diskAvailableBytes || 0);
-  if (diskAvailableBytes > 0 && estimatedStorageBytes.value > diskAvailableBytes) {
-    warnings.push(tr('estimate.piFreeSpace', { size: formatSize(diskAvailableBytes) }));
+  if (
+    diskAvailableBytes > 0 &&
+    estimatedStorageBytes.value > diskAvailableBytes
+  ) {
+    warnings.push(
+      tr("estimate.piFreeSpace", { size: formatSize(diskAvailableBytes) }),
+    );
   }
 
   if (storage.value.limitEnabled) {
-    const pluginAvailableBytes = Number(storage.value.pluginAvailableBytes || 0);
+    const pluginAvailableBytes = Number(
+      storage.value.pluginAvailableBytes || 0,
+    );
     if (estimatedStorageBytes.value > pluginAvailableBytes) {
       warnings.push(
-        tr('estimate.pluginLimitRemaining', { size: formatSize(pluginAvailableBytes) })
+        tr("estimate.pluginLimitRemaining", {
+          size: formatSize(pluginAvailableBytes),
+        }),
       );
     }
   }
@@ -1834,48 +2118,48 @@ const estimateWarning = computed(() => {
     return null;
   }
 
-  return tr('estimate.exceeds', {
+  return tr("estimate.exceeds", {
     size: formatSize(estimatedStorageBytes.value),
-    limits: warnings.join(` ${tr('common.and')} `),
+    limits: warnings.join(` ${tr("common.and")} `),
   });
 });
 
 const meteringOptions = computed(() => [
-  { value: 'centre', label: tr('modals.camera.options.centre') },
-  { value: 'spot', label: tr('modals.camera.options.spot') },
-  { value: 'average', label: tr('modals.camera.options.average') },
-  { value: 'custom', label: tr('modals.camera.options.custom') },
+  { value: "centre", label: tr("modals.camera.options.centre") },
+  { value: "spot", label: tr("modals.camera.options.spot") },
+  { value: "average", label: tr("modals.camera.options.average") },
+  { value: "custom", label: tr("modals.camera.options.custom") },
 ]);
 
 const awbOptions = computed(() => [
-  { value: 'auto', label: tr('modals.camera.options.auto') },
-  { value: 'incandescent', label: tr('modals.camera.options.incandescent') },
-  { value: 'tungsten', label: tr('modals.camera.options.tungsten') },
-  { value: 'fluorescent', label: tr('modals.camera.options.fluorescent') },
-  { value: 'indoor', label: tr('modals.camera.options.indoor') },
-  { value: 'daylight', label: tr('modals.camera.options.daylight') },
-  { value: 'cloudy', label: tr('modals.camera.options.cloudy') },
-  { value: 'custom', label: tr('modals.camera.options.custom') },
+  { value: "auto", label: tr("modals.camera.options.auto") },
+  { value: "incandescent", label: tr("modals.camera.options.incandescent") },
+  { value: "tungsten", label: tr("modals.camera.options.tungsten") },
+  { value: "fluorescent", label: tr("modals.camera.options.fluorescent") },
+  { value: "indoor", label: tr("modals.camera.options.indoor") },
+  { value: "daylight", label: tr("modals.camera.options.daylight") },
+  { value: "cloudy", label: tr("modals.camera.options.cloudy") },
+  { value: "custom", label: tr("modals.camera.options.custom") },
 ]);
 
 const denoiseOptions = computed(() => [
-  { value: 'auto', label: tr('modals.camera.options.auto') },
-  { value: 'off', label: tr('modals.camera.options.off') },
-  { value: 'cdn_off', label: tr('modals.camera.options.cdnOff') },
-  { value: 'cdn_fast', label: tr('modals.camera.options.cdnFast') },
-  { value: 'cdn_hq', label: tr('modals.camera.options.cdnHq') },
+  { value: "auto", label: tr("modals.camera.options.auto") },
+  { value: "off", label: tr("modals.camera.options.off") },
+  { value: "cdn_off", label: tr("modals.camera.options.cdnOff") },
+  { value: "cdn_fast", label: tr("modals.camera.options.cdnFast") },
+  { value: "cdn_hq", label: tr("modals.camera.options.cdnHq") },
 ]);
 
 const settingsModalTitle = computed(() => {
   switch (settingsModal.value) {
-    case 'automation':
-      return tr('buttons.automation');
-    case 'camera':
-      return tr('buttons.camera');
-    case 'outputs':
-      return tr('buttons.outputs');
+    case "automation":
+      return tr("buttons.automation");
+    case "camera":
+      return tr("buttons.camera");
+    case "outputs":
+      return tr("buttons.outputs");
     default:
-      return '';
+      return "";
   }
 });
 
@@ -1959,7 +2243,8 @@ const saveConfig = async () => {
 };
 
 const startSession = async () => {
-  store.manualLabel = (store.manualLabel || '').trim() || defaultManualLabel.value;
+  store.manualLabel =
+    (store.manualLabel || "").trim() || defaultManualLabel.value;
   await store.startSession();
 };
 
@@ -1977,30 +2262,31 @@ const updateBackend = async () => {
 
 const formatSessionReason = (reason) => {
   if (!reason) {
-    return tr('recentSessions.reasons.unknown');
+    return tr("recentSessions.reasons.unknown");
   }
 
   const normalizedReason = String(reason)
     .replace(/-([a-z])/g, (_, character) => character.toUpperCase())
-    .replace(/[^a-zA-Z0-9]/g, '');
+    .replace(/[^a-zA-Z0-9]/g, "");
 
   switch (normalizedReason) {
-    case 'manualStart':
-      return tr('recentSessions.reasons.manualStart');
-    case 'manualStop':
-      return tr('recentSessions.reasons.manualStop');
-    case 'sequenceStart':
-      return tr('recentSessions.reasons.sequenceStart');
-    case 'sequenceStop':
-      return tr('recentSessions.reasons.sequenceStop');
+    case "manualStart":
+      return tr("recentSessions.reasons.manualStart");
+    case "manualStop":
+      return tr("recentSessions.reasons.manualStop");
+    case "sequenceStart":
+      return tr("recentSessions.reasons.sequenceStart");
+    case "sequenceStop":
+      return tr("recentSessions.reasons.sequenceStop");
     default:
       return reason;
   }
 };
 
 const deleteSession = async (session) => {
-  const sessionName = session?.label || session?.id || tr('preview.noActiveSession');
-  if (!window.confirm(tr('dialogs.deleteSession', { sessionName }))) {
+  const sessionName =
+    session?.label || session?.id || tr("preview.noActiveSession");
+  if (!window.confirm(tr("dialogs.deleteSession", { sessionName }))) {
     return;
   }
 
@@ -2008,7 +2294,7 @@ const deleteSession = async (session) => {
 };
 
 const deleteAllSessions = async () => {
-  if (!window.confirm(tr('dialogs.deleteAllSessions'))) {
+  if (!window.confirm(tr("dialogs.deleteAllSessions"))) {
     return;
   }
 
@@ -2021,8 +2307,10 @@ const deleteArtifact = async (session, artifact) => {
   }
 
   const artifactName =
-    artifact.name || artifact.relativePath.split('/').pop() || tr('common.notGenerated');
-  if (!window.confirm(tr('dialogs.deleteArtifact', { artifactName }))) {
+    artifact.name ||
+    artifact.relativePath.split("/").pop() ||
+    tr("common.notGenerated");
+  if (!window.confirm(tr("dialogs.deleteArtifact", { artifactName }))) {
     return;
   }
 
@@ -2034,8 +2322,11 @@ const deleteFrame = async (session, frame) => {
     return;
   }
 
-  const frameName = frame.name || frame.relativePath.split('/').pop() || tr('common.notAvailable');
-  if (!window.confirm(tr('dialogs.deleteFrame', { frameName }))) {
+  const frameName =
+    frame.name ||
+    frame.relativePath.split("/").pop() ||
+    tr("common.notAvailable");
+  if (!window.confirm(tr("dialogs.deleteFrame", { frameName }))) {
     return;
   }
 
@@ -2043,13 +2334,17 @@ const deleteFrame = async (session, frame) => {
 };
 
 const downloadRelativePath = async (relativePath, fallbackName = null) => {
-  const derivedName = fallbackName || relativePath?.split('/').pop() || tr('common.download');
+  const derivedName =
+    fallbackName || relativePath?.split("/").pop() || tr("common.download");
   await store.downloadFile(relativePath, derivedName);
 };
 
-const sessionDetails = (sessionId) => sessionDetailsById.value?.[sessionId] || null;
-const sessionDetailsLoading = (sessionId) => Boolean(detailsLoadingById.value?.[sessionId]);
-const isSessionDetailsOpen = (sessionId) => Boolean(sessionDetailOpen[sessionId]);
+const sessionDetails = (sessionId) =>
+  sessionDetailsById.value?.[sessionId] || null;
+const sessionDetailsLoading = (sessionId) =>
+  Boolean(detailsLoadingById.value?.[sessionId]);
+const isSessionDetailsOpen = (sessionId) =>
+  Boolean(sessionDetailOpen[sessionId]);
 const refreshSessionDetails = async (sessionId) => {
   await store.fetchSessionDetails(sessionId);
 };
@@ -2069,23 +2364,27 @@ const parseDateValue = (value) => {
     return Number.isNaN(value.getTime()) ? null : value;
   }
 
-  if (typeof value === 'string' || typeof value === 'number') {
+  if (typeof value === "string" || typeof value === "number") {
     const parsed = new Date(value);
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   }
 
-  if (typeof value === 'object') {
-    const utcDateTime = typeof value.utcDateTime === 'string' ? value.utcDateTime : null;
+  if (typeof value === "object") {
+    const utcDateTime =
+      typeof value.utcDateTime === "string" ? value.utcDateTime : null;
     if (utcDateTime) {
       const parsedUtc = new Date(
-        /[zZ]|[+-]\d{2}:\d{2}$/.test(utcDateTime) ? utcDateTime : `${utcDateTime}Z`
+        /[zZ]|[+-]\d{2}:\d{2}$/.test(utcDateTime)
+          ? utcDateTime
+          : `${utcDateTime}Z`,
       );
       if (!Number.isNaN(parsedUtc.getTime())) {
         return parsedUtc;
       }
     }
 
-    const localDateTime = typeof value.localDateTime === 'string' ? value.localDateTime : null;
+    const localDateTime =
+      typeof value.localDateTime === "string" ? value.localDateTime : null;
     if (localDateTime) {
       const parsedLocal = new Date(localDateTime);
       if (!Number.isNaN(parsedLocal.getTime())) {
@@ -2093,7 +2392,7 @@ const parseDateValue = (value) => {
       }
     }
 
-    const dateTime = typeof value.dateTime === 'string' ? value.dateTime : null;
+    const dateTime = typeof value.dateTime === "string" ? value.dateTime : null;
     if (dateTime) {
       const parsedDateTime = new Date(dateTime);
       if (!Number.isNaN(parsedDateTime.getTime())) {
@@ -2112,13 +2411,17 @@ const sameLocalDay = (left, right) =>
 
 const buildDefaultManualLabel = () => {
   const now = new Date();
-  const datePrefix = `${String(now.getFullYear()).slice(-2)}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+  const datePrefix = `${String(now.getFullYear()).slice(-2)}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
   const sessionsById = new Map();
-  const candidateSessions = [currentSession.value, ...recentSessions.value].filter(Boolean);
+  const candidateSessions = [
+    currentSession.value,
+    ...recentSessions.value,
+  ].filter(Boolean);
 
   for (const session of candidateSessions) {
     const sessionKey =
-      session.id || `${session.label || ''}:${JSON.stringify(session.startedAtUtc || null)}`;
+      session.id ||
+      `${session.label || ""}:${JSON.stringify(session.startedAtUtc || null)}`;
     if (!sessionsById.has(sessionKey)) {
       sessionsById.set(sessionKey, session);
     }
@@ -2133,7 +2436,7 @@ const buildDefaultManualLabel = () => {
       sessionsStartedToday += 1;
     }
 
-    const label = typeof session.label === 'string' ? session.label.trim() : '';
+    const label = typeof session.label === "string" ? session.label.trim() : "";
     const match = label.match(new RegExp(`^${datePrefix}_(\\d+)$`));
     if (match) {
       maxLabelCounter = Math.max(maxLabelCounter, Number(match[1]));
@@ -2148,7 +2451,7 @@ const defaultManualLabel = computed(() => buildDefaultManualLabel());
 const manualLabelInput = computed({
   get: () => store.manualLabel || defaultManualLabel.value,
   set: (value) => {
-    store.manualLabel = typeof value === 'string' ? value : '';
+    store.manualLabel = typeof value === "string" ? value : "";
   },
 });
 
@@ -2183,7 +2486,7 @@ const initializeEstimateWindow = () => {
 const formatDate = (value) => {
   const parsed = parseDateValue(value);
   if (!parsed) {
-    return tr('common.notAvailable');
+    return tr("common.notAvailable");
   }
 
   return parsed.toLocaleString();
@@ -2191,7 +2494,7 @@ const formatDate = (value) => {
 
 const formatInterval = (seconds) => {
   if (!Number.isFinite(seconds)) {
-    return tr('common.notAvailable');
+    return tr("common.notAvailable");
   }
 
   return `${seconds}s`;
@@ -2199,16 +2502,16 @@ const formatInterval = (seconds) => {
 
 const formatExposure = (camera) => {
   if (!camera) {
-    return tr('common.notAvailable');
+    return tr("common.notAvailable");
   }
 
   if (!camera.useManualExposure) {
-    return tr('common.auto');
+    return tr("common.auto");
   }
 
   const shutterMicroseconds = Number(camera.shutterMicroseconds || 0);
   if (!Number.isFinite(shutterMicroseconds) || shutterMicroseconds <= 0) {
-    return tr('common.notAvailable');
+    return tr("common.notAvailable");
   }
 
   const exposureSeconds = shutterMicroseconds / 1000000;
@@ -2221,24 +2524,24 @@ const formatExposure = (camera) => {
 
 const formatGain = (camera) => {
   if (!camera) {
-    return tr('common.notAvailable');
+    return tr("common.notAvailable");
   }
 
   if (!camera.useManualGain) {
-    return tr('common.auto');
+    return tr("common.auto");
   }
 
   const gain = Number(camera.analogGain || 0);
   if (!Number.isFinite(gain) || gain <= 0) {
-    return tr('common.notAvailable');
+    return tr("common.notAvailable");
   }
 
-  return gain >= 10 ? gain.toFixed(0) : gain.toFixed(1).replace(/\.0$/, '');
+  return gain >= 10 ? gain.toFixed(0) : gain.toFixed(1).replace(/\.0$/, "");
 };
 
 const formatCount = (value) => {
   if (!Number.isFinite(value)) {
-    return tr('common.notAvailable');
+    return tr("common.notAvailable");
   }
 
   return new Intl.NumberFormat().format(value);
@@ -2246,7 +2549,7 @@ const formatCount = (value) => {
 
 const formatDuration = (seconds) => {
   if (!Number.isFinite(seconds) || seconds <= 0) {
-    return tr('common.notAvailable');
+    return tr("common.notAvailable");
   }
 
   const totalMinutes = Math.round(seconds / 60);
@@ -2266,10 +2569,10 @@ const formatDuration = (seconds) => {
 
 const formatSize = (bytes) => {
   if (!bytes && bytes !== 0) {
-    return tr('common.notAvailable');
+    return tr("common.notAvailable");
   }
 
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const units = ["B", "KB", "MB", "GB", "TB"];
   let value = bytes;
   let unitIndex = 0;
 
@@ -2284,7 +2587,7 @@ const formatSize = (bytes) => {
 
 const describeArtifact = (artifact) => {
   if (!artifact) {
-    return tr('common.notGenerated');
+    return tr("common.notGenerated");
   }
 
   return `${formatDate(artifact.generatedAtUtc)} • ${formatSize(artifact.sizeBytes)}`;
