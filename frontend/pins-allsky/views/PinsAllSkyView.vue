@@ -1,22 +1,16 @@
 <template>
   <div class="container py-8 sm:py-12 px-4">
     <div class="mx-auto max-w-7xl space-y-6">
-      <section
-        class="rounded-2xl border border-cyan-900/40 bg-gray-800/80 p-6 shadow-2xl"
-      >
-        <div
-          class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"
-        >
+      <section class="rounded-2xl border border-cyan-900/40 bg-gray-800/80 p-6 shadow-2xl">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h1 class="text-3xl font-bold text-white">{{ tr("title") }}</h1>
+            <h1 class="text-3xl font-bold text-white">{{ t('plugins.pinsAllSky.title') }}</h1>
           </div>
-          <div
-            class="flex flex-wrap items-center justify-end gap-2 self-start lg:ml-auto"
-          >
+          <div class="flex flex-wrap items-center justify-end gap-2 self-start lg:ml-auto">
             <button
               type="button"
-              :title="tr('buttons.automation')"
-              :aria-label="tr('buttons.automation')"
+              :title="t('plugins.pinsAllSky.buttons.automation')"
+              :aria-label="t('plugins.pinsAllSky.buttons.automation')"
               class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
               @click="openSettingsModal('automation')"
             >
@@ -24,8 +18,8 @@
             </button>
             <button
               type="button"
-              :title="tr('buttons.camera')"
-              :aria-label="tr('buttons.camera')"
+              :title="t('plugins.pinsAllSky.buttons.camera')"
+              :aria-label="t('plugins.pinsAllSky.buttons.camera')"
               class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
               @click="openSettingsModal('camera')"
             >
@@ -33,8 +27,8 @@
             </button>
             <button
               type="button"
-              :title="tr('buttons.outputs')"
-              :aria-label="tr('buttons.outputs')"
+              :title="t('plugins.pinsAllSky.buttons.outputs')"
+              :aria-label="t('plugins.pinsAllSky.buttons.outputs')"
               class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
               @click="openSettingsModal('outputs')"
             >
@@ -42,8 +36,8 @@
             </button>
             <button
               type="button"
-              :title="tr('buttons.showStatus')"
-              :aria-label="tr('buttons.showStatus')"
+              :title="t('plugins.pinsAllSky.buttons.showStatus')"
+              :aria-label="t('plugins.pinsAllSky.buttons.showStatus')"
               class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
               @click="showStatusModal = true"
             >
@@ -53,86 +47,27 @@
         </div>
       </section>
 
-      <div
-        v-if="showStatusModal"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm"
-        @click.self="showStatusModal = false"
-      >
-        <div
-          class="w-full max-w-2xl rounded-2xl border border-gray-700 bg-gray-900/95 p-6 shadow-2xl"
-        >
-          <div class="flex items-start justify-between gap-4">
-            <h2 class="text-xl font-semibold text-white">
-              {{ tr("statusModal.title") }}
-            </h2>
-            <button
-              type="button"
-              class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-600 bg-gray-800/80 text-gray-200 transition hover:border-cyan-400 hover:text-white"
-              :aria-label="tr('statusModal.close')"
-              @click="showStatusModal = false"
-            >
-              <XMarkIcon class="h-5 w-5" />
-            </button>
-          </div>
-
-          <div
-            class="mt-6 grid grid-cols-[auto_minmax(0,1fr)] gap-x-8 gap-y-3 lg:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)]"
-          >
-            <template v-for="item in statusRows" :key="item.label">
-              <div
-                class="text-xs font-semibold uppercase tracking-wide text-gray-500"
-              >
-                {{ item.label }}
-              </div>
-              <div class="text-sm" :class="item.className">
-                {{ item.value }}
-              </div>
-            </template>
-          </div>
-
-          <div class="mt-6 flex flex-wrap items-center justify-end gap-3">
-            <button
-              type="button"
-              class="rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-              :disabled="
-                backendUpdateBusy ||
-                status?.captureRunning ||
-                status?.generateInProgress
-              "
-              :title="tr('statusModal.updateBackendTooltip')"
-              @click="updateBackend"
-            >
-              {{
-                backendUpdateBusy
-                  ? tr("buttons.startingUpdate")
-                  : tr("buttons.updateBackend")
-              }}
-            </button>
-            <button
-              type="button"
-              class="rounded-xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-500"
-              @click="showStatusModal = false"
-            >
-              {{ tr("common.ok") }}
-            </button>
-          </div>
-        </div>
-      </div>
+      <PinsAllSkyStatusModal
+        :show="showStatusModal"
+        :status-rows="statusRows"
+        :backend-update-busy="backendUpdateBusy"
+        :disable-update="backendUpdateBusy || status?.captureRunning || status?.generateInProgress"
+        @close="showStatusModal = false"
+        @update-backend="updateBackend"
+      />
 
       <div
         v-if="showBackendSetupBanner"
         class="rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-4 text-sm text-cyan-100"
       >
         <div class="font-semibold text-white">
-          {{ tr("banners.backendUnavailableTitle") }}
+          {{ t('plugins.pinsAllSky.banners.backendUnavailableTitle') }}
         </div>
         <p class="mt-1">
-          {{ tr("banners.backendUnavailableBody") }}
+          {{ t('plugins.pinsAllSky.banners.backendUnavailableBody') }}
         </p>
-        <div
-          class="mt-3 text-xs font-semibold uppercase tracking-wide text-cyan-200/80"
-        >
-          {{ tr("banners.backendUnavailableInstallLabel") }}
+        <div class="mt-3 text-xs font-semibold uppercase tracking-wide text-cyan-200/80">
+          {{ t('plugins.pinsAllSky.banners.backendUnavailableInstallLabel') }}
         </div>
         <pre
           class="mt-2 overflow-x-auto rounded-xl border border-cyan-500/20 bg-gray-950/70 px-4 py-3 text-xs text-cyan-50"
@@ -165,17 +100,15 @@
         class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100"
       >
         {{
-          tr("banners.missingRuntimeDependencies", {
-            dependencies: missingDependencies.join(", "),
+          t('plugins.pinsAllSky.banners.missingRuntimeDependencies', {
+            dependencies: missingDependencies.join(', '),
           })
         }}
       </div>
 
-      <section
-        class="rounded-2xl border border-gray-700 bg-gray-800/80 p-5 shadow-xl"
-      >
+      <section class="rounded-2xl border border-gray-700 bg-gray-800/80 p-5 shadow-xl">
         <h2 class="text-xl font-semibold text-white">
-          {{ tr("sections.sessionControl") }}
+          {{ t('plugins.pinsAllSky.sections.sessionControl') }}
         </h2>
 
         <div class="mt-5 space-y-5">
@@ -183,17 +116,17 @@
             <input
               v-model="manualLabelInput"
               :title="
-                tr('estimate.sessionLabelTitle', { label: defaultManualLabel })
+                t('plugins.pinsAllSky.estimate.sessionLabelTitle', { label: defaultManualLabel })
               "
               class="min-w-0 flex-1 rounded-xl border border-gray-600 bg-gray-900/80 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-              :placeholder="tr('estimate.sessionLabelPlaceholder')"
+              :placeholder="t('plugins.pinsAllSky.estimate.sessionLabelPlaceholder')"
             />
 
             <div class="flex items-center gap-2">
               <button
                 type="button"
-                :title="tr('buttons.startCapture')"
-                :aria-label="tr('buttons.startCapture')"
+                :title="t('plugins.pinsAllSky.buttons.startCapture')"
+                :aria-label="t('plugins.pinsAllSky.buttons.startCapture')"
                 class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-600 text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"
                 :disabled="loading || status?.captureRunning"
                 @click="startSession"
@@ -204,13 +137,13 @@
                 type="button"
                 :title="
                   status?.generateInProgress
-                    ? tr('buttons.renderingProgress')
-                    : tr('buttons.renderProgress')
+                    ? t('plugins.pinsAllSky.buttons.renderingProgress')
+                    : t('plugins.pinsAllSky.buttons.renderProgress')
                 "
                 :aria-label="
                   status?.generateInProgress
-                    ? tr('buttons.renderingProgress')
-                    : tr('buttons.renderProgress')
+                    ? t('plugins.pinsAllSky.buttons.renderingProgress')
+                    : t('plugins.pinsAllSky.buttons.renderProgress')
                 "
                 class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
                 :disabled="
@@ -228,8 +161,8 @@
               </button>
               <button
                 type="button"
-                :title="tr('buttons.stopAndRender')"
-                :aria-label="tr('buttons.stopAndRender')"
+                :title="t('plugins.pinsAllSky.buttons.stopAndRender')"
+                :aria-label="t('plugins.pinsAllSky.buttons.stopAndRender')"
                 class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-rose-600 text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-40"
                 :disabled="loading || !status?.captureRunning"
                 @click="stopSession"
@@ -239,9 +172,7 @@
             </div>
           </div>
 
-          <div
-            class="overflow-hidden rounded-2xl border border-gray-700 bg-black/60"
-          >
+          <div class="overflow-hidden rounded-2xl border border-gray-700 bg-black/60">
             <div class="relative h-[28rem] w-full">
               <img
                 v-if="currentImageUrl"
@@ -253,7 +184,7 @@
                 v-else
                 class="flex h-full items-center justify-center px-6 text-center text-sm text-gray-500"
               >
-                {{ tr("preview.noFrameYet") }}
+                {{ t('plugins.pinsAllSky.preview.noFrameYet') }}
               </div>
 
               <div
@@ -267,41 +198,36 @@
                 <div
                   class="pointer-events-none rounded-xl border border-white/10 bg-black/45 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-300 backdrop-blur-sm"
                 >
-                  {{ tr("sections.livePreview") }}
+                  {{ t('plugins.pinsAllSky.sections.livePreview') }}
                 </div>
                 <button
                   type="button"
                   :title="
                     loading
-                      ? tr('buttons.refreshingPreview')
-                      : tr('buttons.refreshPreview')
+                      ? t('plugins.pinsAllSky.buttons.refreshingPreview')
+                      : t('plugins.pinsAllSky.buttons.refreshPreview')
                   "
                   :aria-label="
                     loading
-                      ? tr('buttons.refreshingPreview')
-                      : tr('buttons.refreshPreview')
+                      ? t('plugins.pinsAllSky.buttons.refreshingPreview')
+                      : t('plugins.pinsAllSky.buttons.refreshPreview')
                   "
                   class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-black/45 text-gray-200 backdrop-blur-sm transition hover:border-cyan-400 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
                   :disabled="loading"
                   @click="refreshAll"
                 >
-                  <ArrowPathIcon
-                    class="h-5 w-5"
-                    :class="loading ? 'animate-spin' : ''"
-                  />
+                  <ArrowPathIcon class="h-5 w-5" :class="loading ? 'animate-spin' : ''" />
                 </button>
               </div>
 
               <div
                 class="pointer-events-none absolute left-4 top-4 rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm"
               >
-                <div
-                  class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-300"
-                >
-                  {{ tr("preview.session") }}
+                <div class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-300">
+                  {{ t('plugins.pinsAllSky.preview.session') }}
                 </div>
                 <div class="mt-1 text-sm font-medium text-white">
-                  {{ currentSession?.id || tr("preview.noActiveSession") }}
+                  {{ currentSession?.id || t('plugins.pinsAllSky.preview.noActiveSession') }}
                 </div>
               </div>
 
@@ -311,13 +237,13 @@
                 <div class="space-y-1 text-sm text-white">
                   <div>
                     <span class="text-gray-300">{{
-                      tr("preview.lastCapture")
+                      t('plugins.pinsAllSky.preview.lastCapture')
                     }}</span>
                     {{ formatDate(currentSession?.lastCaptureAtUtc) }}
                   </div>
                   <div>
                     <span class="text-gray-300">{{
-                      tr("preview.frameCount")
+                      t('plugins.pinsAllSky.preview.frameCount')
                     }}</span>
                     {{ formatCount(currentSession?.captureCount || 0) }}
                   </div>
@@ -330,18 +256,18 @@
                 <div class="space-y-1 text-right text-sm text-white">
                   <div>
                     <span class="text-gray-300">{{
-                      tr("preview.captureInterval")
+                      t('plugins.pinsAllSky.preview.captureInterval')
                     }}</span>
                     {{ formatInterval(config?.camera?.intervalSeconds) }}
                   </div>
                   <div>
                     <span class="text-gray-300">{{
-                      tr("preview.exposure")
+                      t('plugins.pinsAllSky.preview.exposure')
                     }}</span>
                     {{ formatExposure(config?.camera) }}
                   </div>
                   <div>
-                    <span class="text-gray-300">{{ tr("preview.gain") }}</span>
+                    <span class="text-gray-300">{{ t('plugins.pinsAllSky.preview.gain') }}</span>
                     {{ formatGain(config?.camera) }}
                   </div>
                 </div>
@@ -351,62 +277,50 @@
 
           <div class="rounded-2xl border border-gray-700 bg-gray-900/50 p-4">
             <div class="text-sm font-semibold text-white">
-              {{ tr("sections.sessionEstimate") }}
+              {{ t('plugins.pinsAllSky.sections.sessionEstimate') }}
             </div>
             <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-              <label
-                class="block rounded-xl border border-gray-700 bg-gray-900/60 p-3"
-              >
-                <span
-                  class="block text-xs uppercase tracking-wide text-gray-500"
-                  >{{ tr("estimate.start") }}</span
-                >
+              <label class="block rounded-xl border border-gray-700 bg-gray-900/60 p-3">
+                <span class="block text-xs uppercase tracking-wide text-gray-500">{{
+                  t('plugins.pinsAllSky.estimate.start')
+                }}</span>
                 <input
                   v-model="estimateWindow.startLocal"
                   type="datetime-local"
-                  :title="tr('estimate.startTooltip')"
+                  :title="t('plugins.pinsAllSky.estimate.startTooltip')"
                   class="mt-2 w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
-              <label
-                class="block rounded-xl border border-gray-700 bg-gray-900/60 p-3"
-              >
-                <span
-                  class="block text-xs uppercase tracking-wide text-gray-500"
-                  >{{ tr("estimate.end") }}</span
-                >
+              <label class="block rounded-xl border border-gray-700 bg-gray-900/60 p-3">
+                <span class="block text-xs uppercase tracking-wide text-gray-500">{{
+                  t('plugins.pinsAllSky.estimate.end')
+                }}</span>
                 <input
                   v-model="estimateWindow.endLocal"
                   type="datetime-local"
-                  :title="tr('estimate.endTooltip')"
+                  :title="t('plugins.pinsAllSky.estimate.endTooltip')"
                   class="mt-2 w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
                 />
               </label>
               <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
                 <div class="text-xs uppercase tracking-wide text-gray-500">
-                  {{ tr("estimate.expectedDuration") }}
+                  {{ t('plugins.pinsAllSky.estimate.expectedDuration') }}
                 </div>
-                <div class="mt-2 text-sm text-white">
-                  {{ estimateDurationLabel }}
-                </div>
+                <div class="mt-2 text-sm text-white">{{ estimateDurationLabel }}</div>
               </div>
               <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
                 <div class="text-xs uppercase tracking-wide text-gray-500">
-                  {{ tr("estimate.expectedFrames") }}
+                  {{ t('plugins.pinsAllSky.estimate.expectedFrames') }}
                 </div>
-                <div class="mt-2 text-sm text-white">
-                  {{ formatCount(estimatedFrameCount) }}
-                </div>
+                <div class="mt-2 text-sm text-white">{{ formatCount(estimatedFrameCount) }}</div>
               </div>
               <div class="rounded-xl border border-gray-700 bg-gray-900/60 p-3">
                 <div class="text-xs uppercase tracking-wide text-gray-500">
-                  {{ tr("estimate.expectedStorage") }}
+                  {{ t('plugins.pinsAllSky.estimate.expectedStorage') }}
                 </div>
                 <div
                   class="mt-2 text-sm font-semibold"
-                  :class="
-                    estimateExceedsAvailable ? 'text-amber-300' : 'text-white'
-                  "
+                  :class="estimateExceedsAvailable ? 'text-amber-300' : 'text-white'"
                 >
                   {{ formatSize(estimatedStorageBytes) }}
                 </div>
@@ -423,965 +337,50 @@
         </div>
       </section>
 
-      <div
-        v-if="settingsModal"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm"
-        @click.self="closeSettingsModal()"
+      <Modal
+        :show="Boolean(settingsPanelComponent)"
+        max-width="max-w-6xl"
+        :disable-close="saving"
+        :close-on-backdrop-click="!saving"
+        @close="closeSettingsModal()"
       >
-        <div
-          class="w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-2xl border border-gray-700 bg-gray-900/95 p-6 shadow-2xl"
-        >
-          <div class="flex items-start justify-between gap-4">
-            <h2 class="text-xl font-semibold text-white">
-              {{ settingsModalTitle }}
-            </h2>
-            <button
-              type="button"
-              class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-600 bg-gray-800/80 text-gray-200 transition hover:border-cyan-400 hover:text-white"
-              :disabled="saving"
-              :aria-label="
-                tr('modals.closeDialog', { title: settingsModalTitle })
-              "
-              @click="closeSettingsModal()"
-            >
-              <XMarkIcon class="h-5 w-5" />
-            </button>
-          </div>
+        <template #header>
+          <h2 class="text-xl font-semibold text-white">{{ settingsModalTitle }}</h2>
+        </template>
 
-          <div
-            v-if="settingsModal === 'automation'"
-            class="mt-6 flex flex-wrap gap-4"
-          >
-            <label
-              :class="settingsFieldClass"
-              class="rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2"
-            >
-              <span
-                class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-              >
-                {{ tr("modals.automation.autoStartWithSequence") }}
-              </span>
-              <div class="flex items-center justify-between gap-3">
-                <span class="text-sm text-gray-300">{{
-                  tr("modals.automation.sequenceTriggeredCapture")
-                }}</span>
-                <toggleButton
-                  :status-value="Boolean(config.autoStartWithSequence)"
-                  @update:statusValue="
-                    setRootConfigValue('autoStartWithSequence', $event)
-                  "
-                />
-              </div>
-            </label>
+        <template #body>
+          <div class="w-full">
+            <component
+              :is="settingsPanelComponent"
+              v-if="settingsPanelComponent && config"
+              v-bind="settingsPanelProps"
+            />
 
-            <div
-              :class="settingsWideFieldClass"
-              class="rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-100"
-            >
-              {{ tr("modals.automationInfo") }}
-            </div>
-
-            <label
-              :class="settingsFieldClass"
-              class="rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2"
-            >
-              <span
-                class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+            <div class="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                class="rounded-xl border border-gray-600 bg-gray-800/80 px-4 py-2 text-sm font-semibold text-gray-200 transition hover:border-cyan-400 hover:text-white"
+                :disabled="saving"
+                @click="closeSettingsModal()"
               >
-                {{ tr("modals.automation.advancedApiEnabled") }}
-              </span>
-              <div class="flex items-center justify-between gap-3">
-                <span class="text-sm text-gray-300">{{
-                  tr("modals.automation.backendMonitoring")
-                }}</span>
-                <toggleButton
-                  :status-value="Boolean(config.advancedApi.enabled)"
-                  @update:statusValue="setAdvancedApiSetting('enabled', $event)"
-                />
-              </div>
-            </label>
-
-            <label :class="settingsFieldClass" class="block">
-              <span
-                class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                {{ t('plugins.pinsAllSky.common.cancel') }}
+              </button>
+              <button
+                type="button"
+                class="rounded-xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-40"
+                :disabled="saving"
+                @click="saveSettingsModal"
               >
-                {{ tr("modals.automation.protocol") }}
-              </span>
-              <input
-                v-model="config.advancedApi.protocol"
-                :title="tr('modals.automation.protocolTooltip')"
-                class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-              />
-            </label>
-
-            <label :class="settingsFieldClass" class="block">
-              <span
-                class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-              >
-                {{ tr("modals.automation.sequencePollIntervalSeconds") }}
-              </span>
-              <input
-                v-model.number="config.sequencePollIntervalSeconds"
-                type="number"
-                min="5"
-                max="300"
-                :title="tr('modals.automation.sequencePollTooltip')"
-                class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-              />
-              <span class="mt-2 block text-xs text-gray-500">
-                {{ tr("modals.automation.sequencePollIntervalHelp") }}
-              </span>
-            </label>
-
-            <label :class="settingsFieldClass" class="block">
-              <span
-                class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-              >
-                {{ tr("modals.automation.advancedApiHost") }}
-              </span>
-              <input
-                v-model="config.advancedApi.host"
-                :title="tr('modals.automation.advancedApiHostTooltip')"
-                class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-              />
-            </label>
-
-            <label :class="settingsFieldClass" class="block">
-              <span
-                class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-              >
-                {{ tr("modals.automation.port") }}
-              </span>
-              <input
-                v-model.number="config.advancedApi.port"
-                type="number"
-                :title="tr('modals.automation.portTooltip')"
-                class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-              />
-            </label>
-
-            <label :class="settingsFieldClass" class="block">
-              <span
-                class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-              >
-                {{ tr("modals.automation.timeoutSeconds") }}
-              </span>
-              <input
-                v-model.number="config.advancedApi.requestTimeoutSeconds"
-                type="number"
-                min="1"
-                max="30"
-                :title="tr('modals.automation.timeoutTooltip')"
-                class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-              />
-            </label>
-
-            <label :class="settingsFieldClass" class="block">
-              <span
-                class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-              >
-                {{ tr("modals.automation.advancedApiBasePath") }}
-              </span>
-              <input
-                v-model="config.advancedApi.basePath"
-                :title="tr('modals.automation.advancedApiBasePathTooltip')"
-                class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-              />
-            </label>
-
-            <label :class="settingsFieldClass" class="block">
-              <span
-                class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-              >
-                {{ tr("modals.automation.maxPluginStorageGb") }}
-              </span>
-              <input
-                v-model.number="config.storage.maxUsageGb"
-                type="number"
-                min="0"
-                step="0.1"
-                inputmode="decimal"
-                :title="tr('modals.automation.maxPluginStorageTooltip')"
-                class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-              />
-              <span class="mt-2 block text-xs text-gray-500">
-                {{ tr("modals.automation.maxPluginStorageHelp") }}
-              </span>
-            </label>
-          </div>
-
-          <div v-else-if="settingsModal === 'camera'" class="mt-6 space-y-4">
-            <div class="flex flex-wrap gap-4">
-              <label :class="settingsFieldClass" class="block">
-                <span
-                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                >
-                  {{ tr("modals.camera.intervalSeconds") }}
-                </span>
-                <input
-                  v-model.number="config.camera.intervalSeconds"
-                  type="number"
-                  min="5"
-                  :title="tr('modals.camera.intervalTooltip')"
-                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                />
-              </label>
-              <label :class="settingsFieldClass" class="block">
-                <span
-                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                >
-                  {{ tr("modals.camera.timeoutSeconds") }}
-                </span>
-                <input
-                  v-model.number="config.camera.captureTimeoutSeconds"
-                  type="number"
-                  min="15"
-                  :title="tr('modals.camera.timeoutTooltip')"
-                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                />
-              </label>
-              <label :class="settingsFieldClass" class="block">
-                <span
-                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                >
-                  {{ tr("modals.camera.width") }}
-                </span>
-                <input
-                  v-model.number="config.camera.width"
-                  type="number"
-                  min="640"
-                  :title="tr('modals.camera.widthTooltip')"
-                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                />
-              </label>
-              <label :class="settingsFieldClass" class="block">
-                <span
-                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                >
-                  {{ tr("modals.camera.height") }}
-                </span>
-                <input
-                  v-model.number="config.camera.height"
-                  type="number"
-                  min="480"
-                  :title="tr('modals.camera.heightTooltip')"
-                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                />
-              </label>
-              <label :class="settingsFieldClass" class="block">
-                <span
-                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                >
-                  {{ tr("modals.camera.jpegQuality") }}
-                </span>
-                <input
-                  v-model.number="config.camera.quality"
-                  type="number"
-                  min="1"
-                  max="100"
-                  :title="tr('modals.camera.jpegQualityTooltip')"
-                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                />
-              </label>
-              <label :class="settingsFieldClass" class="block">
-                <span
-                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                >
-                  {{ tr("modals.camera.warmupMilliseconds") }}
-                </span>
-                <input
-                  v-model.number="config.camera.warmupMilliseconds"
-                  type="number"
-                  min="1"
-                  :title="tr('modals.camera.warmupTooltip')"
-                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                />
-              </label>
-              <label :class="settingsFieldClass" class="block">
-                <span
-                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                >
-                  {{ tr("modals.camera.metering") }}
-                </span>
-                <select
-                  v-model="config.camera.meteringMode"
-                  :title="tr('modals.camera.meteringTooltip')"
-                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                >
-                  <option
-                    v-for="option in meteringOptions"
-                    :key="option.value"
-                    :value="option.value"
-                  >
-                    {{ option.label }}
-                  </option>
-                </select>
-              </label>
-              <label :class="settingsFieldClass" class="block">
-                <span
-                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                >
-                  {{ tr("modals.camera.awb") }}
-                </span>
-                <select
-                  v-model="config.camera.awbMode"
-                  :title="tr('modals.camera.awbTooltip')"
-                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                >
-                  <option
-                    v-for="option in awbOptions"
-                    :key="option.value"
-                    :value="option.value"
-                  >
-                    {{ option.label }}
-                  </option>
-                </select>
-              </label>
-              <label :class="settingsFieldClass" class="block">
-                <span
-                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                >
-                  {{ tr("modals.camera.denoise") }}
-                </span>
-                <select
-                  v-model="config.camera.denoiseMode"
-                  :title="tr('modals.camera.denoiseTooltip')"
-                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                >
-                  <option
-                    v-for="option in denoiseOptions"
-                    :key="option.value"
-                    :value="option.value"
-                  >
-                    {{ option.label }}
-                  </option>
-                </select>
-              </label>
-              <label :class="settingsFieldClass" class="block">
-                <span
-                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                >
-                  {{ tr("modals.camera.evCompensation") }}
-                </span>
-                <input
-                  v-model.number="config.camera.evCompensation"
-                  type="number"
-                  step="0.1"
-                  inputmode="decimal"
-                  :title="tr('modals.camera.evCompensationTooltip')"
-                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                />
-              </label>
-              <label :class="settingsFieldClass" class="block">
-                <span
-                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                >
-                  {{ tr("modals.camera.rotation") }}
-                </span>
-                <input
-                  v-model.number="config.camera.rotation"
-                  type="number"
-                  min="0"
-                  max="180"
-                  :title="tr('modals.camera.rotationTooltip')"
-                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                />
-              </label>
-              <label :class="settingsFieldClass" class="block">
-                <span
-                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                >
-                  {{ tr("modals.camera.brightness") }}
-                </span>
-                <input
-                  v-model.number="config.camera.brightness"
-                  type="number"
-                  step="0.1"
-                  inputmode="decimal"
-                  :title="tr('modals.camera.brightnessTooltip')"
-                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                />
-              </label>
-              <label :class="settingsFieldClass" class="block">
-                <span
-                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                >
-                  {{ tr("modals.camera.contrast") }}
-                </span>
-                <input
-                  v-model.number="config.camera.contrast"
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  inputmode="decimal"
-                  :title="tr('modals.camera.contrastTooltip')"
-                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                />
-              </label>
-              <label :class="settingsFieldClass" class="block">
-                <span
-                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                >
-                  {{ tr("modals.camera.saturation") }}
-                </span>
-                <input
-                  v-model.number="config.camera.saturation"
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  inputmode="decimal"
-                  :title="tr('modals.camera.saturationTooltip')"
-                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                />
-              </label>
-              <label :class="settingsFieldClass" class="block">
-                <span
-                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                >
-                  {{ tr("modals.camera.sharpness") }}
-                </span>
-                <input
-                  v-model.number="config.camera.sharpness"
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  inputmode="decimal"
-                  :title="tr('modals.camera.sharpnessTooltip')"
-                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                />
-              </label>
-            </div>
-
-            <div class="flex flex-wrap gap-4">
-              <div
-                class="w-full lg:w-[calc(50%-0.5rem)] rounded-xl border border-gray-700 bg-gray-800/70 p-3"
-              >
-                <label class="flex items-center justify-between gap-3">
-                  <span class="text-sm text-gray-300">{{
-                    tr("modals.camera.manualExposure")
-                  }}</span>
-                  <toggleButton
-                    :status-value="Boolean(config.camera.useManualExposure)"
-                    @update:statusValue="
-                      setCameraSetting('useManualExposure', $event)
-                    "
-                  />
-                </label>
-                <label class="mt-3 block">
-                  <span
-                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                  >
-                    {{ tr("modals.camera.shutterMicroseconds") }}
-                  </span>
-                  <input
-                    v-model.number="config.camera.shutterMicroseconds"
-                    type="number"
-                    min="1"
-                    inputmode="numeric"
-                    :disabled="!config.camera.useManualExposure"
-                    :title="tr('modals.camera.shutterTooltip')"
-                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </label>
-                <p class="mt-3 text-xs text-gray-500">
-                  {{ tr("modals.camera.manualExposureHelp") }}
-                </p>
-              </div>
-
-              <div
-                class="w-full lg:w-[calc(50%-0.5rem)] rounded-xl border border-gray-700 bg-gray-800/70 p-3"
-              >
-                <label class="flex items-center justify-between gap-3">
-                  <span class="text-sm text-gray-300">{{
-                    tr("modals.camera.manualGain")
-                  }}</span>
-                  <toggleButton
-                    :status-value="Boolean(config.camera.useManualGain)"
-                    @update:statusValue="
-                      setCameraSetting('useManualGain', $event)
-                    "
-                  />
-                </label>
-                <label class="mt-3 block">
-                  <span
-                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                  >
-                    {{ tr("modals.camera.analogGain") }}
-                  </span>
-                  <input
-                    v-model.number="config.camera.analogGain"
-                    type="number"
-                    min="1"
-                    step="0.1"
-                    inputmode="decimal"
-                    :disabled="!config.camera.useManualGain"
-                    :title="tr('modals.camera.analogGainTooltip')"
-                    class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </label>
-                <p class="mt-3 text-xs text-gray-500">
-                  {{ tr("modals.camera.manualGainHelp") }}
-                </p>
-              </div>
-            </div>
-
-            <div class="flex flex-wrap gap-4">
-              <div
-                :class="settingsFullWidthClass"
-                class="rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-100"
-              >
-                {{ tr("modals.cameraRotationInfo") }}
-              </div>
-              <label
-                :class="settingsFieldClass"
-                class="rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2"
-              >
-                <span
-                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                >
-                  {{ tr("modals.camera.horizontalFlip") }}
-                </span>
-                <div class="flex items-center justify-between gap-3">
-                  <span class="text-sm text-gray-300">{{
-                    tr("modals.camera.mirrorOnXAxis")
-                  }}</span>
-                  <toggleButton
-                    :status-value="Boolean(config.camera.horizontalFlip)"
-                    @update:statusValue="
-                      setCameraSetting('horizontalFlip', $event)
-                    "
-                  />
-                </div>
-              </label>
-              <label
-                :class="settingsFieldClass"
-                class="rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2"
-              >
-                <span
-                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                >
-                  {{ tr("modals.camera.verticalFlip") }}
-                </span>
-                <div class="flex items-center justify-between gap-3">
-                  <span class="text-sm text-gray-300">{{
-                    tr("modals.camera.mirrorOnYAxis")
-                  }}</span>
-                  <toggleButton
-                    :status-value="Boolean(config.camera.verticalFlip)"
-                    @update:statusValue="
-                      setCameraSetting('verticalFlip', $event)
-                    "
-                  />
-                </div>
-              </label>
-              <label :class="settingsFullWidthClass" class="block">
-                <span
-                  class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                >
-                  {{ tr("modals.camera.extraArguments") }}
-                </span>
-                <textarea
-                  v-model="config.camera.extraArguments"
-                  rows="3"
-                  :title="tr('modals.camera.extraArgumentsTooltip')"
-                  class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                />
-              </label>
+                {{
+                  saving ? t('plugins.pinsAllSky.common.saving') : t('plugins.pinsAllSky.common.ok')
+                }}
+              </button>
             </div>
           </div>
+        </template>
+      </Modal>
 
-          <div v-else class="mt-6 space-y-4">
-            <label
-              class="block rounded-xl border border-gray-700 bg-gray-800/70 px-3 py-2"
-            >
-              <span
-                class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-              >
-                {{ tr("modals.outputs.keepSourceFrames") }}
-              </span>
-              <div class="flex items-center justify-between gap-3">
-                <span class="text-sm text-gray-300">{{
-                  tr("modals.outputs.retainOriginalCaptures")
-                }}</span>
-                <toggleButton
-                  :status-value="Boolean(config.products.keepFrames)"
-                  @update:statusValue="setProductSetting('keepFrames', $event)"
-                />
-              </div>
-            </label>
-
-            <div class="rounded-xl border border-gray-700 bg-gray-800/70 p-4">
-              <div class="flex items-center justify-between gap-3">
-                <span class="font-semibold text-white">{{
-                  tr("modals.outputs.timelapse")
-                }}</span>
-                <toggleButton
-                  :status-value="Boolean(config.products.timelapseEnabled)"
-                  @update:statusValue="
-                    setProductSetting('timelapseEnabled', $event)
-                  "
-                />
-              </div>
-              <div
-                v-if="config.products.timelapseEnabled"
-                class="mt-4 flex flex-wrap gap-4"
-              >
-                <label :class="settingsFieldClass" class="block">
-                  <span
-                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                  >
-                    {{ tr("modals.outputs.fps") }}
-                  </span>
-                  <input
-                    v-model.number="config.products.timelapseFps"
-                    type="number"
-                    min="1"
-                    max="60"
-                    :title="tr('modals.outputs.fpsTooltip')"
-                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                  />
-                </label>
-                <label :class="settingsFieldClass" class="block">
-                  <span
-                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                  >
-                    {{ tr("modals.outputs.bitrateKbps") }}
-                  </span>
-                  <input
-                    v-model.number="config.products.timelapseBitrateKbps"
-                    type="number"
-                    min="1000"
-                    :title="tr('modals.outputs.bitrateTooltip')"
-                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                  />
-                </label>
-                <label :class="settingsFieldClass" class="block">
-                  <span
-                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                  >
-                    {{ tr("modals.outputs.width") }}
-                  </span>
-                  <input
-                    v-model.number="config.products.timelapseWidth"
-                    type="number"
-                    min="320"
-                    :title="tr('modals.outputs.timelapseWidthTooltip')"
-                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                  />
-                </label>
-                <label :class="settingsFieldClass" class="block">
-                  <span
-                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                  >
-                    {{ tr("modals.outputs.height") }}
-                  </span>
-                  <input
-                    v-model.number="config.products.timelapseHeight"
-                    type="number"
-                    min="240"
-                    :title="tr('modals.outputs.timelapseHeightTooltip')"
-                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                  />
-                </label>
-                <label :class="settingsFieldClass" class="block">
-                  <span
-                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                  >
-                    {{ tr("modals.outputs.codec") }}
-                  </span>
-                  <input
-                    v-model="config.products.timelapseCodec"
-                    :title="tr('modals.outputs.codecTooltip')"
-                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                  />
-                </label>
-                <label :class="settingsFieldClass" class="block">
-                  <span
-                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                  >
-                    {{ tr("modals.outputs.pixelFormat") }}
-                  </span>
-                  <input
-                    v-model="config.products.timelapsePixelFormat"
-                    :title="tr('modals.outputs.pixelFormatTooltip')"
-                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                  />
-                </label>
-                <label :class="settingsFieldClass" class="block">
-                  <span
-                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                  >
-                    {{ tr("modals.outputs.ffmpegLogLevel") }}
-                  </span>
-                  <input
-                    v-model="config.products.timelapseLogLevel"
-                    :title="tr('modals.outputs.ffmpegLogLevelTooltip')"
-                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                  />
-                </label>
-                <label :class="settingsFullWidthClass" class="block">
-                  <span
-                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                  >
-                    {{ tr("modals.outputs.extraFfmpegArguments") }}
-                  </span>
-                  <textarea
-                    v-model="config.products.timelapseExtraParameters"
-                    rows="3"
-                    :title="tr('modals.outputs.extraFfmpegArgumentsTooltip')"
-                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                  />
-                </label>
-              </div>
-            </div>
-
-            <div class="rounded-xl border border-gray-700 bg-gray-800/70 p-4">
-              <div class="flex items-center justify-between gap-3">
-                <span class="font-semibold text-white">{{
-                  tr("modals.outputs.keogram")
-                }}</span>
-                <toggleButton
-                  :status-value="Boolean(config.products.keogramEnabled)"
-                  @update:statusValue="
-                    setProductSetting('keogramEnabled', $event)
-                  "
-                />
-              </div>
-              <div
-                v-if="config.products.keogramEnabled"
-                class="mt-4 flex flex-wrap gap-4"
-              >
-                <label
-                  :class="settingsFieldClass"
-                  class="rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2"
-                >
-                  <span
-                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                  >
-                    {{ tr("modals.outputs.expandToFrameWidth") }}
-                  </span>
-                  <div class="flex items-center justify-between gap-3">
-                    <span class="text-sm text-gray-300">{{
-                      tr("modals.outputs.stretchOutput")
-                    }}</span>
-                    <toggleButton
-                      :status-value="Boolean(config.products.keogramExpand)"
-                      @update:statusValue="
-                        setProductSetting('keogramExpand', $event)
-                      "
-                    />
-                  </div>
-                </label>
-                <label
-                  :class="settingsFieldClass"
-                  class="rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2"
-                >
-                  <span
-                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                  >
-                    {{ tr("modals.outputs.showLabels") }}
-                  </span>
-                  <div class="flex items-center justify-between gap-3">
-                    <span class="text-sm text-gray-300">{{
-                      tr("modals.outputs.drawCaptions")
-                    }}</span>
-                    <toggleButton
-                      :status-value="Boolean(config.products.keogramShowLabels)"
-                      @update:statusValue="
-                        setProductSetting('keogramShowLabels', $event)
-                      "
-                    />
-                  </div>
-                </label>
-                <label
-                  :class="settingsFieldClass"
-                  class="rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2"
-                >
-                  <span
-                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                  >
-                    {{ tr("modals.outputs.showDate") }}
-                  </span>
-                  <div class="flex items-center justify-between gap-3">
-                    <span class="text-sm text-gray-300">{{
-                      tr("modals.outputs.stampDate")
-                    }}</span>
-                    <toggleButton
-                      :status-value="Boolean(config.products.keogramShowDate)"
-                      @update:statusValue="
-                        setProductSetting('keogramShowDate', $event)
-                      "
-                    />
-                  </div>
-                </label>
-                <label :class="settingsFieldClass" class="block">
-                  <span
-                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                  >
-                    {{ tr("modals.outputs.rotateDegrees") }}
-                  </span>
-                  <input
-                    v-model.number="config.products.keogramRotateDegrees"
-                    type="number"
-                    inputmode="decimal"
-                    :title="tr('modals.outputs.rotateTooltip')"
-                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                  />
-                </label>
-                <label :class="settingsFieldClass" class="block">
-                  <span
-                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                  >
-                    {{ tr("modals.outputs.fontName") }}
-                  </span>
-                  <input
-                    v-model="config.products.keogramFontName"
-                    :title="tr('modals.outputs.fontNameTooltip')"
-                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                  />
-                </label>
-                <label :class="settingsFieldClass" class="block">
-                  <span
-                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                  >
-                    {{ tr("modals.outputs.fontColor") }}
-                  </span>
-                  <input
-                    v-model="config.products.keogramFontColor"
-                    :title="tr('modals.outputs.fontColorTooltip')"
-                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                  />
-                </label>
-                <label :class="settingsFieldClass" class="block">
-                  <span
-                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                  >
-                    {{ tr("modals.outputs.fontSize") }}
-                  </span>
-                  <input
-                    v-model.number="config.products.keogramFontSize"
-                    type="number"
-                    min="0.1"
-                    step="0.1"
-                    inputmode="decimal"
-                    :title="tr('modals.outputs.fontSizeTooltip')"
-                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                  />
-                </label>
-                <label :class="settingsFieldClass" class="block">
-                  <span
-                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                  >
-                    {{ tr("modals.outputs.lineThickness") }}
-                  </span>
-                  <input
-                    v-model.number="config.products.keogramLineThickness"
-                    type="number"
-                    min="1"
-                    :title="tr('modals.outputs.lineThicknessTooltip')"
-                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                  />
-                </label>
-                <label :class="settingsFullWidthClass" class="block">
-                  <span
-                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                  >
-                    {{ tr("modals.outputs.extraKeogramArguments") }}
-                  </span>
-                  <textarea
-                    v-model="config.products.keogramExtraParameters"
-                    rows="3"
-                    :title="tr('modals.outputs.extraKeogramArgumentsTooltip')"
-                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                  />
-                </label>
-              </div>
-            </div>
-
-            <div class="rounded-xl border border-gray-700 bg-gray-800/70 p-4">
-              <div class="flex items-center justify-between gap-3">
-                <span class="font-semibold text-white">{{
-                  tr("modals.outputs.startrails")
-                }}</span>
-                <toggleButton
-                  :status-value="Boolean(config.products.startrailsEnabled)"
-                  @update:statusValue="
-                    setProductSetting('startrailsEnabled', $event)
-                  "
-                />
-              </div>
-              <div
-                v-if="config.products.startrailsEnabled"
-                class="mt-4 flex flex-wrap gap-4"
-              >
-                <label :class="settingsFieldClass" class="block">
-                  <span
-                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                  >
-                    {{ tr("modals.outputs.brightnessThreshold") }}
-                  </span>
-                  <input
-                    v-model.number="
-                      config.products.startrailsBrightnessThreshold
-                    "
-                    type="number"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    inputmode="decimal"
-                    :title="tr('modals.outputs.brightnessThresholdTooltip')"
-                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                  />
-                </label>
-                <div
-                  :class="settingsWideFieldClass"
-                  class="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-100"
-                >
-                  {{ tr("modals.startrailMountInfo") }}
-                </div>
-                <label :class="settingsFullWidthClass" class="block">
-                  <span
-                    class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
-                  >
-                    {{ tr("modals.outputs.extraStartrailsArguments") }}
-                  </span>
-                  <textarea
-                    v-model="config.products.startrailsExtraParameters"
-                    rows="3"
-                    :title="
-                      tr('modals.outputs.extraStartrailsArgumentsTooltip')
-                    "
-                    class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
-                  />
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <div class="mt-6 flex justify-end gap-3">
-            <button
-              type="button"
-              class="rounded-xl border border-gray-600 bg-gray-800/80 px-4 py-2 text-sm font-semibold text-gray-200 transition hover:border-cyan-400 hover:text-white"
-              :disabled="saving"
-              @click="closeSettingsModal()"
-            >
-              {{ tr("common.cancel") }}
-            </button>
-            <button
-              type="button"
-              class="rounded-xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-40"
-              :disabled="saving"
-              @click="saveSettingsModal"
-            >
-              {{ saving ? tr("common.saving") : tr("common.ok") }}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <section
-        class="rounded-2xl border border-gray-700 bg-gray-800/80 p-6 shadow-xl"
-      >
+      <section class="rounded-2xl border border-gray-700 bg-gray-800/80 p-6 shadow-xl">
         <button
           type="button"
           class="flex w-full items-start justify-between gap-4 text-left"
@@ -1389,10 +388,10 @@
         >
           <div>
             <h2 class="text-xl font-semibold text-white">
-              {{ tr("sections.recentSessions") }}
+              {{ t('plugins.pinsAllSky.sections.recentSessions') }}
             </h2>
             <p class="mt-1 text-sm text-gray-400">
-              {{ tr("sections.recentSessionsDescription") }}
+              {{ t('plugins.pinsAllSky.sections.recentSessionsDescription') }}
             </p>
           </div>
           <div class="flex items-center gap-3">
@@ -1401,14 +400,14 @@
             >
               {{
                 sectionOpen.recentSessions
-                  ? tr("recentSessions.expanded")
-                  : tr("recentSessions.collapsed")
+                  ? t('plugins.pinsAllSky.recentSessions.expanded')
+                  : t('plugins.pinsAllSky.recentSessions.collapsed')
               }}
             </span>
             <span
               class="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-500/40 bg-cyan-500/10 text-lg font-semibold text-cyan-200"
             >
-              {{ sectionOpen.recentSessions ? "-" : "+" }}
+              {{ sectionOpen.recentSessions ? '-' : '+' }}
             </span>
           </div>
         </button>
@@ -1418,27 +417,23 @@
             class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-900/50 px-4 py-3"
           >
             <div class="text-sm text-gray-300">
-              <span
-                :class="
-                  storage.withinLimit ? 'text-emerald-300' : 'text-amber-200'
-                "
-              >
+              <span :class="storage.withinLimit ? 'text-emerald-300' : 'text-amber-200'">
                 {{
                   storage.withinLimit || !storage.limitEnabled
-                    ? tr("recentSessions.storageWithinLimit")
-                    : tr("recentSessions.storageLimitExceeded")
+                    ? t('plugins.pinsAllSky.recentSessions.storageWithinLimit')
+                    : t('plugins.pinsAllSky.recentSessions.storageLimitExceeded')
                 }}
               </span>
               <span class="text-gray-500">
-                {{ tr("recentSessions.pluginAvailable") }}
+                {{ t('plugins.pinsAllSky.recentSessions.pluginAvailable') }}
                 {{
                   storage.limitEnabled
                     ? formatSize(storage.pluginAvailableBytes)
-                    : tr("common.unlimited")
+                    : t('plugins.pinsAllSky.common.unlimited')
                 }}.
               </span>
               <span class="text-gray-500">
-                {{ tr("recentSessions.piAvailable") }}
+                {{ t('plugins.pinsAllSky.recentSessions.piAvailable') }}
                 {{ formatSize(storage.diskAvailableBytes) }}.
               </span>
             </div>
@@ -1450,8 +445,8 @@
                 status?.generateInProgress ||
                 recentSessions.length === 0
               "
-              :title="tr('buttons.deleteAllSessions')"
-              :aria-label="tr('buttons.deleteAllSessions')"
+              :title="t('plugins.pinsAllSky.buttons.deleteAllSessions')"
+              :aria-label="t('plugins.pinsAllSky.buttons.deleteAllSessions')"
               @click.stop="deleteAllSessions"
             >
               <TrashIcon class="h-5 w-5" />
@@ -1463,7 +458,7 @@
           v-if="sectionOpen.recentSessions && recentSessions.length === 0"
           class="mt-6 rounded-xl border border-dashed border-gray-700 bg-gray-900/40 px-4 py-8 text-center text-sm text-gray-500"
         >
-          {{ tr("recentSessions.noSessions") }}
+          {{ t('plugins.pinsAllSky.recentSessions.noSessions') }}
         </div>
 
         <div v-else-if="sectionOpen.recentSessions" class="mt-6 space-y-4">
@@ -1472,23 +467,21 @@
             :key="session.id"
             class="rounded-2xl border border-gray-700 bg-gray-900/50 p-4"
           >
-            <div
-              class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"
-            >
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div class="space-y-1">
                 <div class="text-lg font-semibold text-white">
                   {{ session.label || session.id }}
                 </div>
                 <div class="text-sm text-gray-400">
                   {{
-                    tr("recentSessions.started", {
+                    t('plugins.pinsAllSky.recentSessions.started', {
                       date: formatDate(session.startedAtUtc),
                     })
                   }}
                   <span v-if="session.endedAtUtc">
                     •
                     {{
-                      tr("recentSessions.stopped", {
+                      t('plugins.pinsAllSky.recentSessions.stopped', {
                         date: formatDate(session.endedAtUtc),
                       })
                     }}</span
@@ -1496,7 +489,7 @@
                 </div>
                 <div class="text-sm text-gray-400">
                   {{
-                    tr("recentSessions.framesReason", {
+                    t('plugins.pinsAllSky.recentSessions.framesReason', {
                       count: formatCount(session.captureCount),
                       reason: formatSessionReason(session.startReason),
                     })
@@ -1507,7 +500,7 @@
                 </div>
                 <div class="text-sm text-gray-400">
                   {{
-                    tr("recentSessions.storage", {
+                    t('plugins.pinsAllSky.recentSessions.storage', {
                       size: formatSize(session.totalSizeBytes),
                     })
                   }}
@@ -1520,7 +513,7 @@
                   :disabled="cleanupBusy"
                   @click="generateArtifacts(session.id)"
                 >
-                  {{ tr("buttons.regenerate") }}
+                  {{ t('plugins.pinsAllSky.buttons.regenerate') }}
                 </button>
                 <button
                   class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-rose-500/40 bg-rose-500/10 text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
@@ -1530,8 +523,8 @@
                     status?.generateInProgress ||
                     session.id === currentSession?.id
                   "
-                  :title="tr('buttons.deleteSession')"
-                  :aria-label="tr('buttons.deleteSession')"
+                  :title="t('plugins.pinsAllSky.buttons.deleteSession')"
+                  :aria-label="t('plugins.pinsAllSky.buttons.deleteSession')"
                   @click="deleteSession(session)"
                 >
                   <TrashIcon class="h-5 w-5" />
@@ -1540,21 +533,18 @@
                   class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-sm text-white transition hover:border-cyan-400"
                   :title="
                     isSessionDetailsOpen(session.id)
-                      ? tr('buttons.hideStoredFiles')
-                      : tr('buttons.showStoredFiles')
+                      ? t('plugins.pinsAllSky.buttons.hideStoredFiles')
+                      : t('plugins.pinsAllSky.buttons.showStoredFiles')
                   "
                   :aria-label="
                     isSessionDetailsOpen(session.id)
-                      ? tr('buttons.hideStoredFiles')
-                      : tr('buttons.showStoredFiles')
+                      ? t('plugins.pinsAllSky.buttons.hideStoredFiles')
+                      : t('plugins.pinsAllSky.buttons.showStoredFiles')
                   "
                   @click="toggleSessionDetails(session.id)"
                 >
-                  <span>{{ tr("buttons.files") }}</span>
-                  <ChevronUpIcon
-                    v-if="isSessionDetailsOpen(session.id)"
-                    class="h-4 w-4"
-                  />
+                  <span>{{ t('plugins.pinsAllSky.buttons.files') }}</span>
+                  <ChevronUpIcon v-if="isSessionDetailsOpen(session.id)" class="h-4 w-4" />
                   <ChevronDownIcon v-else class="h-4 w-4" />
                 </button>
               </div>
@@ -1565,23 +555,16 @@
                 class="rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-sm text-gray-300"
               >
                 <div class="text-xs uppercase tracking-wide text-gray-500">
-                  {{ tr("recentSessions.timelapse") }}
+                  {{ t('plugins.pinsAllSky.recentSessions.timelapse') }}
                 </div>
                 <div class="mt-2 flex items-start justify-between gap-3">
                   <div>{{ describeArtifact(session.products?.timelapse) }}</div>
-                  <div
-                    v-if="session.products?.timelapse"
-                    class="flex items-center gap-2"
-                  >
+                  <div v-if="session.products?.timelapse" class="flex items-center gap-2">
                     <button
                       class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
-                      :title="tr('buttons.downloadTimelapse')"
-                      :aria-label="tr('buttons.downloadTimelapse')"
-                      @click="
-                        downloadRelativePath(
-                          session.products.timelapse.relativePath,
-                        )
-                      "
+                      :title="t('plugins.pinsAllSky.buttons.downloadTimelapse')"
+                      :aria-label="t('plugins.pinsAllSky.buttons.downloadTimelapse')"
+                      @click="downloadRelativePath(session.products.timelapse.relativePath)"
                     >
                       <ArrowDownTrayIcon class="h-4 w-4" />
                     </button>
@@ -1592,11 +575,9 @@
                         status?.generateInProgress ||
                         session.id === currentSession?.id
                       "
-                      :title="tr('buttons.deleteTimelapse')"
-                      :aria-label="tr('buttons.deleteTimelapse')"
-                      @click="
-                        deleteArtifact(session, session.products.timelapse)
-                      "
+                      :title="t('plugins.pinsAllSky.buttons.deleteTimelapse')"
+                      :aria-label="t('plugins.pinsAllSky.buttons.deleteTimelapse')"
+                      @click="deleteArtifact(session, session.products.timelapse)"
                     >
                       <TrashIcon class="h-4 w-4" />
                     </button>
@@ -1607,23 +588,16 @@
                 class="rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-sm text-gray-300"
               >
                 <div class="text-xs uppercase tracking-wide text-gray-500">
-                  {{ tr("recentSessions.keogram") }}
+                  {{ t('plugins.pinsAllSky.recentSessions.keogram') }}
                 </div>
                 <div class="mt-2 flex items-start justify-between gap-3">
                   <div>{{ describeArtifact(session.products?.keogram) }}</div>
-                  <div
-                    v-if="session.products?.keogram"
-                    class="flex items-center gap-2"
-                  >
+                  <div v-if="session.products?.keogram" class="flex items-center gap-2">
                     <button
                       class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
-                      :title="tr('buttons.downloadKeogram')"
-                      :aria-label="tr('buttons.downloadKeogram')"
-                      @click="
-                        downloadRelativePath(
-                          session.products.keogram.relativePath,
-                        )
-                      "
+                      :title="t('plugins.pinsAllSky.buttons.downloadKeogram')"
+                      :aria-label="t('plugins.pinsAllSky.buttons.downloadKeogram')"
+                      @click="downloadRelativePath(session.products.keogram.relativePath)"
                     >
                       <ArrowDownTrayIcon class="h-4 w-4" />
                     </button>
@@ -1634,8 +608,8 @@
                         status?.generateInProgress ||
                         session.id === currentSession?.id
                       "
-                      :title="tr('buttons.deleteKeogram')"
-                      :aria-label="tr('buttons.deleteKeogram')"
+                      :title="t('plugins.pinsAllSky.buttons.deleteKeogram')"
+                      :aria-label="t('plugins.pinsAllSky.buttons.deleteKeogram')"
                       @click="deleteArtifact(session, session.products.keogram)"
                     >
                       <TrashIcon class="h-4 w-4" />
@@ -1647,25 +621,16 @@
                 class="rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-sm text-gray-300"
               >
                 <div class="text-xs uppercase tracking-wide text-gray-500">
-                  {{ tr("recentSessions.startrails") }}
+                  {{ t('plugins.pinsAllSky.recentSessions.startrails') }}
                 </div>
                 <div class="mt-2 flex items-start justify-between gap-3">
-                  <div>
-                    {{ describeArtifact(session.products?.startrails) }}
-                  </div>
-                  <div
-                    v-if="session.products?.startrails"
-                    class="flex items-center gap-2"
-                  >
+                  <div>{{ describeArtifact(session.products?.startrails) }}</div>
+                  <div v-if="session.products?.startrails" class="flex items-center gap-2">
                     <button
                       class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
-                      :title="tr('buttons.downloadStartrails')"
-                      :aria-label="tr('buttons.downloadStartrails')"
-                      @click="
-                        downloadRelativePath(
-                          session.products.startrails.relativePath,
-                        )
-                      "
+                      :title="t('plugins.pinsAllSky.buttons.downloadStartrails')"
+                      :aria-label="t('plugins.pinsAllSky.buttons.downloadStartrails')"
+                      @click="downloadRelativePath(session.products.startrails.relativePath)"
                     >
                       <ArrowDownTrayIcon class="h-4 w-4" />
                     </button>
@@ -1676,11 +641,9 @@
                         status?.generateInProgress ||
                         session.id === currentSession?.id
                       "
-                      :title="tr('buttons.deleteStartrails')"
-                      :aria-label="tr('buttons.deleteStartrails')"
-                      @click="
-                        deleteArtifact(session, session.products.startrails)
-                      "
+                      :title="t('plugins.pinsAllSky.buttons.deleteStartrails')"
+                      :aria-label="t('plugins.pinsAllSky.buttons.deleteStartrails')"
+                      @click="deleteArtifact(session, session.products.startrails)"
                     >
                       <TrashIcon class="h-4 w-4" />
                     </button>
@@ -1696,15 +659,15 @@
               <div class="mb-3 flex items-center justify-between gap-3">
                 <div>
                   <div class="text-sm font-semibold text-white">
-                    {{ tr("sections.storedFrames") }}
+                    {{ t('plugins.pinsAllSky.sections.storedFrames') }}
                   </div>
                   <div class="text-xs text-gray-400">
                     {{
-                      tr("recentSessions.retainedFrames", {
+                      t('plugins.pinsAllSky.recentSessions.retainedFrames', {
                         count: formatCount(
                           sessionDetails(session.id)?.frames?.length ??
                             session.storedFrameCount ??
-                            0,
+                            0
                         ),
                       })
                     }}
@@ -1714,7 +677,7 @@
                   class="rounded-lg border border-gray-600 bg-gray-900/70 px-3 py-2 text-xs text-gray-200 transition hover:border-cyan-400"
                   @click="refreshSessionDetails(session.id)"
                 >
-                  {{ tr("buttons.refreshFiles") }}
+                  {{ t('plugins.pinsAllSky.buttons.refreshFiles') }}
                 </button>
               </div>
 
@@ -1722,13 +685,13 @@
                 v-if="sessionDetailsLoading(session.id)"
                 class="rounded-xl border border-dashed border-gray-700 bg-gray-900/40 px-4 py-6 text-center text-sm text-gray-500"
               >
-                {{ tr("recentSessions.loadingStoredFiles") }}
+                {{ t('plugins.pinsAllSky.recentSessions.loadingStoredFiles') }}
               </div>
               <div
                 v-else-if="!sessionDetails(session.id)?.frames?.length"
                 class="rounded-xl border border-dashed border-gray-700 bg-gray-900/40 px-4 py-6 text-center text-sm text-gray-500"
               >
-                {{ tr("recentSessions.noStoredFrames") }}
+                {{ t('plugins.pinsAllSky.recentSessions.noStoredFrames') }}
               </div>
               <div v-else class="max-h-80 space-y-2 overflow-y-auto pr-1">
                 <div
@@ -1737,24 +700,19 @@
                   class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2"
                 >
                   <div class="min-w-0">
-                    <div class="truncate text-sm text-white">
-                      {{ frame.name }}
-                    </div>
+                    <div class="truncate text-sm text-white">{{ frame.name }}</div>
                     <div class="text-xs text-gray-400">
-                      {{ formatDate(frame.capturedAtUtc) }} •
-                      {{ formatSize(frame.sizeBytes) }}
+                      {{ formatDate(frame.capturedAtUtc) }} • {{ formatSize(frame.sizeBytes) }}
                     </div>
                   </div>
                   <div class="flex items-center gap-2">
                     <button
                       class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-100 transition hover:bg-cyan-500/20"
-                      :title="tr('buttons.downloadItem', { name: frame.name })"
+                      :title="t('plugins.pinsAllSky.buttons.downloadItem', { name: frame.name })"
                       :aria-label="
-                        tr('buttons.downloadItem', { name: frame.name })
+                        t('plugins.pinsAllSky.buttons.downloadItem', { name: frame.name })
                       "
-                      @click="
-                        downloadRelativePath(frame.relativePath, frame.name)
-                      "
+                      @click="downloadRelativePath(frame.relativePath, frame.name)"
                     >
                       <ArrowDownTrayIcon class="h-4 w-4" />
                     </button>
@@ -1765,10 +723,8 @@
                         status?.generateInProgress ||
                         session.id === currentSession?.id
                       "
-                      :title="tr('buttons.deleteItem', { name: frame.name })"
-                      :aria-label="
-                        tr('buttons.deleteItem', { name: frame.name })
-                      "
+                      :title="t('plugins.pinsAllSky.buttons.deleteItem', { name: frame.name })"
+                      :aria-label="t('plugins.pinsAllSky.buttons.deleteItem', { name: frame.name })"
                       @click="deleteFrame(session, frame)"
                     >
                       <TrashIcon class="h-4 w-4" />
@@ -1785,9 +741,9 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
-import { storeToRefs } from "pinia";
-import { useI18n } from "vue-i18n";
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
 import {
   ArrowDownTrayIcon,
   ArrowPathIcon,
@@ -1800,13 +756,15 @@ import {
   PlayIcon,
   StopIcon,
   TrashIcon,
-  XMarkIcon,
-} from "@heroicons/vue/24/outline";
-import toggleButton from "@/components/helpers/toggleButton.vue";
-import { usePinsAllSkyStore } from "../store/pinsAllskyStore";
+} from '@heroicons/vue/24/outline';
+import Modal from '@/components/helpers/Modal.vue';
+import PinsAllSkyAutomationSettings from '../components/PinsAllSkyAutomationSettings.vue';
+import PinsAllSkyCameraSettings from '../components/PinsAllSkyCameraSettings.vue';
+import PinsAllSkyOutputsSettings from '../components/PinsAllSkyOutputsSettings.vue';
+import PinsAllSkyStatusModal from '../components/PinsAllSkyStatusModal.vue';
+import { usePinsAllSkyStore } from '../store/pinsAllskyStore';
 
-const { t } = useI18n({ useScope: "global" });
-const tr = (key, params) => t(`plugins.pinsAllSky.${key}`, params);
+const { t } = useI18n({ useScope: 'global' });
 const store = usePinsAllSkyStore();
 const {
   status,
@@ -1828,17 +786,12 @@ const sectionOpen = reactive({
 
 const sessionDetailOpen = reactive({});
 const estimateWindow = reactive({
-  startLocal: "",
-  endLocal: "",
+  startLocal: '',
+  endLocal: '',
 });
 const showStatusModal = ref(false);
 const settingsModal = ref(null);
 const settingsModalSnapshot = ref(null);
-const settingsFieldClass =
-  "w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)] 2xl:w-[calc(16.666%-0.834rem)]";
-const settingsWideFieldClass =
-  "w-full lg:w-[calc(66.666%-0.667rem)] 2xl:w-[calc(33.333%-0.667rem)]";
-const settingsFullWidthClass = "w-full";
 
 const currentSession = computed(() => status.value?.currentSession || null);
 const recentSessions = computed(() => status.value?.recentSessions || []);
@@ -1850,17 +803,15 @@ const storage = computed(() => {
 
   return {
     ...raw,
-    diskUsedBytes: Number(
-      raw.diskUsedBytes ?? Math.max(0, diskTotalBytes - diskAvailableBytes),
-    ),
+    diskUsedBytes: Number(raw.diskUsedBytes ?? Math.max(0, diskTotalBytes - diskAvailableBytes)),
   };
 });
 const estimateBaseline = computed(() => status.value?.estimateBaseline || null);
 const estimateBaselineAverageFrameBytes = computed(
-  () => estimateBaseline.value?.averageFrameBytes || 0,
+  () => estimateBaseline.value?.averageFrameBytes || 0
 );
 const showBackendSetupBanner = computed(
-  () => !loading.value && !status.value && Boolean(error.value),
+  () => !loading.value && !status.value && Boolean(error.value)
 );
 const backendInstallCommands = `cd /home/pi
 git clone https://github.com/sharon92/pins-allsky-plugin.git
@@ -1869,123 +820,109 @@ cd pins-allsky-plugin
 
 const dependencyRows = computed(() => [
   {
-    label: tr("dependencies.rpiCamStill"),
+    label: t('plugins.pinsAllSky.dependencies.rpiCamStill'),
     ready: Boolean(status.value?.dependencies?.rpiCamStillAvailable),
   },
   {
-    label: tr("dependencies.ffmpeg"),
+    label: t('plugins.pinsAllSky.dependencies.ffmpeg'),
     ready: Boolean(status.value?.dependencies?.ffmpegAvailable),
   },
   {
-    label: tr("dependencies.keogram"),
+    label: t('plugins.pinsAllSky.dependencies.keogram'),
     ready: Boolean(status.value?.dependencies?.keogramAvailable),
   },
   {
-    label: tr("dependencies.startrails"),
+    label: t('plugins.pinsAllSky.dependencies.startrails'),
     ready: Boolean(status.value?.dependencies?.startrailsAvailable),
   },
 ]);
 
 const missingDependencies = computed(() =>
-  dependencyRows.value.filter((item) => !item.ready).map((item) => item.label),
+  dependencyRows.value.filter((item) => !item.ready).map((item) => item.label)
 );
 const statusRows = computed(() => {
   const pluginLimitValue = storage.value.limitEnabled
     ? formatSize(storage.value.maxPluginUsageBytes)
-    : tr("common.unlimited");
+    : t('plugins.pinsAllSky.common.unlimited');
   const pluginAvailableValue = storage.value.limitEnabled
     ? formatSize(storage.value.pluginAvailableBytes)
-    : tr("common.unlimited");
+    : t('plugins.pinsAllSky.common.unlimited');
 
   return [
     {
-      label: tr("statusRows.backend"),
+      label: t('plugins.pinsAllSky.statusRows.backend'),
       value: status.value?.advancedApiReachable
-        ? tr("statusRows.online")
-        : tr("statusRows.offline"),
-      className: status.value?.advancedApiReachable
-        ? "text-emerald-300"
-        : "text-amber-300",
+        ? t('plugins.pinsAllSky.statusRows.online')
+        : t('plugins.pinsAllSky.statusRows.offline'),
+      className: status.value?.advancedApiReachable ? 'text-emerald-300' : 'text-amber-300',
     },
     {
-      label: tr("statusRows.session"),
+      label: t('plugins.pinsAllSky.statusRows.session'),
       value:
         currentSession.value?.label ||
         currentSession.value?.id ||
-        tr("preview.noActiveSession"),
-      className: "text-white",
+        t('plugins.pinsAllSky.preview.noActiveSession'),
+      className: 'text-white',
     },
     {
-      label: tr("statusRows.sequence"),
+      label: t('plugins.pinsAllSky.statusRows.sequence'),
       value: status.value?.sequenceRunning
-        ? tr("statusRows.running")
-        : tr("statusRows.idle"),
-      className: status.value?.sequenceRunning
-        ? "text-emerald-300"
-        : "text-gray-300",
+        ? t('plugins.pinsAllSky.statusRows.running')
+        : t('plugins.pinsAllSky.statusRows.idle'),
+      className: status.value?.sequenceRunning ? 'text-emerald-300' : 'text-gray-300',
     },
     {
-      label: tr("statusRows.capture"),
+      label: t('plugins.pinsAllSky.statusRows.capture'),
       value: status.value?.captureRunning
-        ? tr("statusRows.active")
-        : tr("statusRows.stopped"),
-      className: status.value?.captureRunning
-        ? "text-emerald-300"
-        : "text-gray-300",
+        ? t('plugins.pinsAllSky.statusRows.active')
+        : t('plugins.pinsAllSky.statusRows.stopped'),
+      className: status.value?.captureRunning ? 'text-emerald-300' : 'text-gray-300',
     },
     {
-      label: tr("statusRows.rendering"),
+      label: t('plugins.pinsAllSky.statusRows.rendering'),
       value: status.value?.generateInProgress
-        ? tr("statusRows.inProgress")
-        : tr("statusRows.idle"),
-      className: status.value?.generateInProgress
-        ? "text-cyan-300"
-        : "text-gray-300",
+        ? t('plugins.pinsAllSky.statusRows.inProgress')
+        : t('plugins.pinsAllSky.statusRows.idle'),
+      className: status.value?.generateInProgress ? 'text-cyan-300' : 'text-gray-300',
     },
     {
-      label: tr("statusRows.piUsed"),
+      label: t('plugins.pinsAllSky.statusRows.piUsed'),
       value: formatSize(storage.value.diskUsedBytes),
-      className: "text-white",
+      className: 'text-white',
     },
     {
-      label: tr("statusRows.piAvailable"),
+      label: t('plugins.pinsAllSky.statusRows.piAvailable'),
       value: formatSize(storage.value.diskAvailableBytes),
-      className: estimateExceedsAvailable.value
-        ? "text-amber-300"
-        : "text-white",
+      className: estimateExceedsAvailable.value ? 'text-amber-300' : 'text-white',
     },
     {
-      label: tr("statusRows.pluginUsed"),
+      label: t('plugins.pinsAllSky.statusRows.pluginUsed'),
       value: formatSize(storage.value.pluginUsedBytes),
-      className: "text-white",
+      className: 'text-white',
     },
     {
-      label: tr("statusRows.pluginLimit"),
+      label: t('plugins.pinsAllSky.statusRows.pluginLimit'),
       value: pluginLimitValue,
-      className: "text-white",
+      className: 'text-white',
     },
     {
-      label: tr("statusRows.pluginAvailable"),
+      label: t('plugins.pinsAllSky.statusRows.pluginAvailable'),
       value: pluginAvailableValue,
       className:
-        storage.value.withinLimit || !storage.value.limitEnabled
-          ? "text-white"
-          : "text-amber-300",
+        storage.value.withinLimit || !storage.value.limitEnabled ? 'text-white' : 'text-amber-300',
     },
     ...dependencyRows.value.map((item) => ({
       label: item.label,
-      value: item.ready ? tr("statusRows.available") : tr("statusRows.missing"),
-      className: item.ready ? "text-emerald-300" : "text-amber-300",
+      value: item.ready
+        ? t('plugins.pinsAllSky.statusRows.available')
+        : t('plugins.pinsAllSky.statusRows.missing'),
+      className: item.ready ? 'text-emerald-300' : 'text-amber-300',
     })),
   ];
 });
 
-const parsedEstimateStart = computed(() =>
-  parseLocalInputValue(estimateWindow.startLocal),
-);
-const parsedEstimateEnd = computed(() =>
-  parseLocalInputValue(estimateWindow.endLocal),
-);
+const parsedEstimateStart = computed(() => parseLocalInputValue(estimateWindow.startLocal));
+const parsedEstimateEnd = computed(() => parseLocalInputValue(estimateWindow.endLocal));
 const estimateDurationSeconds = computed(() => {
   if (!parsedEstimateStart.value || !parsedEstimateEnd.value) {
     return 0;
@@ -1993,11 +930,7 @@ const estimateDurationSeconds = computed(() => {
 
   return Math.max(
     0,
-    Math.round(
-      (parsedEstimateEnd.value.getTime() -
-        parsedEstimateStart.value.getTime()) /
-        1000,
-    ),
+    Math.round((parsedEstimateEnd.value.getTime() - parsedEstimateStart.value.getTime()) / 1000)
   );
 });
 const estimatedFrameCount = computed(() => {
@@ -2016,58 +949,43 @@ const estimatedFrameStorageBytes = computed(() => {
   return estimateBaselineAverageFrameBytes.value * estimatedFrameCount.value;
 });
 const estimatedTimelapseBytes = computed(() => {
-  if (
-    !config.value?.products?.timelapseEnabled ||
-    estimatedFrameCount.value <= 0
-  ) {
+  if (!config.value?.products?.timelapseEnabled || estimatedFrameCount.value <= 0) {
     return 0;
   }
 
   const fps = Math.max(1, Number(config.value?.products?.timelapseFps || 1));
-  const bitrateKbps = Math.max(
-    1000,
-    Number(config.value?.products?.timelapseBitrateKbps || 1000),
-  );
+  const bitrateKbps = Math.max(1000, Number(config.value?.products?.timelapseBitrateKbps || 1000));
   const videoSeconds = estimatedFrameCount.value / fps;
   return Math.round((videoSeconds * bitrateKbps * 1000) / 8);
 });
 const estimatedKeogramBytes = computed(() =>
-  config.value?.products?.keogramEnabled
-    ? Number(estimateBaseline.value?.keogramBytes || 0)
-    : 0,
+  config.value?.products?.keogramEnabled ? Number(estimateBaseline.value?.keogramBytes || 0) : 0
 );
 const estimatedStartrailsBytes = computed(() =>
   config.value?.products?.startrailsEnabled
     ? Number(estimateBaseline.value?.startrailsBytes || 0)
-    : 0,
+    : 0
 );
 const estimatedStorageBytes = computed(
   () =>
     estimatedFrameStorageBytes.value +
     estimatedTimelapseBytes.value +
     estimatedKeogramBytes.value +
-    estimatedStartrailsBytes.value,
+    estimatedStartrailsBytes.value
 );
-const estimateDurationLabel = computed(() =>
-  formatDuration(estimateDurationSeconds.value),
-);
+const estimateDurationLabel = computed(() => formatDuration(estimateDurationSeconds.value));
 const estimateExceedsAvailable = computed(() => {
   if (estimatedStorageBytes.value <= 0) {
     return false;
   }
 
   const diskAvailableBytes = Number(storage.value.diskAvailableBytes || 0);
-  if (
-    diskAvailableBytes > 0 &&
-    estimatedStorageBytes.value > diskAvailableBytes
-  ) {
+  if (diskAvailableBytes > 0 && estimatedStorageBytes.value > diskAvailableBytes) {
     return true;
   }
 
   if (storage.value.limitEnabled) {
-    const pluginAvailableBytes = Number(
-      storage.value.pluginAvailableBytes || 0,
-    );
+    const pluginAvailableBytes = Number(storage.value.pluginAvailableBytes || 0);
     return estimatedStorageBytes.value > pluginAvailableBytes;
   }
 
@@ -2075,15 +993,15 @@ const estimateExceedsAvailable = computed(() => {
 });
 const estimateWarning = computed(() => {
   if (!parsedEstimateStart.value || !parsedEstimateEnd.value) {
-    return tr("estimate.invalidWindow");
+    return t('plugins.pinsAllSky.estimate.invalidWindow');
   }
 
   if (estimateDurationSeconds.value <= 0) {
-    return tr("estimate.endBeforeStart");
+    return t('plugins.pinsAllSky.estimate.endBeforeStart');
   }
 
   if (!estimateBaseline.value) {
-    return tr("estimate.noBaseline");
+    return t('plugins.pinsAllSky.estimate.noBaseline');
   }
 
   if (estimatedStorageBytes.value <= 0) {
@@ -2092,24 +1010,19 @@ const estimateWarning = computed(() => {
 
   const warnings = [];
   const diskAvailableBytes = Number(storage.value.diskAvailableBytes || 0);
-  if (
-    diskAvailableBytes > 0 &&
-    estimatedStorageBytes.value > diskAvailableBytes
-  ) {
+  if (diskAvailableBytes > 0 && estimatedStorageBytes.value > diskAvailableBytes) {
     warnings.push(
-      tr("estimate.piFreeSpace", { size: formatSize(diskAvailableBytes) }),
+      t('plugins.pinsAllSky.estimate.piFreeSpace', { size: formatSize(diskAvailableBytes) })
     );
   }
 
   if (storage.value.limitEnabled) {
-    const pluginAvailableBytes = Number(
-      storage.value.pluginAvailableBytes || 0,
-    );
+    const pluginAvailableBytes = Number(storage.value.pluginAvailableBytes || 0);
     if (estimatedStorageBytes.value > pluginAvailableBytes) {
       warnings.push(
-        tr("estimate.pluginLimitRemaining", {
+        t('plugins.pinsAllSky.estimate.pluginLimitRemaining', {
           size: formatSize(pluginAvailableBytes),
-        }),
+        })
       );
     }
   }
@@ -2118,48 +1031,62 @@ const estimateWarning = computed(() => {
     return null;
   }
 
-  return tr("estimate.exceeds", {
+  return t('plugins.pinsAllSky.estimate.exceeds', {
     size: formatSize(estimatedStorageBytes.value),
-    limits: warnings.join(` ${tr("common.and")} `),
+    limits: warnings.join(` ${t('plugins.pinsAllSky.common.and')} `),
   });
 });
 
-const meteringOptions = computed(() => [
-  { value: "centre", label: tr("modals.camera.options.centre") },
-  { value: "spot", label: tr("modals.camera.options.spot") },
-  { value: "average", label: tr("modals.camera.options.average") },
-  { value: "custom", label: tr("modals.camera.options.custom") },
-]);
-
-const awbOptions = computed(() => [
-  { value: "auto", label: tr("modals.camera.options.auto") },
-  { value: "incandescent", label: tr("modals.camera.options.incandescent") },
-  { value: "tungsten", label: tr("modals.camera.options.tungsten") },
-  { value: "fluorescent", label: tr("modals.camera.options.fluorescent") },
-  { value: "indoor", label: tr("modals.camera.options.indoor") },
-  { value: "daylight", label: tr("modals.camera.options.daylight") },
-  { value: "cloudy", label: tr("modals.camera.options.cloudy") },
-  { value: "custom", label: tr("modals.camera.options.custom") },
-]);
-
-const denoiseOptions = computed(() => [
-  { value: "auto", label: tr("modals.camera.options.auto") },
-  { value: "off", label: tr("modals.camera.options.off") },
-  { value: "cdn_off", label: tr("modals.camera.options.cdnOff") },
-  { value: "cdn_fast", label: tr("modals.camera.options.cdnFast") },
-  { value: "cdn_hq", label: tr("modals.camera.options.cdnHq") },
-]);
-
 const settingsModalTitle = computed(() => {
   switch (settingsModal.value) {
-    case "automation":
-      return tr("buttons.automation");
-    case "camera":
-      return tr("buttons.camera");
-    case "outputs":
-      return tr("buttons.outputs");
+    case 'automation':
+      return t('plugins.pinsAllSky.buttons.automation');
+    case 'camera':
+      return t('plugins.pinsAllSky.buttons.camera');
+    case 'outputs':
+      return t('plugins.pinsAllSky.buttons.outputs');
     default:
-      return "";
+      return '';
+  }
+});
+
+const settingsPanelComponent = computed(() => {
+  switch (settingsModal.value) {
+    case 'automation':
+      return PinsAllSkyAutomationSettings;
+    case 'camera':
+      return PinsAllSkyCameraSettings;
+    case 'outputs':
+      return PinsAllSkyOutputsSettings;
+    default:
+      return null;
+  }
+});
+
+const settingsPanelProps = computed(() => {
+  if (!config.value) {
+    return {};
+  }
+
+  switch (settingsModal.value) {
+    case 'automation':
+      return {
+        config: config.value,
+        setRootConfigValue,
+        setAdvancedApiSetting,
+      };
+    case 'camera':
+      return {
+        config: config.value,
+        setCameraSetting,
+      };
+    case 'outputs':
+      return {
+        config: config.value,
+        setProductSetting,
+      };
+    default:
+      return {};
   }
 });
 
@@ -2243,8 +1170,7 @@ const saveConfig = async () => {
 };
 
 const startSession = async () => {
-  store.manualLabel =
-    (store.manualLabel || "").trim() || defaultManualLabel.value;
+  store.manualLabel = (store.manualLabel || '').trim() || defaultManualLabel.value;
   await store.startSession();
 };
 
@@ -2262,22 +1188,22 @@ const updateBackend = async () => {
 
 const formatSessionReason = (reason) => {
   if (!reason) {
-    return tr("recentSessions.reasons.unknown");
+    return t('plugins.pinsAllSky.recentSessions.reasons.unknown');
   }
 
   const normalizedReason = String(reason)
     .replace(/-([a-z])/g, (_, character) => character.toUpperCase())
-    .replace(/[^a-zA-Z0-9]/g, "");
+    .replace(/[^a-zA-Z0-9]/g, '');
 
   switch (normalizedReason) {
-    case "manualStart":
-      return tr("recentSessions.reasons.manualStart");
-    case "manualStop":
-      return tr("recentSessions.reasons.manualStop");
-    case "sequenceStart":
-      return tr("recentSessions.reasons.sequenceStart");
-    case "sequenceStop":
-      return tr("recentSessions.reasons.sequenceStop");
+    case 'manualStart':
+      return t('plugins.pinsAllSky.recentSessions.reasons.manualStart');
+    case 'manualStop':
+      return t('plugins.pinsAllSky.recentSessions.reasons.manualStop');
+    case 'sequenceStart':
+      return t('plugins.pinsAllSky.recentSessions.reasons.sequenceStart');
+    case 'sequenceStop':
+      return t('plugins.pinsAllSky.recentSessions.reasons.sequenceStop');
     default:
       return reason;
   }
@@ -2285,8 +1211,8 @@ const formatSessionReason = (reason) => {
 
 const deleteSession = async (session) => {
   const sessionName =
-    session?.label || session?.id || tr("preview.noActiveSession");
-  if (!window.confirm(tr("dialogs.deleteSession", { sessionName }))) {
+    session?.label || session?.id || t('plugins.pinsAllSky.preview.noActiveSession');
+  if (!window.confirm(t('plugins.pinsAllSky.dialogs.deleteSession', { sessionName }))) {
     return;
   }
 
@@ -2294,7 +1220,7 @@ const deleteSession = async (session) => {
 };
 
 const deleteAllSessions = async () => {
-  if (!window.confirm(tr("dialogs.deleteAllSessions"))) {
+  if (!window.confirm(t('plugins.pinsAllSky.dialogs.deleteAllSessions'))) {
     return;
   }
 
@@ -2308,9 +1234,9 @@ const deleteArtifact = async (session, artifact) => {
 
   const artifactName =
     artifact.name ||
-    artifact.relativePath.split("/").pop() ||
-    tr("common.notGenerated");
-  if (!window.confirm(tr("dialogs.deleteArtifact", { artifactName }))) {
+    artifact.relativePath.split('/').pop() ||
+    t('plugins.pinsAllSky.common.notGenerated');
+  if (!window.confirm(t('plugins.pinsAllSky.dialogs.deleteArtifact', { artifactName }))) {
     return;
   }
 
@@ -2324,9 +1250,9 @@ const deleteFrame = async (session, frame) => {
 
   const frameName =
     frame.name ||
-    frame.relativePath.split("/").pop() ||
-    tr("common.notAvailable");
-  if (!window.confirm(tr("dialogs.deleteFrame", { frameName }))) {
+    frame.relativePath.split('/').pop() ||
+    t('plugins.pinsAllSky.common.notAvailable');
+  if (!window.confirm(t('plugins.pinsAllSky.dialogs.deleteFrame', { frameName }))) {
     return;
   }
 
@@ -2335,16 +1261,13 @@ const deleteFrame = async (session, frame) => {
 
 const downloadRelativePath = async (relativePath, fallbackName = null) => {
   const derivedName =
-    fallbackName || relativePath?.split("/").pop() || tr("common.download");
+    fallbackName || relativePath?.split('/').pop() || t('plugins.pinsAllSky.common.download');
   await store.downloadFile(relativePath, derivedName);
 };
 
-const sessionDetails = (sessionId) =>
-  sessionDetailsById.value?.[sessionId] || null;
-const sessionDetailsLoading = (sessionId) =>
-  Boolean(detailsLoadingById.value?.[sessionId]);
-const isSessionDetailsOpen = (sessionId) =>
-  Boolean(sessionDetailOpen[sessionId]);
+const sessionDetails = (sessionId) => sessionDetailsById.value?.[sessionId] || null;
+const sessionDetailsLoading = (sessionId) => Boolean(detailsLoadingById.value?.[sessionId]);
+const isSessionDetailsOpen = (sessionId) => Boolean(sessionDetailOpen[sessionId]);
 const refreshSessionDetails = async (sessionId) => {
   await store.fetchSessionDetails(sessionId);
 };
@@ -2364,27 +1287,23 @@ const parseDateValue = (value) => {
     return Number.isNaN(value.getTime()) ? null : value;
   }
 
-  if (typeof value === "string" || typeof value === "number") {
+  if (typeof value === 'string' || typeof value === 'number') {
     const parsed = new Date(value);
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   }
 
-  if (typeof value === "object") {
-    const utcDateTime =
-      typeof value.utcDateTime === "string" ? value.utcDateTime : null;
+  if (typeof value === 'object') {
+    const utcDateTime = typeof value.utcDateTime === 'string' ? value.utcDateTime : null;
     if (utcDateTime) {
       const parsedUtc = new Date(
-        /[zZ]|[+-]\d{2}:\d{2}$/.test(utcDateTime)
-          ? utcDateTime
-          : `${utcDateTime}Z`,
+        /[zZ]|[+-]\d{2}:\d{2}$/.test(utcDateTime) ? utcDateTime : `${utcDateTime}Z`
       );
       if (!Number.isNaN(parsedUtc.getTime())) {
         return parsedUtc;
       }
     }
 
-    const localDateTime =
-      typeof value.localDateTime === "string" ? value.localDateTime : null;
+    const localDateTime = typeof value.localDateTime === 'string' ? value.localDateTime : null;
     if (localDateTime) {
       const parsedLocal = new Date(localDateTime);
       if (!Number.isNaN(parsedLocal.getTime())) {
@@ -2392,7 +1311,7 @@ const parseDateValue = (value) => {
       }
     }
 
-    const dateTime = typeof value.dateTime === "string" ? value.dateTime : null;
+    const dateTime = typeof value.dateTime === 'string' ? value.dateTime : null;
     if (dateTime) {
       const parsedDateTime = new Date(dateTime);
       if (!Number.isNaN(parsedDateTime.getTime())) {
@@ -2411,17 +1330,13 @@ const sameLocalDay = (left, right) =>
 
 const buildDefaultManualLabel = () => {
   const now = new Date();
-  const datePrefix = `${String(now.getFullYear()).slice(-2)}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
+  const datePrefix = `${String(now.getFullYear()).slice(-2)}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
   const sessionsById = new Map();
-  const candidateSessions = [
-    currentSession.value,
-    ...recentSessions.value,
-  ].filter(Boolean);
+  const candidateSessions = [currentSession.value, ...recentSessions.value].filter(Boolean);
 
   for (const session of candidateSessions) {
     const sessionKey =
-      session.id ||
-      `${session.label || ""}:${JSON.stringify(session.startedAtUtc || null)}`;
+      session.id || `${session.label || ''}:${JSON.stringify(session.startedAtUtc || null)}`;
     if (!sessionsById.has(sessionKey)) {
       sessionsById.set(sessionKey, session);
     }
@@ -2436,7 +1351,7 @@ const buildDefaultManualLabel = () => {
       sessionsStartedToday += 1;
     }
 
-    const label = typeof session.label === "string" ? session.label.trim() : "";
+    const label = typeof session.label === 'string' ? session.label.trim() : '';
     const match = label.match(new RegExp(`^${datePrefix}_(\\d+)$`));
     if (match) {
       maxLabelCounter = Math.max(maxLabelCounter, Number(match[1]));
@@ -2451,7 +1366,7 @@ const defaultManualLabel = computed(() => buildDefaultManualLabel());
 const manualLabelInput = computed({
   get: () => store.manualLabel || defaultManualLabel.value,
   set: (value) => {
-    store.manualLabel = typeof value === "string" ? value : "";
+    store.manualLabel = typeof value === 'string' ? value : '';
   },
 });
 
@@ -2486,7 +1401,7 @@ const initializeEstimateWindow = () => {
 const formatDate = (value) => {
   const parsed = parseDateValue(value);
   if (!parsed) {
-    return tr("common.notAvailable");
+    return t('plugins.pinsAllSky.common.notAvailable');
   }
 
   return parsed.toLocaleString();
@@ -2494,7 +1409,7 @@ const formatDate = (value) => {
 
 const formatInterval = (seconds) => {
   if (!Number.isFinite(seconds)) {
-    return tr("common.notAvailable");
+    return t('plugins.pinsAllSky.common.notAvailable');
   }
 
   return `${seconds}s`;
@@ -2502,16 +1417,16 @@ const formatInterval = (seconds) => {
 
 const formatExposure = (camera) => {
   if (!camera) {
-    return tr("common.notAvailable");
+    return t('plugins.pinsAllSky.common.notAvailable');
   }
 
   if (!camera.useManualExposure) {
-    return tr("common.auto");
+    return t('plugins.pinsAllSky.common.auto');
   }
 
   const shutterMicroseconds = Number(camera.shutterMicroseconds || 0);
   if (!Number.isFinite(shutterMicroseconds) || shutterMicroseconds <= 0) {
-    return tr("common.notAvailable");
+    return t('plugins.pinsAllSky.common.notAvailable');
   }
 
   const exposureSeconds = shutterMicroseconds / 1000000;
@@ -2524,24 +1439,24 @@ const formatExposure = (camera) => {
 
 const formatGain = (camera) => {
   if (!camera) {
-    return tr("common.notAvailable");
+    return t('plugins.pinsAllSky.common.notAvailable');
   }
 
   if (!camera.useManualGain) {
-    return tr("common.auto");
+    return t('plugins.pinsAllSky.common.auto');
   }
 
   const gain = Number(camera.analogGain || 0);
   if (!Number.isFinite(gain) || gain <= 0) {
-    return tr("common.notAvailable");
+    return t('plugins.pinsAllSky.common.notAvailable');
   }
 
-  return gain >= 10 ? gain.toFixed(0) : gain.toFixed(1).replace(/\.0$/, "");
+  return gain >= 10 ? gain.toFixed(0) : gain.toFixed(1).replace(/\.0$/, '');
 };
 
 const formatCount = (value) => {
   if (!Number.isFinite(value)) {
-    return tr("common.notAvailable");
+    return t('plugins.pinsAllSky.common.notAvailable');
   }
 
   return new Intl.NumberFormat().format(value);
@@ -2549,7 +1464,7 @@ const formatCount = (value) => {
 
 const formatDuration = (seconds) => {
   if (!Number.isFinite(seconds) || seconds <= 0) {
-    return tr("common.notAvailable");
+    return t('plugins.pinsAllSky.common.notAvailable');
   }
 
   const totalMinutes = Math.round(seconds / 60);
@@ -2569,10 +1484,10 @@ const formatDuration = (seconds) => {
 
 const formatSize = (bytes) => {
   if (!bytes && bytes !== 0) {
-    return tr("common.notAvailable");
+    return t('plugins.pinsAllSky.common.notAvailable');
   }
 
-  const units = ["B", "KB", "MB", "GB", "TB"];
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
   let value = bytes;
   let unitIndex = 0;
 
@@ -2587,7 +1502,7 @@ const formatSize = (bytes) => {
 
 const describeArtifact = (artifact) => {
   if (!artifact) {
-    return tr("common.notGenerated");
+    return t('plugins.pinsAllSky.common.notGenerated');
   }
 
   return `${formatDate(artifact.generatedAtUtc)} • ${formatSize(artifact.sizeBytes)}`;

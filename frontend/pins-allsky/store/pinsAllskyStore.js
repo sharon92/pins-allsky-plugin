@@ -5,7 +5,6 @@ import { useSettingsStore } from '@/store/settingsStore';
 
 const DEFAULT_BACKEND_PORT = 19091;
 const DEFAULT_POLL_INTERVAL_MS = 5000;
-const tr = (key, params) => i18n.global.t(`plugins.pinsAllSky.${key}`, params);
 
 export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
   state: () => ({
@@ -49,7 +48,9 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
     async fetchStatus() {
       const { data } = await axios.get(`${this.backendBaseUrl}/api/status`);
       this.status = data.data;
-      this.error = data.success ? null : data.error || tr('errors.loadStatus');
+      this.error = data.success
+        ? null
+        : data.error || i18n.global.t('plugins.pinsAllSky.errors.loadStatus');
       this.imageNonce = Date.now();
       return this.status;
     },
@@ -57,7 +58,9 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
     async fetchConfig() {
       const { data } = await axios.get(`${this.backendBaseUrl}/api/config`);
       this.config = data.data;
-      this.error = data.success ? null : data.error || tr('errors.loadConfig');
+      this.error = data.success
+        ? null
+        : data.error || i18n.global.t('plugins.pinsAllSky.errors.loadConfig');
       return this.config;
     },
 
@@ -66,7 +69,7 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
       try {
         await Promise.all([this.fetchStatus(), this.fetchConfig()]);
       } catch (error) {
-        this.error = error?.message || tr('errors.connectBackend');
+        this.error = error?.message || i18n.global.t('plugins.pinsAllSky.errors.connectBackend');
       } finally {
         this.loading = false;
       }
@@ -77,14 +80,14 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
       try {
         const { data } = await axios.put(`${this.backendBaseUrl}/api/config`, this.config);
         if (!data.success) {
-          throw new Error(data.error || tr('errors.saveConfig'));
+          throw new Error(data.error || i18n.global.t('plugins.pinsAllSky.errors.saveConfig'));
         }
 
         this.config = data.data;
         await this.fetchStatus();
         this.error = null;
       } catch (error) {
-        this.error = error?.message || tr('errors.saveConfig');
+        this.error = error?.message || i18n.global.t('plugins.pinsAllSky.errors.saveConfig');
       } finally {
         this.saving = false;
       }
@@ -97,14 +100,14 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
         });
 
         if (!data.success) {
-          throw new Error(data.error || tr('errors.startSession'));
+          throw new Error(data.error || i18n.global.t('plugins.pinsAllSky.errors.startSession'));
         }
 
         this.manualLabel = '';
         await this.fetchStatus();
         this.error = null;
       } catch (error) {
-        this.error = error?.message || tr('errors.startSession');
+        this.error = error?.message || i18n.global.t('plugins.pinsAllSky.errors.startSession');
       }
     },
 
@@ -115,13 +118,13 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
         });
 
         if (!data.success) {
-          throw new Error(data.error || tr('errors.stopSession'));
+          throw new Error(data.error || i18n.global.t('plugins.pinsAllSky.errors.stopSession'));
         }
 
         await this.fetchStatus();
         this.error = null;
       } catch (error) {
-        this.error = error?.message || tr('errors.stopSession');
+        this.error = error?.message || i18n.global.t('plugins.pinsAllSky.errors.stopSession');
       }
     },
 
@@ -132,13 +135,15 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
         });
 
         if (!data.success) {
-          throw new Error(data.error || tr('errors.generateArtifacts'));
+          throw new Error(
+            data.error || i18n.global.t('plugins.pinsAllSky.errors.generateArtifacts')
+          );
         }
 
         await this.fetchStatus();
         this.error = null;
       } catch (error) {
-        this.error = error?.message || tr('errors.generateArtifacts');
+        this.error = error?.message || i18n.global.t('plugins.pinsAllSky.errors.generateArtifacts');
       }
     },
 
@@ -150,7 +155,7 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
         });
 
         if (!data.success) {
-          throw new Error(data.error || tr('errors.deleteSession'));
+          throw new Error(data.error || i18n.global.t('plugins.pinsAllSky.errors.deleteSession'));
         }
 
         const deletedSessionCount = data.data?.deletedSessionCount || 0;
@@ -158,8 +163,8 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
         const remainingUsed = data.data?.storage?.pluginUsedBytes ?? 0;
         this.actionMessage =
           deletedSessionCount === 0
-            ? tr('messages.noSessionsDeleted')
-            : tr('messages.deletedSessions', {
+            ? i18n.global.t('plugins.pinsAllSky.messages.noSessionsDeleted')
+            : i18n.global.t('plugins.pinsAllSky.messages.deletedSessions', {
                 count: deletedSessionCount,
                 suffix: deletedSessionCount === 1 ? '' : 's',
                 freed: this.formatSize(freedBytes),
@@ -170,7 +175,7 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
         await this.fetchStatus();
         this.error = null;
       } catch (error) {
-        this.error = error?.message || tr('errors.deleteSession');
+        this.error = error?.message || i18n.global.t('plugins.pinsAllSky.errors.deleteSession');
       } finally {
         this.cleanupBusy = false;
       }
@@ -182,7 +187,9 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
         const { data } = await axios.post(`${this.backendBaseUrl}/api/sessions/delete-all`, {});
 
         if (!data.success) {
-          throw new Error(data.error || tr('errors.deleteAllSessions'));
+          throw new Error(
+            data.error || i18n.global.t('plugins.pinsAllSky.errors.deleteAllSessions')
+          );
         }
 
         const deletedSessionCount = data.data?.deletedSessionCount || 0;
@@ -190,8 +197,8 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
         const remainingUsed = data.data?.storage?.pluginUsedBytes ?? 0;
         this.actionMessage =
           deletedSessionCount === 0
-            ? tr('messages.noSessionsDeleted')
-            : tr('messages.deletedSessions', {
+            ? i18n.global.t('plugins.pinsAllSky.messages.noSessionsDeleted')
+            : i18n.global.t('plugins.pinsAllSky.messages.deletedSessions', {
                 count: deletedSessionCount,
                 suffix: deletedSessionCount === 1 ? '' : 's',
                 freed: this.formatSize(freedBytes),
@@ -202,7 +209,7 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
         await this.fetchStatus();
         this.error = null;
       } catch (error) {
-        this.error = error?.message || tr('errors.deleteAllSessions');
+        this.error = error?.message || i18n.global.t('plugins.pinsAllSky.errors.deleteAllSessions');
       } finally {
         this.cleanupBusy = false;
       }
@@ -224,7 +231,9 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
         });
 
         if (!data.success) {
-          throw new Error(data.error || tr('errors.loadSessionDetails'));
+          throw new Error(
+            data.error || i18n.global.t('plugins.pinsAllSky.errors.loadSessionDetails')
+          );
         }
 
         this.sessionDetailsById = {
@@ -234,7 +243,8 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
         this.error = null;
         return data.data;
       } catch (error) {
-        this.error = error?.message || tr('errors.loadSessionDetails');
+        this.error =
+          error?.message || i18n.global.t('plugins.pinsAllSky.errors.loadSessionDetails');
         return null;
       } finally {
         this.detailsLoadingById = {
@@ -253,16 +263,16 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
         });
 
         if (!data.success) {
-          throw new Error(data.error || tr('errors.deleteArtifact'));
+          throw new Error(data.error || i18n.global.t('plugins.pinsAllSky.errors.deleteArtifact'));
         }
 
-        this.actionMessage = tr('messages.deletedArtifact', {
+        this.actionMessage = i18n.global.t('plugins.pinsAllSky.messages.deletedArtifact', {
           freed: this.formatSize(data.data?.freedBytes || 0),
         });
         await Promise.all([this.fetchStatus(), this.fetchSessionDetails(sessionId)]);
         this.error = null;
       } catch (error) {
-        this.error = error?.message || tr('errors.deleteArtifact');
+        this.error = error?.message || i18n.global.t('plugins.pinsAllSky.errors.deleteArtifact');
       } finally {
         this.cleanupBusy = false;
       }
@@ -277,16 +287,16 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
         });
 
         if (!data.success) {
-          throw new Error(data.error || tr('errors.deleteFrame'));
+          throw new Error(data.error || i18n.global.t('plugins.pinsAllSky.errors.deleteFrame'));
         }
 
-        this.actionMessage = tr('messages.deletedFrame', {
+        this.actionMessage = i18n.global.t('plugins.pinsAllSky.messages.deletedFrame', {
           freed: this.formatSize(data.data?.freedBytes || 0),
         });
         await Promise.all([this.fetchStatus(), this.fetchSessionDetails(sessionId)]);
         this.error = null;
       } catch (error) {
-        this.error = error?.message || tr('errors.deleteFrame');
+        this.error = error?.message || i18n.global.t('plugins.pinsAllSky.errors.deleteFrame');
       } finally {
         this.cleanupBusy = false;
       }
@@ -298,14 +308,18 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
         const { data } = await axios.post(`${this.backendBaseUrl}/api/backend/update`, {});
 
         if (!data.success) {
-          throw new Error(data.error || tr('errors.startBackendUpdate'));
+          throw new Error(
+            data.error || i18n.global.t('plugins.pinsAllSky.errors.startBackendUpdate')
+          );
         }
 
-        this.actionMessage = data.data?.message || tr('messages.backendUpdateStarted');
+        this.actionMessage =
+          data.data?.message || i18n.global.t('plugins.pinsAllSky.messages.backendUpdateStarted');
         this.error = null;
         return data.data;
       } catch (error) {
-        this.error = error?.message || tr('errors.startBackendUpdate');
+        this.error =
+          error?.message || i18n.global.t('plugins.pinsAllSky.errors.startBackendUpdate');
         return null;
       } finally {
         this.backendUpdateBusy = false;
@@ -324,7 +338,10 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
       return `${this.backendBaseUrl}/media/${relativePath}`;
     },
 
-    async downloadFile(relativePath, fallbackName = tr('common.download')) {
+    async downloadFile(
+      relativePath,
+      fallbackName = i18n.global.t('plugins.pinsAllSky.common.download')
+    ) {
       const url = this.artifactUrl(relativePath);
       if (!url) {
         return;
@@ -333,7 +350,9 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
       try {
         const response = await fetch(url);
         if (!response.ok) {
-          throw new Error(tr('errors.downloadFailed', { status: response.status }));
+          throw new Error(
+            i18n.global.t('plugins.pinsAllSky.errors.downloadFailed', { status: response.status })
+          );
         }
 
         const blob = await response.blob();
@@ -349,7 +368,7 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
         }, 1000);
         this.error = null;
       } catch (error) {
-        this.error = error?.message || tr('errors.downloadFile');
+        this.error = error?.message || i18n.global.t('plugins.pinsAllSky.errors.downloadFile');
       }
     },
 
@@ -375,7 +394,7 @@ export const usePinsAllSkyStore = defineStore('pinsAllSkyStore', {
       this.stopPolling();
       this.pollTimer = setInterval(() => {
         this.fetchStatus().catch((error) => {
-          this.error = error?.message || tr('errors.refreshStatus');
+          this.error = error?.message || i18n.global.t('plugins.pinsAllSky.errors.refreshStatus');
         });
       }, DEFAULT_POLL_INTERVAL_MS);
     },
