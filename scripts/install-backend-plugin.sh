@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DOTNET_BIN="${DOTNET_BIN:-/home/pi/.local/dotnet/dotnet}"
+REQUIRED_DOTNET_MAJOR=10
 BACKEND_PROJECT="$ROOT_DIR/backend/PinsAllSky/PinsAllSky.csproj"
 BACKEND_OUTPUT="$ROOT_DIR/backend/PinsAllSky/bin/Release/net10.0"
 ARTIFACTS_DIR="$ROOT_DIR/artifacts"
@@ -16,6 +16,9 @@ PINS_LD_LIBRARY_PATH="${PINS_LD_LIBRARY_PATH:-/opt/opencvsharp/lib:/usr/lib/aarc
 RESTART_PINS=false
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
 
+# shellcheck source=./dotnet-env.sh
+source "$ROOT_DIR/scripts/dotnet-env.sh"
+
 for arg in "$@"; do
   case "$arg" in
     --restart-pins)
@@ -28,10 +31,11 @@ for arg in "$@"; do
   esac
 done
 
-if [[ ! -x "$DOTNET_BIN" ]]; then
-  echo "dotnet binary not found at $DOTNET_BIN" >&2
-  exit 1
-fi
+pins_allsky_resolve_dotnet_bin
+pins_allsky_require_dotnet_sdk_major "$REQUIRED_DOTNET_MAJOR"
+
+echo "Using dotnet: $DOTNET_BIN"
+echo "Using .NET SDK: ${PINS_ALLSKY_DOTNET_SDK_VERSION:-unknown}"
 
 "$DOTNET_BIN" build "$BACKEND_PROJECT" -c Release
 

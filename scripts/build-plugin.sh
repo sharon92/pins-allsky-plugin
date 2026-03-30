@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DOTNET_BIN="${DOTNET_BIN:-/home/pi/.local/dotnet/dotnet}"
+REQUIRED_DOTNET_MAJOR=10
 BACKEND_PROJECT="$ROOT_DIR/backend/PinsAllSky/PinsAllSky.csproj"
 BACKEND_OUTPUT="$ROOT_DIR/backend/PinsAllSky/bin/Release/net10.0"
 FRONTEND_SOURCE="$ROOT_DIR/frontend/pins-allsky"
@@ -14,6 +14,9 @@ BACKEND_PACKAGE_DIR="$ARTIFACTS_DIR/backend-plugin/PINS AllSky"
 FRONTEND_PACKAGE_DIR="$ARTIFACTS_DIR/touch-n-stars-app"
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
 
+# shellcheck source=./dotnet-env.sh
+source "$ROOT_DIR/scripts/dotnet-env.sh"
+
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
     echo "Missing required command: $1" >&2
@@ -23,10 +26,11 @@ require_cmd() {
 
 require_cmd npm
 
-if [[ ! -x "$DOTNET_BIN" ]]; then
-  echo "dotnet binary not found at $DOTNET_BIN" >&2
-  exit 1
-fi
+pins_allsky_resolve_dotnet_bin
+pins_allsky_require_dotnet_sdk_major "$REQUIRED_DOTNET_MAJOR"
+
+echo "Using dotnet: $DOTNET_BIN"
+echo "Using .NET SDK: ${PINS_ALLSKY_DOTNET_SDK_VERSION:-unknown}"
 
 mkdir -p "$ARTIFACTS_DIR/backend-plugin" "$ARTIFACTS_DIR" "$BUILD_BACKUPS_DIR/tns-plugins"
 
