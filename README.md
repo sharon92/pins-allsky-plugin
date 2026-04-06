@@ -80,6 +80,7 @@ The smoke test:
 
 ## Notes
 
+- When manual exposure and/or gain are disabled, PINS AllSky now follows AllSky's mean-based control loop instead of relying only on `rpicam-still` auto exposure. Set `Target Mean` to `0` to fall back to camera-managed auto exposure.
 - `rpicam-still` rotation is limited to `0` or `180`.
 - On an equatorial mount, startrail generation is still available but the output may not show classic circular trails.
 - The bundled `keogram` and `startrails` tools come from AllSky and are documented in `THIRD_PARTY_NOTICES.md`.

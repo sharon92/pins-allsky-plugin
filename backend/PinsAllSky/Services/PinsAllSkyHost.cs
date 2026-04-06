@@ -24,6 +24,7 @@ public sealed class PinsAllSkyHost : IDisposable
     private CancellationTokenSource shutdownCts = new();
     private bool disposed;
     private bool generateInProgress;
+    private AllSkyAutoExposureController autoExposureController = new();
     private bool sequenceRunning;
     private bool advancedApiReachable;
     private bool suppressAutoStartUntilSequenceStops;
@@ -162,6 +163,7 @@ public sealed class PinsAllSkyHost : IDisposable
         lock (sync)
         {
             currentSession = session;
+            autoExposureController.Reset();
             captureCts?.Dispose();
             captureCts = CancellationTokenSource.CreateLinkedTokenSource(shutdownCts.Token);
             captureTask = Task.Run(() => CaptureLoopAsync(captureCts.Token));
@@ -214,6 +216,7 @@ public sealed class PinsAllSkyHost : IDisposable
             }
 
             currentSession = null;
+            autoExposureController.Reset();
             captureTask = null;
             captureCts?.Dispose();
             captureCts = null;
@@ -594,6 +597,7 @@ public sealed class PinsAllSkyHost : IDisposable
         var timestamp = DateTimeOffset.UtcNow;
         var frameName = $"frame-{timestamp:yyyyMMddTHHmmssfff}.jpg";
         var tempFramePath = Path.Combine(paths.GetFramesRoot(session.Id), $"{frameName}.tmp");
+        var tempMetadataPath = Path.Combine(paths.GetFramesRoot(session.Id), $"{frameName}.metadata.txt");
         var finalFramePath = Path.Combine(paths.GetFramesRoot(session.Id), frameName);
 
         Directory.CreateDirectory(paths.GetFramesRoot(session.Id));
@@ -603,7 +607,13 @@ public sealed class PinsAllSkyHost : IDisposable
             File.Delete(tempFramePath);
         }
 
-        var arguments = BuildCaptureArguments(settings.Camera, tempFramePath);
+        if (File.Exists(tempMetadataPath))
+        {
+            File.Delete(tempMetadataPath);
+        }
+
+        var captureSettings = BuildCaptureSettings(settings.Camera);
+        var arguments = BuildCaptureArguments(settings.Camera, captureSettings, tempFramePath, tempMetadataPath);
         var timeout = TimeSpan.FromSeconds(Math.Max(15, settings.Camera.CaptureTimeoutSeconds));
         var result = await processRunner.RunAsync("/usr/bin/rpicam-still", arguments, paths.GetFramesRoot(session.Id), timeout, cancellationToken).ConfigureAwait(false);
 
@@ -622,10 +632,28 @@ public sealed class PinsAllSkyHost : IDisposable
         File.Move(tempFramePath, finalFramePath, overwrite: true);
         File.Copy(finalFramePath, paths.GetCurrentImagePath(), overwrite: true);
 
+        var metadata = RpiCaptureMetadata.ParseTxtFile(tempMetadataPath);
+        var observedExposureMicroseconds = ResolveObservedExposureMicroseconds(settings.Camera, captureSettings, metadata);
+        var observedAnalogGain = ResolveObservedAnalogGain(settings.Camera, captureSettings, metadata);
+        var observedMean = ImageMeanAnalyzer.CalculateNormalizedMean(finalFramePath);
+        TryDeleteFile(tempMetadataPath);
+
+        if (AllSkyAutoExposureController.IsEnabled(settings.Camera))
+        {
+            autoExposureController.Observe(settings.Camera, observedExposureMicroseconds, observedAnalogGain, observedMean);
+        }
+        else
+        {
+            autoExposureController.Reset();
+        }
+
         var updated = Clone(session);
         updated.CaptureCount += 1;
         updated.LastCaptureAtUtc = timestamp;
         updated.LastFrameRelativePath = paths.GetRelativePath(finalFramePath);
+        updated.LastExposureMicroseconds = observedExposureMicroseconds;
+        updated.LastAnalogGain = observedAnalogGain;
+        updated.LastMeanBrightness = observedMean;
         updated.LastError = null;
 
         Logger.Info($"PINS AllSky captured frame '{frameName}' for session '{session.Id}'");
@@ -870,7 +898,46 @@ public sealed class PinsAllSkyHost : IDisposable
         return new SequenceProbeResult(true, false);
     }
 
-    private IEnumerable<string> BuildCaptureArguments(CameraCaptureSettings settings, string outputPath)
+    private CaptureSettingsPlan BuildCaptureSettings(CameraCaptureSettings settings)
+    {
+        var managedAutoEnabled = AllSkyAutoExposureController.IsEnabled(settings);
+        if (!managedAutoEnabled)
+        {
+            return new CaptureSettingsPlan(
+                UseManualExposure: settings.UseManualExposure,
+                ExposureMicroseconds: settings.UseManualExposure ? Math.Max(1, settings.ShutterMicroseconds) : null,
+                UseManualGain: settings.UseManualGain,
+                AnalogGain: settings.UseManualGain ? Math.Max(1.0, settings.AnalogGain) : null,
+                WriteMetadata: false);
+        }
+
+        if (!autoExposureController.IsInitialized)
+        {
+            return new CaptureSettingsPlan(
+                UseManualExposure: settings.UseManualExposure,
+                ExposureMicroseconds: settings.UseManualExposure ? Math.Max(1, settings.ShutterMicroseconds) : null,
+                UseManualGain: settings.UseManualGain,
+                AnalogGain: settings.UseManualGain ? Math.Max(1.0, settings.AnalogGain) : null,
+                WriteMetadata: true);
+        }
+
+        var mode = AllSkyAutoExposureController.ResolveMode(settings);
+        var exposureMicroseconds = mode == AllSkyAutoMode.GainOnly
+            ? Math.Max(1, settings.ShutterMicroseconds)
+            : autoExposureController.CurrentExposureMicroseconds;
+        var analogGain = mode == AllSkyAutoMode.ExposureOnly
+            ? Math.Max(1.0, settings.AnalogGain)
+            : autoExposureController.CurrentAnalogGain;
+
+        return new CaptureSettingsPlan(
+            UseManualExposure: mode != AllSkyAutoMode.Off,
+            ExposureMicroseconds: exposureMicroseconds,
+            UseManualGain: mode != AllSkyAutoMode.Off,
+            AnalogGain: analogGain,
+            WriteMetadata: true);
+    }
+
+    private IEnumerable<string> BuildCaptureArguments(CameraCaptureSettings settings, CaptureSettingsPlan captureSettings, string outputPath, string metadataPath)
     {
         var arguments = new List<string>
         {
@@ -905,14 +972,19 @@ public sealed class PinsAllSkyHost : IDisposable
             settings.Sharpness.ToString(System.Globalization.CultureInfo.InvariantCulture)
         };
 
-        if (settings.UseManualExposure)
+        if (captureSettings.WriteMetadata)
         {
-            arguments.AddRange(["--shutter", Math.Max(1, settings.ShutterMicroseconds).ToString()]);
+            arguments.AddRange(["--metadata", metadataPath, "--metadata-format", "txt"]);
         }
 
-        if (settings.UseManualGain)
+        if (captureSettings.UseManualExposure && captureSettings.ExposureMicroseconds.HasValue)
         {
-            arguments.AddRange(["--gain", settings.AnalogGain.ToString(System.Globalization.CultureInfo.InvariantCulture)]);
+            arguments.AddRange(["--shutter", Math.Max(1, captureSettings.ExposureMicroseconds.Value).ToString()]);
+        }
+
+        if (captureSettings.UseManualGain && captureSettings.AnalogGain.HasValue)
+        {
+            arguments.AddRange(["--gain", captureSettings.AnalogGain.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)]);
         }
 
         if (settings.HorizontalFlip)
@@ -932,6 +1004,36 @@ public sealed class PinsAllSkyHost : IDisposable
 
         arguments.AddRange(ArgumentSplitter.Split(settings.ExtraArguments));
         return arguments;
+    }
+
+    private static int ResolveObservedExposureMicroseconds(CameraCaptureSettings settings, CaptureSettingsPlan captureSettings, RpiCaptureMetadata metadata)
+    {
+        if (metadata.ExposureTimeMicroseconds is int exposureFromMetadata && exposureFromMetadata > 0)
+        {
+            return exposureFromMetadata;
+        }
+
+        if (captureSettings.ExposureMicroseconds is int exposureFromPlan && exposureFromPlan > 0)
+        {
+            return exposureFromPlan;
+        }
+
+        return Math.Max(1, settings.ShutterMicroseconds);
+    }
+
+    private static double ResolveObservedAnalogGain(CameraCaptureSettings settings, CaptureSettingsPlan captureSettings, RpiCaptureMetadata metadata)
+    {
+        if (metadata.AnalogueGain is double gainFromMetadata && gainFromMetadata > 0)
+        {
+            return gainFromMetadata;
+        }
+
+        if (captureSettings.AnalogGain is double gainFromPlan && gainFromPlan > 0)
+        {
+            return gainFromPlan;
+        }
+
+        return Math.Max(1.0, settings.AnalogGain);
     }
 
     private void RecoverInterruptedSessions()
@@ -1029,6 +1131,15 @@ public sealed class PinsAllSkyHost : IDisposable
         updatedConfig.Camera.Height = Math.Clamp(updatedConfig.Camera.Height, 480, 3040);
         updatedConfig.Camera.Quality = Math.Clamp(updatedConfig.Camera.Quality, 1, 100);
         updatedConfig.Camera.WarmupMilliseconds = Math.Clamp(updatedConfig.Camera.WarmupMilliseconds, 1, 10000);
+        updatedConfig.Camera.ShutterMicroseconds = Math.Clamp(updatedConfig.Camera.ShutterMicroseconds, 1, 600_000_000);
+        updatedConfig.Camera.AnalogGain = Math.Clamp(updatedConfig.Camera.AnalogGain, 1.0, 64.0);
+        updatedConfig.Camera.AutoMaxExposureMicroseconds = Math.Clamp(updatedConfig.Camera.AutoMaxExposureMicroseconds, 1, 600_000_000);
+        updatedConfig.Camera.AutoMaxGain = Math.Clamp(updatedConfig.Camera.AutoMaxGain, 1.0, 64.0);
+        updatedConfig.Camera.AutoMeanTarget = Math.Clamp(updatedConfig.Camera.AutoMeanTarget, 0.0, 1.0);
+        updatedConfig.Camera.AutoMeanThreshold = Math.Clamp(updatedConfig.Camera.AutoMeanThreshold, 0.0, 1.0);
+        updatedConfig.Camera.AutoMeanP0 = Math.Clamp(updatedConfig.Camera.AutoMeanP0, 0.0, 1000.0);
+        updatedConfig.Camera.AutoMeanP1 = Math.Clamp(updatedConfig.Camera.AutoMeanP1, 0.0, 1000.0);
+        updatedConfig.Camera.AutoMeanP2 = Math.Clamp(updatedConfig.Camera.AutoMeanP2, 0.0, 1000.0);
         updatedConfig.Products.TimelapseFps = Math.Clamp(updatedConfig.Products.TimelapseFps, 1, 60);
         updatedConfig.Products.TimelapseBitrateKbps = Math.Clamp(updatedConfig.Products.TimelapseBitrateKbps, 1000, 50000);
         updatedConfig.Products.TimelapseWidth = Math.Clamp(updatedConfig.Products.TimelapseWidth, 320, 4056);
@@ -1685,6 +1796,13 @@ public sealed class PinsAllSkyHost : IDisposable
         {
         }
     }
+
+    private readonly record struct CaptureSettingsPlan(
+        bool UseManualExposure,
+        int? ExposureMicroseconds,
+        bool UseManualGain,
+        double? AnalogGain,
+        bool WriteMetadata);
 
     private sealed record SequenceProbeResult(bool Reachable, bool SequenceRunning);
 }

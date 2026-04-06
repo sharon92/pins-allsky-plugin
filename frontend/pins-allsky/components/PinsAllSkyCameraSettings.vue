@@ -265,6 +265,118 @@
     </div>
 
     <div class="flex flex-wrap gap-4">
+      <div class="w-full rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-4">
+        <div class="text-sm font-semibold text-cyan-100">
+          {{ t('plugins.pinsAllSky.modals.camera.allSkyAutoExposure') }}
+        </div>
+        <p class="mt-2 text-sm text-cyan-50/90">
+          {{ t('plugins.pinsAllSky.modals.camera.allSkyAutoExposureHelp') }}
+        </p>
+
+        <div class="mt-4 flex flex-wrap gap-4">
+          <label :class="settingsFieldClass" class="block">
+            <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+              {{ t('plugins.pinsAllSky.modals.camera.autoMeanTarget') }}
+            </span>
+            <input
+              v-model.number="config.camera.autoMeanTarget"
+              type="number"
+              min="0"
+              max="1"
+              step="0.01"
+              inputmode="decimal"
+              :title="t('plugins.pinsAllSky.modals.camera.autoMeanTargetTooltip')"
+              class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+            />
+          </label>
+          <label :class="settingsFieldClass" class="block">
+            <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+              {{ t('plugins.pinsAllSky.modals.camera.autoMeanThreshold') }}
+            </span>
+            <input
+              v-model.number="config.camera.autoMeanThreshold"
+              type="number"
+              min="0"
+              max="1"
+              step="0.01"
+              inputmode="decimal"
+              :title="t('plugins.pinsAllSky.modals.camera.autoMeanThresholdTooltip')"
+              class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+            />
+          </label>
+          <label :class="settingsFieldClass" class="block">
+            <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+              {{ t('plugins.pinsAllSky.modals.camera.autoMaxExposureMicroseconds') }}
+            </span>
+            <input
+              v-model.number="config.camera.autoMaxExposureMicroseconds"
+              type="number"
+              min="1"
+              inputmode="numeric"
+              :title="t('plugins.pinsAllSky.modals.camera.autoMaxExposureTooltip')"
+              class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+            />
+          </label>
+          <label :class="settingsFieldClass" class="block">
+            <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+              {{ t('plugins.pinsAllSky.modals.camera.autoMaxGain') }}
+            </span>
+            <input
+              v-model.number="config.camera.autoMaxGain"
+              type="number"
+              min="1"
+              max="64"
+              step="0.1"
+              inputmode="decimal"
+              :title="t('plugins.pinsAllSky.modals.camera.autoMaxGainTooltip')"
+              class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+            />
+          </label>
+          <label :class="settingsFieldClass" class="block">
+            <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+              {{ t('plugins.pinsAllSky.modals.camera.autoMeanP0') }}
+            </span>
+            <input
+              v-model.number="config.camera.autoMeanP0"
+              type="number"
+              min="0"
+              step="0.1"
+              inputmode="decimal"
+              :title="t('plugins.pinsAllSky.modals.camera.autoMeanP0Tooltip')"
+              class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+            />
+          </label>
+          <label :class="settingsFieldClass" class="block">
+            <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+              {{ t('plugins.pinsAllSky.modals.camera.autoMeanP1') }}
+            </span>
+            <input
+              v-model.number="config.camera.autoMeanP1"
+              type="number"
+              min="0"
+              step="0.1"
+              inputmode="decimal"
+              :title="t('plugins.pinsAllSky.modals.camera.autoMeanP1Tooltip')"
+              class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+            />
+          </label>
+          <label :class="settingsFieldClass" class="block">
+            <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+              {{ t('plugins.pinsAllSky.modals.camera.autoMeanP2') }}
+            </span>
+            <input
+              v-model.number="config.camera.autoMeanP2"
+              type="number"
+              min="0"
+              step="0.1"
+              inputmode="decimal"
+              :title="t('plugins.pinsAllSky.modals.camera.autoMeanP2Tooltip')"
+              class="w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
+            />
+          </label>
+        </div>
+      </div>
+
       <div
         :class="settingsFullWidthClass"
         class="rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-100"

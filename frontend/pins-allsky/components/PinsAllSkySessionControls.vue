@@ -150,11 +150,19 @@
               </div>
               <div>
                 <span class="text-gray-300">{{ t('plugins.pinsAllSky.preview.exposure') }}</span>
-                {{ formatExposure(config?.camera) }}
+                {{ formatExposure(config?.camera, currentSession) }}
               </div>
               <div>
                 <span class="text-gray-300">{{ t('plugins.pinsAllSky.preview.gain') }}</span>
-                {{ formatGain(config?.camera) }}
+                {{ formatGain(config?.camera, currentSession) }}
+              </div>
+              <div>
+                <span class="text-gray-300">{{ t('plugins.pinsAllSky.preview.mean') }}</span>
+                {{
+                  Number.isFinite(Number(currentSession?.lastMeanBrightness))
+                    ? Number(currentSession?.lastMeanBrightness).toFixed(3)
+                    : t('plugins.pinsAllSky.common.notAvailable')
+                }}
               </div>
             </div>
           </div>

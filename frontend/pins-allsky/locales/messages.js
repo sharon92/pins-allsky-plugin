@@ -74,6 +74,7 @@ export default {
     captureInterval: "Capture Interval:",
     exposure: "Exposure:",
     gain: "Gain:",
+    mean: "Mean:",
   },
   statusRows: {
     backend: "Backend",
@@ -178,11 +179,21 @@ export default {
       manualExposure: "Manual exposure",
       shutterMicroseconds: "Shutter (µs)",
       manualExposureHelp:
-        "When disabled, rpicam-still controls exposure automatically.",
+        "When disabled, PINS AllSky uses the AllSky mean-based controller. If Target Mean is 0, rpicam-still exposure stays automatic instead.",
       manualGain: "Manual gain",
       analogGain: "Analog Gain",
       manualGainHelp:
-        "When disabled, rpicam-still controls gain automatically.",
+        "When disabled, PINS AllSky uses the AllSky mean-based controller. If Target Mean is 0, rpicam-still gain stays automatic instead.",
+      allSkyAutoExposure: "AllSky auto exposure / gain",
+      allSkyAutoExposureHelp:
+        "Adapted from AllSky's mean-based controller. When manual exposure and/or manual gain are disabled, PINS AllSky measures the previous frame and calculates the next shutter and gain instead of relying on rpicam-still auto exposure alone.",
+      autoMeanTarget: "Target Mean",
+      autoMeanThreshold: "Mean Threshold",
+      autoMaxExposureMicroseconds: "Auto Max Shutter (µs)",
+      autoMaxGain: "Auto Max Gain",
+      autoMeanP0: "Aggression P0",
+      autoMeanP1: "Aggression P1",
+      autoMeanP2: "Aggression P2",
       horizontalFlip: "Horizontal flip",
       mirrorOnXAxis: "Mirror on X axis",
       verticalFlip: "Vertical flip",
@@ -214,6 +225,20 @@ export default {
         "Manual shutter time in microseconds. Only applied when Manual exposure is enabled.",
       analogGainTooltip:
         "Manual analog gain applied to the Pi camera. Only used when Manual gain is enabled.",
+      autoMeanTargetTooltip:
+        "Target normalized image mean used by the AllSky auto-exposure controller. Set to 0 to fall back to rpicam-still auto exposure.",
+      autoMeanThresholdTooltip:
+        "Allowed normalized distance from the target mean before the next frame's exposure level is changed.",
+      autoMaxExposureTooltip:
+        "Maximum shutter time the AllSky auto-exposure controller may use when manual exposure is disabled.",
+      autoMaxGainTooltip:
+        "Maximum analog gain the AllSky auto-exposure controller may use when manual gain is disabled.",
+      autoMeanP0Tooltip:
+        "AllSky controller tuning constant p0. Higher values react more aggressively to brightness changes.",
+      autoMeanP1Tooltip:
+        "AllSky controller tuning constant p1 used for linear response to mean error.",
+      autoMeanP2Tooltip:
+        "AllSky controller tuning constant p2 used for stronger quadratic response to large brightness errors.",
       extraArgumentsTooltip:
         "Additional raw rpicam-still arguments appended after the managed camera settings.",
       options: {

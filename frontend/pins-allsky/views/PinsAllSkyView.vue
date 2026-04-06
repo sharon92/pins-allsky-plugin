@@ -875,16 +875,7 @@ const formatInterval = (seconds) => {
   return `${seconds}s`;
 };
 
-const formatExposure = (camera) => {
-  if (!camera) {
-    return t('plugins.pinsAllSky.common.notAvailable');
-  }
-
-  if (!camera.useManualExposure) {
-    return t('plugins.pinsAllSky.common.auto');
-  }
-
-  const shutterMicroseconds = Number(camera.shutterMicroseconds || 0);
+const formatExposureValue = (shutterMicroseconds) => {
   if (!Number.isFinite(shutterMicroseconds) || shutterMicroseconds <= 0) {
     return t('plugins.pinsAllSky.common.notAvailable');
   }
@@ -897,21 +888,46 @@ const formatExposure = (camera) => {
   return `${exposureSeconds.toFixed(exposureSeconds >= 0.1 ? 2 : 3)}s`;
 };
 
-const formatGain = (camera) => {
+const formatExposure = (camera, session = null) => {
   if (!camera) {
     return t('plugins.pinsAllSky.common.notAvailable');
+  }
+
+  const actualExposure = Number(session?.lastExposureMicroseconds || 0);
+  if (actualExposure > 0) {
+    return formatExposureValue(actualExposure);
+  }
+
+  if (!camera.useManualExposure) {
+    return t('plugins.pinsAllSky.common.auto');
+  }
+
+  return formatExposureValue(Number(camera.shutterMicroseconds || 0));
+};
+
+const formatGainValue = (gain) => {
+  if (!Number.isFinite(gain) || gain <= 0) {
+    return t('plugins.pinsAllSky.common.notAvailable');
+  }
+
+  return gain >= 10 ? gain.toFixed(0) : gain.toFixed(1).replace(/\.0$/, '');
+};
+
+const formatGain = (camera, session = null) => {
+  if (!camera) {
+    return t('plugins.pinsAllSky.common.notAvailable');
+  }
+
+  const actualGain = Number(session?.lastAnalogGain || 0);
+  if (actualGain > 0) {
+    return formatGainValue(actualGain);
   }
 
   if (!camera.useManualGain) {
     return t('plugins.pinsAllSky.common.auto');
   }
 
-  const gain = Number(camera.analogGain || 0);
-  if (!Number.isFinite(gain) || gain <= 0) {
-    return t('plugins.pinsAllSky.common.notAvailable');
-  }
-
-  return gain >= 10 ? gain.toFixed(0) : gain.toFixed(1).replace(/\.0$/, '');
+  return formatGainValue(Number(camera.analogGain || 0));
 };
 
 const formatCount = (value) => {

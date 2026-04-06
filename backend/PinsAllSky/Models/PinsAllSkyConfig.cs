@@ -22,6 +22,13 @@ public sealed class CameraCaptureSettings
     public int ShutterMicroseconds { get; set; } = 10000;
     public bool UseManualGain { get; set; }
     public double AnalogGain { get; set; } = 1.0;
+    public int AutoMaxExposureMicroseconds { get; set; } = 60_000_000;
+    public double AutoMaxGain { get; set; } = 16.0;
+    public double AutoMeanTarget { get; set; } = 0.2;
+    public double AutoMeanThreshold { get; set; } = 0.1;
+    public double AutoMeanP0 { get; set; } = 5.0;
+    public double AutoMeanP1 { get; set; } = 20.0;
+    public double AutoMeanP2 { get; set; } = 45.0;
     public string MeteringMode { get; set; } = "centre";
     public string AwbMode { get; set; } = "auto";
     public string DenoiseMode { get; set; } = "auto";

@@ -14,6 +14,9 @@ public sealed class SessionInfo
     public int StoredFrameCount { get; set; }
     public DateTimeOffset? LastCaptureAtUtc { get; set; }
     public string? LastFrameRelativePath { get; set; }
+    public int? LastExposureMicroseconds { get; set; }
+    public double? LastAnalogGain { get; set; }
+    public double? LastMeanBrightness { get; set; }
     public string? LastError { get; set; }
     public long TotalSizeBytes { get; set; }
     public GeneratedProducts Products { get; set; } = new();
