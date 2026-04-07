@@ -48,6 +48,8 @@ public sealed class ProductGenerationSettings
     public bool KeepFrames { get; set; } = true;
 
     public bool TimelapseEnabled { get; set; } = true;
+    public bool TimelapseOverlayTimestamp { get; set; }
+    public bool TimelapseOverlayExposureGain { get; set; }
     public int TimelapseFps { get; set; } = 20;
     public int TimelapseBitrateKbps { get; set; } = 4000;
     public int TimelapseWidth { get; set; } = 1920;

@@ -270,6 +270,10 @@ export default {
       codec: "Codec",
       pixelFormat: "Pixel Format",
       ffmpegLogLevel: "FFmpeg Log Level",
+      overlayTimestamp: "Overlay Timestamp",
+      stampTimestamp: "Stamp capture timestamp",
+      overlayExposureGain: "Overlay Exposure + Gain",
+      stampExposureGain: "Stamp exposure and gain",
       extraFfmpegArguments: "Extra ffmpeg Arguments",
       keogram: "Keogram",
       expandToFrameWidth: "Expand to frame width",
@@ -299,6 +303,10 @@ export default {
       pixelFormatTooltip: "ffmpeg pixel format used for the timelapse output.",
       ffmpegLogLevelTooltip:
         "ffmpeg log verbosity used while rendering the timelapse.",
+      overlayTimestampTooltip:
+        "Render the captured timestamp into each timelapse frame.",
+      overlayExposureGainTooltip:
+        "Render the actual exposure and gain used for each captured frame into the timelapse.",
       extraFfmpegArgumentsTooltip:
         "Extra ffmpeg arguments appended to the timelapse render command.",
       rotateTooltip: "Rotation applied to the finished keogram image.",

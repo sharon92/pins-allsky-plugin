@@ -119,7 +119,11 @@
               {{ t('plugins.pinsAllSky.preview.session') }}
             </div>
             <div class="mt-1 text-sm font-medium text-white">
-              {{ currentSession?.id || t('plugins.pinsAllSky.preview.noActiveSession') }}
+              {{
+                currentSession?.label ||
+                currentSession?.id ||
+                t('plugins.pinsAllSky.preview.noActiveSession')
+              }}
             </div>
           </div>
 

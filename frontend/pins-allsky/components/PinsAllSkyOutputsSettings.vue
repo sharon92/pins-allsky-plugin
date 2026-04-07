@@ -105,6 +105,42 @@
             class="w-full rounded-xl border border-gray-600 bg-gray-900/60 px-3 py-2 text-white outline-none transition focus:border-cyan-400"
           />
         </label>
+        <label
+          :class="settingsFieldClass"
+          class="rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2"
+          :title="t('plugins.pinsAllSky.modals.outputs.overlayTimestampTooltip')"
+        >
+          <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+            {{ t('plugins.pinsAllSky.modals.outputs.overlayTimestamp') }}
+          </span>
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-sm text-gray-300">
+              {{ t('plugins.pinsAllSky.modals.outputs.stampTimestamp') }}
+            </span>
+            <toggleButton
+              :status-value="Boolean(config.products.timelapseOverlayTimestamp)"
+              @update:statusValue="setProductSetting('timelapseOverlayTimestamp', $event)"
+            />
+          </div>
+        </label>
+        <label
+          :class="settingsFieldClass"
+          class="rounded-xl border border-gray-700 bg-gray-900/60 px-3 py-2"
+          :title="t('plugins.pinsAllSky.modals.outputs.overlayExposureGainTooltip')"
+        >
+          <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+            {{ t('plugins.pinsAllSky.modals.outputs.overlayExposureGain') }}
+          </span>
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-sm text-gray-300">
+              {{ t('plugins.pinsAllSky.modals.outputs.stampExposureGain') }}
+            </span>
+            <toggleButton
+              :status-value="Boolean(config.products.timelapseOverlayExposureGain)"
+              @update:statusValue="setProductSetting('timelapseOverlayExposureGain', $event)"
+            />
+          </div>
+        </label>
         <label :class="settingsFullWidthClass" class="block">
           <span class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400">
             {{ t('plugins.pinsAllSky.modals.outputs.extraFfmpegArguments') }}

@@ -40,20 +40,7 @@ if [[ -d "$BACKEND_PACKAGE_DIR" ]]; then
   mv "$BACKEND_PACKAGE_DIR" "${BACKEND_PACKAGE_DIR}.bak-$TIMESTAMP"
 fi
 mkdir -p "$BACKEND_PACKAGE_DIR/tools" "$BACKEND_PACKAGE_DIR/licenses" "$BACKEND_PACKAGE_DIR/scripts"
-
-for file in \
-  NINA.PINS.AllSky.dll \
-  NINA.PINS.AllSky.deps.json \
-  NINA.PINS.AllSky.runtimeconfig.json \
-  NINA.PINS.AllSky.pdb \
-  EmbedIO.dll \
-  Swan.Lite.dll
-do
-  cp "$BACKEND_OUTPUT/$file" "$BACKEND_PACKAGE_DIR/"
-done
-
-cp "$BACKEND_OUTPUT/tools/keogram" "$BACKEND_PACKAGE_DIR/tools/"
-cp "$BACKEND_OUTPUT/tools/startrails" "$BACKEND_PACKAGE_DIR/tools/"
+cp -a "$BACKEND_OUTPUT/." "$BACKEND_PACKAGE_DIR/"
 cp "$ROOT_DIR/THIRD_PARTY_NOTICES.md" "$BACKEND_PACKAGE_DIR/"
 cp "$ROOT_DIR/licenses/AllSky-LICENSE.txt" "$BACKEND_PACKAGE_DIR/licenses/"
 cp "$ROOT_DIR/scripts/update-backend-plugin.sh" "$BACKEND_PACKAGE_DIR/scripts/"

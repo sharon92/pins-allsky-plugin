@@ -895,7 +895,9 @@ const formatExposure = (camera, session = null) => {
 
   const actualExposure = Number(session?.lastExposureMicroseconds || 0);
   if (actualExposure > 0) {
-    return formatExposureValue(actualExposure);
+    return camera.useManualExposure
+      ? formatExposureValue(actualExposure)
+      : `${formatExposureValue(actualExposure)} (${t('plugins.pinsAllSky.common.auto')})`;
   }
 
   if (!camera.useManualExposure) {
@@ -920,7 +922,9 @@ const formatGain = (camera, session = null) => {
 
   const actualGain = Number(session?.lastAnalogGain || 0);
   if (actualGain > 0) {
-    return formatGainValue(actualGain);
+    return camera.useManualGain
+      ? formatGainValue(actualGain)
+      : `${formatGainValue(actualGain)} (${t('plugins.pinsAllSky.common.auto')})`;
   }
 
   if (!camera.useManualGain) {

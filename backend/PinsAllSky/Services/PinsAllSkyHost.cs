@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text;
 using System.Globalization;
 using System.Diagnostics;
 using NINA.Core.Utility;
@@ -638,6 +639,17 @@ public sealed class PinsAllSkyHost : IDisposable
         var observedMean = ImageMeanAnalyzer.CalculateNormalizedMean(finalFramePath);
         TryDeleteFile(tempMetadataPath);
 
+        await SaveFrameMetadataAsync(
+            finalFramePath,
+            new FrameCaptureMetadata
+            {
+                CapturedAtUtc = timestamp,
+                ExposureMicroseconds = observedExposureMicroseconds,
+                AnalogGain = observedAnalogGain,
+                MeanBrightness = observedMean
+            },
+            cancellationToken).ConfigureAwait(false);
+
         if (AllSkyAutoExposureController.IsEnabled(settings.Camera))
         {
             autoExposureController.Observe(settings.Camera, observedExposureMicroseconds, observedAnalogGain, observedMean);
@@ -665,51 +677,59 @@ public sealed class PinsAllSkyHost : IDisposable
         var outputPath = Path.Combine(paths.GetProductsRoot(sessionId), "timelapse.mp4");
         var framesPattern = Path.Combine(paths.GetFramesRoot(sessionId), "*.jpg");
         var products = settings.Products;
+        var overlayScriptPath = await CreateTimelapseOverlayScriptAsync(sessionId, settings, cancellationToken).ConfigureAwait(false);
 
-        var arguments = new List<string>
+        try
         {
-            "-y",
-            "-loglevel",
-            products.TimelapseLogLevel,
-            "-framerate",
-            products.TimelapseFps.ToString(),
-            "-pattern_type",
-            "glob",
-            "-i",
-            framesPattern
-        };
+            var arguments = new List<string>
+            {
+                "-y",
+                "-loglevel",
+                products.TimelapseLogLevel,
+                "-framerate",
+                products.TimelapseFps.ToString(),
+                "-pattern_type",
+                "glob",
+                "-i",
+                framesPattern
+            };
 
-        if (products.TimelapseWidth > 0 && products.TimelapseHeight > 0)
-        {
+            var filter = BuildTimelapseVideoFilter(settings, overlayScriptPath);
+            if (!string.IsNullOrWhiteSpace(filter))
+            {
+                arguments.AddRange(["-vf", filter]);
+            }
+
             arguments.AddRange(
             [
-                "-vf",
-                $"scale={products.TimelapseWidth}:{products.TimelapseHeight}:force_original_aspect_ratio=decrease,pad={products.TimelapseWidth}:{products.TimelapseHeight}:(ow-iw)/2:(oh-ih)/2:black"
+                "-c:v",
+                products.TimelapseCodec,
+                "-b:v",
+                $"{Math.Max(1000, products.TimelapseBitrateKbps)}k",
+                "-pix_fmt",
+                products.TimelapsePixelFormat
             ]);
+
+            arguments.AddRange(ArgumentSplitter.Split(products.TimelapseExtraParameters));
+            arguments.Add(outputPath);
+
+            var result = await processRunner.RunAsync("/usr/bin/ffmpeg", arguments, paths.GetFramesRoot(sessionId), TimeSpan.FromMinutes(10), cancellationToken).ConfigureAwait(false);
+            if (!result.Succeeded || !File.Exists(outputPath))
+            {
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(result.StdErr)
+                    ? "ffmpeg did not produce a timelapse video."
+                    : result.StdErr);
+            }
+
+            return CreateArtifact("Timelapse", outputPath);
         }
-
-        arguments.AddRange(
-        [
-            "-c:v",
-            products.TimelapseCodec,
-            "-b:v",
-            $"{Math.Max(1000, products.TimelapseBitrateKbps)}k",
-            "-pix_fmt",
-            products.TimelapsePixelFormat
-        ]);
-
-        arguments.AddRange(ArgumentSplitter.Split(products.TimelapseExtraParameters));
-        arguments.Add(outputPath);
-
-        var result = await processRunner.RunAsync("/usr/bin/ffmpeg", arguments, paths.GetFramesRoot(sessionId), TimeSpan.FromMinutes(10), cancellationToken).ConfigureAwait(false);
-        if (!result.Succeeded || !File.Exists(outputPath))
+        finally
         {
-            throw new InvalidOperationException(string.IsNullOrWhiteSpace(result.StdErr)
-                ? "ffmpeg did not produce a timelapse video."
-                : result.StdErr);
+            if (!string.IsNullOrWhiteSpace(overlayScriptPath))
+            {
+                TryDeleteFile(overlayScriptPath);
+            }
         }
-
-        return CreateArtifact("Timelapse", outputPath);
     }
 
     private async Task<ArtifactInfo> GenerateKeogramAsync(string sessionId, PinsAllSkyConfig settings, CancellationToken cancellationToken)
@@ -908,7 +928,7 @@ public sealed class PinsAllSkyHost : IDisposable
                 ExposureMicroseconds: settings.UseManualExposure ? Math.Max(1, settings.ShutterMicroseconds) : null,
                 UseManualGain: settings.UseManualGain,
                 AnalogGain: settings.UseManualGain ? Math.Max(1.0, settings.AnalogGain) : null,
-                WriteMetadata: false);
+                WriteMetadata: true);
         }
 
         if (!autoExposureController.IsInitialized)
@@ -935,6 +955,208 @@ public sealed class PinsAllSkyHost : IDisposable
             UseManualGain: mode != AllSkyAutoMode.Off,
             AnalogGain: analogGain,
             WriteMetadata: true);
+    }
+
+    private string? BuildTimelapseVideoFilter(PinsAllSkyConfig settings, string? overlayScriptPath)
+    {
+        var products = settings.Products;
+        var filters = new List<string>();
+
+        if (products.TimelapseWidth > 0 && products.TimelapseHeight > 0)
+        {
+            filters.Add(
+                $"scale={products.TimelapseWidth}:{products.TimelapseHeight}:force_original_aspect_ratio=decrease");
+            filters.Add(
+                $"pad={products.TimelapseWidth}:{products.TimelapseHeight}:(ow-iw)/2:(oh-ih)/2:black");
+        }
+
+        if (!string.IsNullOrWhiteSpace(overlayScriptPath))
+        {
+            filters.Add(
+                $"subtitles={EscapeFfmpegSubtitlePath(overlayScriptPath)}:force_style='Fontname=DejaVu Sans,FontSize=18,PrimaryColour=&H00FFFFFF,OutlineColour=&H80000000,BorderStyle=1,Outline=2,Shadow=0,Alignment=2,MarginL=24,MarginR=24,MarginV=24'");
+        }
+
+        return filters.Count == 0 ? null : string.Join(",", filters);
+    }
+
+    private async Task<string?> CreateTimelapseOverlayScriptAsync(string sessionId, PinsAllSkyConfig settings, CancellationToken cancellationToken)
+    {
+        var products = settings.Products;
+        if (!products.TimelapseOverlayTimestamp && !products.TimelapseOverlayExposureGain)
+        {
+            return null;
+        }
+
+        var frames = GetFrameEntries(sessionId)
+            .OrderBy(frame => frame.CapturedAtUtc ?? DateTimeOffset.MinValue)
+            .ThenBy(frame => frame.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (frames.Count == 0)
+        {
+            return null;
+        }
+
+        var frameDurationSeconds = 1d / Math.Max(1, products.TimelapseFps);
+        var renderWidth = products.TimelapseWidth > 0 ? products.TimelapseWidth : Math.Max(640, settings.Camera.Width);
+        var renderHeight = products.TimelapseHeight > 0 ? products.TimelapseHeight : Math.Max(480, settings.Camera.Height);
+        var lines = new List<string>
+        {
+            "[Script Info]",
+            "ScriptType: v4.00+",
+            $"PlayResX: {renderWidth}",
+            $"PlayResY: {renderHeight}",
+            string.Empty,
+            "[V4+ Styles]",
+            "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding",
+            "Style: Default,DejaVu Sans,20,&H00FFFFFF,&H00FFFFFF,&H80000000,&H40000000,-1,0,0,0,100,100,0,0,1,2,0,2,24,24,24,1",
+            string.Empty,
+            "[Events]",
+            "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"
+        };
+
+        for (var index = 0; index < frames.Count; index += 1)
+        {
+            var overlayText = BuildTimelapseOverlayText(frames[index], products);
+            if (string.IsNullOrWhiteSpace(overlayText))
+            {
+                continue;
+            }
+
+            var start = FormatAssTimestamp(TimeSpan.FromSeconds(index * frameDurationSeconds));
+            var end = FormatAssTimestamp(TimeSpan.FromSeconds((index + 1) * frameDurationSeconds));
+            lines.Add($"Dialogue: 0,{start},{end},Default,,0,0,0,,{EscapeAssText(overlayText)}");
+        }
+
+        if (lines.Count == 11)
+        {
+            return null;
+        }
+
+        var overlayScriptPath = Path.Combine(paths.GetFramesRoot(sessionId), "timelapse-overlay.ass");
+        await File.WriteAllLinesAsync(overlayScriptPath, lines, Encoding.UTF8, cancellationToken).ConfigureAwait(false);
+        return overlayScriptPath;
+    }
+
+    private static string BuildTimelapseOverlayText(FrameInfo frame, ProductGenerationSettings products)
+    {
+        var lines = new List<string>();
+
+        if (products.TimelapseOverlayTimestamp && frame.CapturedAtUtc is DateTimeOffset capturedAtUtc)
+        {
+            lines.Add(capturedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture));
+        }
+
+        if (products.TimelapseOverlayExposureGain)
+        {
+            var exposureLabel = frame.ExposureMicroseconds is int exposureMicroseconds && exposureMicroseconds > 0
+                ? $"Exp {FormatExposureValue(exposureMicroseconds)}"
+                : null;
+            var gainLabel = frame.AnalogGain is double analogGain && analogGain > 0
+                ? $"Gain {FormatGainValue(analogGain)}"
+                : null;
+
+            var parts = new List<string>();
+            if (!string.IsNullOrWhiteSpace(exposureLabel))
+            {
+                parts.Add(exposureLabel);
+            }
+
+            if (!string.IsNullOrWhiteSpace(gainLabel))
+            {
+                parts.Add(gainLabel);
+            }
+
+            if (parts.Count > 0)
+            {
+                lines.Add(string.Join("  ", parts));
+            }
+        }
+
+        return string.Join("\\N", lines);
+    }
+
+    private static string FormatExposureValue(int shutterMicroseconds)
+    {
+        if (shutterMicroseconds <= 0)
+        {
+            return "n/a";
+        }
+
+        var exposureSeconds = shutterMicroseconds / 1_000_000d;
+        if (exposureSeconds >= 1)
+        {
+            return exposureSeconds.ToString(exposureSeconds >= 10 ? "0" : "0.0", CultureInfo.InvariantCulture) + "s";
+        }
+
+        return exposureSeconds.ToString(exposureSeconds >= 0.1 ? "0.00" : "0.000", CultureInfo.InvariantCulture) + "s";
+    }
+
+    private static string FormatGainValue(double gain)
+    {
+        if (gain <= 0)
+        {
+            return "n/a";
+        }
+
+        return gain >= 10
+            ? gain.ToString("0", CultureInfo.InvariantCulture)
+            : gain.ToString("0.0", CultureInfo.InvariantCulture).TrimEnd('0').TrimEnd('.');
+    }
+
+    private static string FormatAssTimestamp(TimeSpan value)
+    {
+        if (value < TimeSpan.Zero)
+        {
+            value = TimeSpan.Zero;
+        }
+
+        var totalHours = (int)value.TotalHours;
+        return $"{totalHours}:{value.Minutes:00}:{value.Seconds:00}.{value.Milliseconds / 10:00}";
+    }
+
+    private static string EscapeAssText(string value)
+    {
+        return value
+            .Replace("\\", "\\\\", StringComparison.Ordinal)
+            .Replace("{", "\\{", StringComparison.Ordinal)
+            .Replace("}", "\\}", StringComparison.Ordinal);
+    }
+
+    private static string EscapeFfmpegSubtitlePath(string path)
+    {
+        return path
+            .Replace("\\", "\\\\", StringComparison.Ordinal)
+            .Replace(":", "\\:", StringComparison.Ordinal)
+            .Replace("'", "\\'", StringComparison.Ordinal);
+    }
+
+    private static string GetFrameMetadataPath(string framePath)
+    {
+        return Path.ChangeExtension(framePath, ".json");
+    }
+
+    private async Task SaveFrameMetadataAsync(string framePath, FrameCaptureMetadata metadata, CancellationToken cancellationToken)
+    {
+        await JsonStorage.SaveAsync(GetFrameMetadataPath(framePath), metadata, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static FrameCaptureMetadata? LoadFrameMetadata(string framePath)
+    {
+        var metadataPath = GetFrameMetadataPath(framePath);
+        if (!File.Exists(metadataPath))
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonStorage.LoadOrDefault<FrameCaptureMetadata?>(metadataPath, static () => null);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private IEnumerable<string> BuildCaptureArguments(CameraCaptureSettings settings, CaptureSettingsPlan captureSettings, string outputPath, string metadataPath)
@@ -1214,6 +1436,7 @@ public sealed class PinsAllSkyHost : IDisposable
             try
             {
                 File.Delete(framePath);
+                TryDeleteFile(GetFrameMetadataPath(framePath));
             }
             catch (Exception ex)
             {
@@ -1250,6 +1473,16 @@ public sealed class PinsAllSkyHost : IDisposable
         var before = GetStorageStatus(forceRefresh: true);
         var freedBytes = new FileInfo(resolvedPath).Length;
         File.Delete(resolvedPath);
+
+        if (!isArtifact)
+        {
+            var metadataPath = GetFrameMetadataPath(resolvedPath);
+            if (File.Exists(metadataPath))
+            {
+                freedBytes += new FileInfo(metadataPath).Length;
+                File.Delete(metadataPath);
+            }
+        }
 
         var session = LoadSession(sessionId);
         if (session is not null)
@@ -1651,11 +1884,17 @@ public sealed class PinsAllSkyHost : IDisposable
             .Select(framePath =>
             {
                 var info = new FileInfo(framePath);
+                var metadata = LoadFrameMetadata(info.FullName);
                 return new FrameInfo
                 {
                     Name = info.Name,
                     RelativePath = paths.GetRelativePath(info.FullName),
-                    CapturedAtUtc = ParseFrameTimestamp(info.Name) ?? new DateTimeOffset(info.LastWriteTimeUtc, TimeSpan.Zero),
+                    CapturedAtUtc = metadata?.CapturedAtUtc
+                        ?? ParseFrameTimestamp(info.Name)
+                        ?? new DateTimeOffset(info.LastWriteTimeUtc, TimeSpan.Zero),
+                    ExposureMicroseconds = metadata?.ExposureMicroseconds,
+                    AnalogGain = metadata?.AnalogGain,
+                    MeanBrightness = metadata?.MeanBrightness,
                     SizeBytes = info.Length
                 };
             })
@@ -1715,6 +1954,9 @@ public sealed class PinsAllSkyHost : IDisposable
         var latest = frames.FirstOrDefault();
         session.LastFrameRelativePath = latest?.RelativePath;
         session.LastCaptureAtUtc = latest?.CapturedAtUtc;
+        session.LastExposureMicroseconds = latest?.ExposureMicroseconds;
+        session.LastAnalogGain = latest?.AnalogGain;
+        session.LastMeanBrightness = latest?.MeanBrightness;
     }
 
     private void EnsureSessionFilesCanBeModified(string sessionId)

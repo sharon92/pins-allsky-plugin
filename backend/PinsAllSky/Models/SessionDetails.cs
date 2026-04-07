@@ -12,6 +12,9 @@ public sealed class FrameInfo
     public string Name { get; set; } = string.Empty;
     public string RelativePath { get; set; } = string.Empty;
     public DateTimeOffset? CapturedAtUtc { get; set; }
+    public int? ExposureMicroseconds { get; set; }
+    public double? AnalogGain { get; set; }
+    public double? MeanBrightness { get; set; }
     public long SizeBytes { get; set; }
 }
 
