@@ -615,7 +615,7 @@ public sealed class PinsAllSkyHost : IDisposable
 
         var captureSettings = BuildCaptureSettings(settings.Camera);
         var arguments = BuildCaptureArguments(settings.Camera, captureSettings, tempFramePath, tempMetadataPath);
-        var timeout = TimeSpan.FromSeconds(Math.Max(15, settings.Camera.CaptureTimeoutSeconds));
+        var timeout = ResolveCaptureProcessTimeout(settings.Camera, captureSettings);
         var result = await processRunner.RunAsync("/usr/bin/rpicam-still", arguments, paths.GetFramesRoot(session.Id), timeout, cancellationToken).ConfigureAwait(false);
 
         if (!result.Succeeded)
@@ -667,6 +667,7 @@ public sealed class PinsAllSkyHost : IDisposable
         updated.LastAnalogGain = observedAnalogGain;
         updated.LastMeanBrightness = observedMean;
         updated.LastError = null;
+        SetLastError(null);
 
         Logger.Info($"PINS AllSky captured frame '{frameName}' for session '{session.Id}'");
         return updated;
@@ -955,6 +956,24 @@ public sealed class PinsAllSkyHost : IDisposable
             UseManualGain: mode != AllSkyAutoMode.Off,
             AnalogGain: analogGain,
             WriteMetadata: true);
+    }
+
+    private static TimeSpan ResolveCaptureProcessTimeout(CameraCaptureSettings settings, CaptureSettingsPlan captureSettings)
+    {
+        var configuredSeconds = Math.Max(15, settings.CaptureTimeoutSeconds);
+        var warmupSeconds = Math.Ceiling(Math.Max(1, settings.WarmupMilliseconds) / 1000d);
+        var plannedExposureSeconds = captureSettings.UseManualExposure && captureSettings.ExposureMicroseconds.HasValue
+            ? Math.Ceiling(Math.Max(1, captureSettings.ExposureMicroseconds.Value) / 1_000_000d)
+            : 0d;
+
+        if (plannedExposureSeconds <= 0 && AllSkyAutoExposureController.IsEnabled(settings))
+        {
+            plannedExposureSeconds = Math.Ceiling(Math.Max(1, settings.AutoMaxExposureMicroseconds) / 1_000_000d);
+        }
+
+        // Allow enough headroom for long night exposures, camera startup, and metadata/file I/O.
+        var requiredSeconds = warmupSeconds + plannedExposureSeconds + 15d;
+        return TimeSpan.FromSeconds(Math.Clamp(Math.Max(configuredSeconds, requiredSeconds), 15d, 900d));
     }
 
     private string? BuildTimelapseVideoFilter(PinsAllSkyConfig settings, string? overlayScriptPath)
@@ -1389,7 +1408,7 @@ public sealed class PinsAllSkyHost : IDisposable
         return element.TryGetProperty(pascalCase, out value);
     }
 
-    private void SetLastError(string message)
+    private void SetLastError(string? message)
     {
         lock (sync)
         {
