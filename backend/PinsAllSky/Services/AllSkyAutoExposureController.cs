@@ -67,13 +67,13 @@ internal sealed class AllSkyAutoExposureController
     // Adapted from AllSky's Raspberry Pi capture path:
     // - src/mode_mean.cpp
     // - src/capture_RPi.cpp
-    public void Observe(CameraCaptureSettings settings, int observedExposureMicroseconds, double observedAnalogGain, double observedMean)
+    public AutoExposureObservation Observe(CameraCaptureSettings settings, int observedExposureMicroseconds, double observedAnalogGain, double observedMean)
     {
         var mode = ResolveMode(settings);
         if (mode == AllSkyAutoMode.Off || settings.AutoMeanTarget <= 0)
         {
             Reset();
-            return;
+            return new AutoExposureObservation(true, false);
         }
 
         var context = AutoExposureContext.Create(settings, mode);
@@ -121,11 +121,14 @@ internal sealed class AllSkyAutoExposureController
         var forecastMeanDifference = Math.Abs(weightedMean - context.TargetMean);
         var measuredMeanDifference = Math.Abs(meanHistory[currentIndex] - context.TargetMean);
         var exposureChange = CalculateExposureChange(context, forecastMeanDifference, measuredMeanDifference);
+        var withinThreshold = false;
+        var canImprove = false;
 
         if (meanHistory[currentIndex] < (context.TargetMean - context.TargetThreshold))
         {
             if (CurrentAnalogGain < context.MaxGain || CurrentExposureMicroseconds < context.MaxExposureMicroseconds)
             {
+                canImprove = true;
                 exposureLevel += exposureChange;
             }
         }
@@ -133,8 +136,13 @@ internal sealed class AllSkyAutoExposureController
         {
             if (CurrentAnalogGain > context.MinGain || CurrentExposureMicroseconds > context.MinExposureMicroseconds)
             {
+                canImprove = true;
                 exposureLevel -= exposureChange;
             }
+        }
+        else
+        {
+            withinThreshold = true;
         }
 
         exposureLevel = Math.Clamp(exposureLevel, context.MinExposureLevel, context.MaxExposureLevel);
@@ -185,6 +193,7 @@ internal sealed class AllSkyAutoExposureController
         exposureLevelHistory[meanCount % HistorySize] = exposureLevel;
         CurrentExposureMicroseconds = Math.Clamp(nextExposureMicroseconds, context.MinExposureMicroseconds, context.MaxExposureMicroseconds);
         CurrentAnalogGain = Math.Clamp(nextAnalogGain, context.MinGain, context.MaxGain);
+        return new AutoExposureObservation(withinThreshold, canImprove);
     }
 
     private int CalculateExposureChange(AutoExposureContext context, double forecastMeanDifference, double measuredMeanDifference)
@@ -222,7 +231,10 @@ internal sealed class AllSkyAutoExposureController
 
     private static int CalculateExposureLevel(int exposureMicroseconds, double analogGain)
     {
-        var normalizedExposure = Math.Max(1.0, analogGain * exposureMicroseconds / 1_000_000.0);
+        // AllSky allows negative exposure levels for effective exposures below 1 second.
+        // Clamping to 1.0 breaks day/night convergence because the controller can no longer
+        // step down into short daytime shutters.
+        var normalizedExposure = Math.Max(1e-12, analogGain * exposureMicroseconds / 1_000_000.0);
         return (int)Math.Round(Math.Log(normalizedExposure, 2.0) * ShutterStepSquared);
     }
 
@@ -290,3 +302,5 @@ internal sealed class AllSkyAutoExposureController
         }
     }
 }
+
+internal readonly record struct AutoExposureObservation(bool WithinThreshold, bool CanImprove);

@@ -540,7 +540,6 @@ public sealed class PinsAllSkyHost : IDisposable
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            var startedAt = DateTimeOffset.UtcNow;
             SessionInfo? session;
             PinsAllSkyConfig settings;
 
@@ -565,6 +564,8 @@ public sealed class PinsAllSkyHost : IDisposable
                 }
 
                 await SaveSessionAsync(updatedSession, cancellationToken).ConfigureAwait(false);
+                var interval = TimeSpan.FromSeconds(Math.Max(5, settings.Camera.IntervalSeconds));
+                await Task.Delay(interval, cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -582,95 +583,129 @@ public sealed class PinsAllSkyHost : IDisposable
                         currentSession.LastError = ex.Message;
                     }
                 }
-            }
 
-            var interval = TimeSpan.FromSeconds(Math.Max(5, settings.Camera.IntervalSeconds));
-            var wait = interval - (DateTimeOffset.UtcNow - startedAt);
-            if (wait > TimeSpan.Zero)
-            {
-                await Task.Delay(wait, cancellationToken).ConfigureAwait(false);
+                try
+                {
+                    await Task.Delay(ResolveFailedCaptureDelay(settings.Camera), cancellationToken).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
             }
         }
     }
 
     private async Task<SessionInfo> CaptureFrameAsync(SessionInfo session, PinsAllSkyConfig settings, CancellationToken cancellationToken)
     {
-        var timestamp = DateTimeOffset.UtcNow;
-        var frameName = $"frame-{timestamp:yyyyMMddTHHmmssfff}.jpg";
-        var tempFramePath = Path.Combine(paths.GetFramesRoot(session.Id), $"{frameName}.tmp");
-        var tempMetadataPath = Path.Combine(paths.GetFramesRoot(session.Id), $"{frameName}.metadata.txt");
-        var finalFramePath = Path.Combine(paths.GetFramesRoot(session.Id), frameName);
-
         Directory.CreateDirectory(paths.GetFramesRoot(session.Id));
 
-        if (File.Exists(tempFramePath))
+        while (true)
         {
-            File.Delete(tempFramePath);
-        }
+            cancellationToken.ThrowIfCancellationRequested();
 
-        if (File.Exists(tempMetadataPath))
-        {
-            File.Delete(tempMetadataPath);
-        }
+            var timestamp = DateTimeOffset.UtcNow;
+            var frameName = $"frame-{timestamp:yyyyMMddTHHmmssfff}.jpg";
+            var tempFramePath = Path.Combine(paths.GetFramesRoot(session.Id), $"{frameName}.tmp");
+            var tempMetadataPath = Path.Combine(paths.GetFramesRoot(session.Id), $"{frameName}.metadata.txt");
+            var finalFramePath = Path.Combine(paths.GetFramesRoot(session.Id), frameName);
+            var frameAccepted = false;
 
-        var captureSettings = BuildCaptureSettings(settings.Camera);
-        var arguments = BuildCaptureArguments(settings.Camera, captureSettings, tempFramePath, tempMetadataPath);
-        var timeout = ResolveCaptureProcessTimeout(settings.Camera, captureSettings);
-        var result = await processRunner.RunAsync("/usr/bin/rpicam-still", arguments, paths.GetFramesRoot(session.Id), timeout, cancellationToken).ConfigureAwait(false);
-
-        if (!result.Succeeded)
-        {
-            throw new InvalidOperationException(string.IsNullOrWhiteSpace(result.StdErr)
-                ? "rpicam-still returned a non-zero exit code."
-                : result.StdErr);
-        }
-
-        if (!File.Exists(tempFramePath))
-        {
-            throw new FileNotFoundException("rpicam-still completed without creating an output image.", tempFramePath);
-        }
-
-        File.Move(tempFramePath, finalFramePath, overwrite: true);
-        File.Copy(finalFramePath, paths.GetCurrentImagePath(), overwrite: true);
-
-        var metadata = RpiCaptureMetadata.ParseTxtFile(tempMetadataPath);
-        var observedExposureMicroseconds = ResolveObservedExposureMicroseconds(settings.Camera, captureSettings, metadata);
-        var observedAnalogGain = ResolveObservedAnalogGain(settings.Camera, captureSettings, metadata);
-        var observedMean = ImageMeanAnalyzer.CalculateNormalizedMean(finalFramePath);
-        TryDeleteFile(tempMetadataPath);
-
-        await SaveFrameMetadataAsync(
-            finalFramePath,
-            new FrameCaptureMetadata
+            try
             {
-                CapturedAtUtc = timestamp,
-                ExposureMicroseconds = observedExposureMicroseconds,
-                AnalogGain = observedAnalogGain,
-                MeanBrightness = observedMean
-            },
-            cancellationToken).ConfigureAwait(false);
+                if (File.Exists(tempFramePath))
+                {
+                    File.Delete(tempFramePath);
+                }
 
-        if (AllSkyAutoExposureController.IsEnabled(settings.Camera))
-        {
-            autoExposureController.Observe(settings.Camera, observedExposureMicroseconds, observedAnalogGain, observedMean);
+                if (File.Exists(tempMetadataPath))
+                {
+                    File.Delete(tempMetadataPath);
+                }
+
+                var captureSettings = BuildCaptureSettings(settings.Camera);
+                var arguments = BuildCaptureArguments(settings.Camera, captureSettings, tempFramePath, tempMetadataPath);
+                var timeout = ResolveCaptureProcessTimeout(settings.Camera, captureSettings);
+                var result = await processRunner.RunAsync("/usr/bin/rpicam-still", arguments, paths.GetFramesRoot(session.Id), timeout, cancellationToken).ConfigureAwait(false);
+
+                if (!result.Succeeded)
+                {
+                    throw new InvalidOperationException(string.IsNullOrWhiteSpace(result.StdErr)
+                        ? "rpicam-still returned a non-zero exit code."
+                        : result.StdErr);
+                }
+
+                if (!File.Exists(tempFramePath))
+                {
+                    throw new FileNotFoundException("rpicam-still completed without creating an output image.", tempFramePath);
+                }
+
+                File.Move(tempFramePath, finalFramePath, overwrite: true);
+                File.Copy(finalFramePath, paths.GetCurrentImagePath(), overwrite: true);
+
+                var metadata = RpiCaptureMetadata.ParseTxtFile(tempMetadataPath);
+                var observedExposureMicroseconds = ResolveObservedExposureMicroseconds(settings.Camera, captureSettings, metadata);
+                var observedAnalogGain = ResolveObservedAnalogGain(settings.Camera, captureSettings, metadata);
+                var observedMean = ImageMeanAnalyzer.CalculateNormalizedMean(finalFramePath);
+
+                AutoExposureObservation autoExposureObservation = new(true, false);
+                if (AllSkyAutoExposureController.IsEnabled(settings.Camera))
+                {
+                    autoExposureObservation = autoExposureController.Observe(settings.Camera, observedExposureMicroseconds, observedAnalogGain, observedMean);
+                }
+                else
+                {
+                    autoExposureController.Reset();
+                }
+
+                if (!autoExposureObservation.WithinThreshold && autoExposureObservation.CanImprove)
+                {
+                    Logger.Info(
+                        $"PINS AllSky rejected frame '{frameName}' for session '{session.Id}' because mean {observedMean:F3} is outside target {settings.Camera.AutoMeanTarget:F3} +/- {settings.Camera.AutoMeanThreshold:F3}. Retrying immediately with shutter {autoExposureController.CurrentExposureMicroseconds}us and gain {autoExposureController.CurrentAnalogGain:F3}.");
+                    continue;
+                }
+
+                await SaveFrameMetadataAsync(
+                    finalFramePath,
+                    new FrameCaptureMetadata
+                    {
+                        CapturedAtUtc = timestamp,
+                        ExposureMicroseconds = observedExposureMicroseconds,
+                        AnalogGain = observedAnalogGain,
+                        MeanBrightness = observedMean
+                    },
+                    cancellationToken).ConfigureAwait(false);
+
+                var updated = Clone(session);
+                updated.CaptureCount += 1;
+                updated.LastCaptureAtUtc = timestamp;
+                updated.LastFrameRelativePath = paths.GetRelativePath(finalFramePath);
+                updated.LastExposureMicroseconds = observedExposureMicroseconds;
+                updated.LastAnalogGain = observedAnalogGain;
+                updated.LastMeanBrightness = observedMean;
+                updated.LastError = null;
+                SetLastError(null);
+                frameAccepted = true;
+
+                if (!autoExposureObservation.WithinThreshold)
+                {
+                    Logger.Warning(
+                        $"PINS AllSky accepted frame '{frameName}' for session '{session.Id}' outside the target mean because the controller hit its configured exposure/gain limits. Mean={observedMean:F3}, target={settings.Camera.AutoMeanTarget:F3} +/- {settings.Camera.AutoMeanThreshold:F3}, shutter={observedExposureMicroseconds}us, gain={observedAnalogGain:F3}.");
+                }
+
+                Logger.Info($"PINS AllSky captured frame '{frameName}' for session '{session.Id}'");
+                return updated;
+            }
+            finally
+            {
+                TryDeleteFile(tempFramePath);
+                TryDeleteFile(tempMetadataPath);
+                if (!frameAccepted)
+                {
+                    TryDeleteFile(finalFramePath);
+                }
+            }
         }
-        else
-        {
-            autoExposureController.Reset();
-        }
-
-        var updated = Clone(session);
-        updated.CaptureCount += 1;
-        updated.LastCaptureAtUtc = timestamp;
-        updated.LastFrameRelativePath = paths.GetRelativePath(finalFramePath);
-        updated.LastExposureMicroseconds = observedExposureMicroseconds;
-        updated.LastAnalogGain = observedAnalogGain;
-        updated.LastMeanBrightness = observedMean;
-        updated.LastError = null;
-        SetLastError(null);
-
-        Logger.Info($"PINS AllSky captured frame '{frameName}' for session '{session.Id}'");
-        return updated;
     }
 
     private async Task<ArtifactInfo> GenerateTimelapseAsync(string sessionId, PinsAllSkyConfig settings, CancellationToken cancellationToken)
@@ -932,30 +967,30 @@ public sealed class PinsAllSkyHost : IDisposable
                 WriteMetadata: true);
         }
 
-        if (!autoExposureController.IsInitialized)
-        {
-            return new CaptureSettingsPlan(
-                UseManualExposure: settings.UseManualExposure,
-                ExposureMicroseconds: settings.UseManualExposure ? Math.Max(1, settings.ShutterMicroseconds) : null,
-                UseManualGain: settings.UseManualGain,
-                AnalogGain: settings.UseManualGain ? Math.Max(1.0, settings.AnalogGain) : null,
-                WriteMetadata: true);
-        }
-
         var mode = AllSkyAutoExposureController.ResolveMode(settings);
         var exposureMicroseconds = mode == AllSkyAutoMode.GainOnly
             ? Math.Max(1, settings.ShutterMicroseconds)
-            : autoExposureController.CurrentExposureMicroseconds;
+            : autoExposureController.IsInitialized
+                ? autoExposureController.CurrentExposureMicroseconds
+                : Math.Max(1, settings.ShutterMicroseconds);
         var analogGain = mode == AllSkyAutoMode.ExposureOnly
             ? Math.Max(1.0, settings.AnalogGain)
-            : autoExposureController.CurrentAnalogGain;
+            : autoExposureController.IsInitialized
+                ? autoExposureController.CurrentAnalogGain
+                : Math.Max(1.0, settings.AnalogGain);
 
         return new CaptureSettingsPlan(
-            UseManualExposure: mode != AllSkyAutoMode.Off,
+            UseManualExposure: true,
             ExposureMicroseconds: exposureMicroseconds,
-            UseManualGain: mode != AllSkyAutoMode.Off,
+            UseManualGain: true,
             AnalogGain: analogGain,
             WriteMetadata: true);
+    }
+
+    private static TimeSpan ResolveFailedCaptureDelay(CameraCaptureSettings settings)
+    {
+        var intervalSeconds = Math.Max(5, settings.IntervalSeconds);
+        return TimeSpan.FromSeconds(Math.Max(1, Math.Ceiling(intervalSeconds * 0.25)));
     }
 
     private static TimeSpan ResolveCaptureProcessTimeout(CameraCaptureSettings settings, CaptureSettingsPlan captureSettings)
